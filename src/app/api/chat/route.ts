@@ -12,6 +12,7 @@ import { decrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
 import {
   createConversation,
+  getConversation,
   saveMessage,
   updateConversationTitle,
 } from '@/lib/chat/persist';
@@ -53,7 +54,13 @@ export async function POST(req: Request) {
   const apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
   const modelId = user.preferredModel || getDefaultModelId(user.apiProvider);
 
-  // 5. Create or reuse conversation
+  // 5. Verify conversation ownership if reusing, or create new
+  if (existingConvId) {
+    const existingConv = await getConversation(existingConvId, session.user.agentUserId);
+    if (!existingConv) {
+      return new Response('Conversation not found', { status: 404 });
+    }
+  }
   const conversationId =
     existingConvId ||
     (await createConversation(session.user.agentUserId)).id;

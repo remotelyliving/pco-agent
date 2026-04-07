@@ -3,7 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockPrisma = vi.hoisted(() => ({
   memory: {
     findMany: vi.fn(),
+    findFirst: vi.fn(),
     upsert: vi.fn(),
+    create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   },
@@ -80,14 +82,30 @@ describe('memory queries', () => {
   describe('upsertMemory', () => {
     it('creates an org-level memory when userId is not provided', async () => {
       const newMemory = { id: 'm1', orgId: 'org-1', userId: null, key: 'pastor_name', value: 'John Smith', source: 'auto' };
-      mockPrisma.memory.upsert.mockResolvedValue(newMemory);
+      mockPrisma.memory.findFirst.mockResolvedValue(null);
+      mockPrisma.memory.create.mockResolvedValue(newMemory);
 
       const result = await upsertMemory('org-1', 'pastor_name', 'John Smith', 'auto');
       expect(result).toEqual(newMemory);
-      expect(mockPrisma.memory.upsert).toHaveBeenCalledWith({
-        where: { orgId_userId_key: { orgId: 'org-1', userId: null, key: 'pastor_name' } },
-        update: { value: 'John Smith', source: 'auto' },
-        create: { orgId: 'org-1', userId: null, key: 'pastor_name', value: 'John Smith', source: 'auto' },
+      expect(mockPrisma.memory.findFirst).toHaveBeenCalledWith({
+        where: { orgId: 'org-1', userId: null, key: 'pastor_name' },
+      });
+      expect(mockPrisma.memory.create).toHaveBeenCalledWith({
+        data: { orgId: 'org-1', key: 'pastor_name', value: 'John Smith', source: 'auto' },
+      });
+    });
+
+    it('updates an existing org-level memory when one already exists', async () => {
+      const existing = { id: 'm1', orgId: 'org-1', userId: null, key: 'pastor_name', value: 'Old Name', source: 'auto' };
+      const updated = { ...existing, value: 'John Smith' };
+      mockPrisma.memory.findFirst.mockResolvedValue(existing);
+      mockPrisma.memory.update.mockResolvedValue(updated);
+
+      const result = await upsertMemory('org-1', 'pastor_name', 'John Smith', 'auto');
+      expect(result).toEqual(updated);
+      expect(mockPrisma.memory.update).toHaveBeenCalledWith({
+        where: { id: 'm1' },
+        data: { value: 'John Smith', source: 'auto' },
       });
     });
 

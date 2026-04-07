@@ -101,34 +101,32 @@ export const authConfig: NextAuthConfig = {
           },
         });
 
-        // TODO: Race condition — two simultaneous first-logins can both get admin.
-        // Fix by wrapping in prisma.$transaction or using DB-level constraint.
-        // See: Milestone 2 review findings.
-        // First user in org = admin, rest = member
-        const existingUsers = await prisma.user.count({
-          where: { orgId: org.id },
-        });
-        const role = existingUsers === 0 ? 'admin' : 'member';
+        // First user in org = admin, rest = member (atomic transaction to prevent race condition)
+        const agentUser = await prisma.$transaction(async (tx) => {
+          const existingUsers = await tx.user.count({
+            where: { orgId: org.id },
+          });
+          const role = existingUsers === 0 ? 'admin' : 'member';
 
-        // Upsert user
-        const agentUser = await prisma.user.upsert({
-          where: {
-            orgId_pcoPersonId: {
+          return tx.user.upsert({
+            where: {
+              orgId_pcoPersonId: {
+                orgId: org.id,
+                pcoPersonId: BigInt(String(profile.pcoPersonId)),
+              },
+            },
+            update: {
+              name: profile.name as string,
+              email: profile.email as string | null,
+            },
+            create: {
               orgId: org.id,
               pcoPersonId: BigInt(String(profile.pcoPersonId)),
+              name: profile.name as string,
+              email: profile.email as string | null,
+              role,
             },
-          },
-          update: {
-            name: profile.name as string,
-            email: profile.email as string | null,
-          },
-          create: {
-            orgId: org.id,
-            pcoPersonId: BigInt(String(profile.pcoPersonId)),
-            name: profile.name as string,
-            email: profile.email as string | null,
-            role,
-          },
+          });
         });
 
         // Attach to user so jwt callback doesn't need to re-query

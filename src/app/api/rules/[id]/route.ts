@@ -17,6 +17,10 @@ export async function PATCH(
   const rule = await prisma.rule.findUnique({ where: { id } });
   if (!rule) return new Response('Not found', { status: 404 });
 
+  if (rule.orgId && rule.orgId !== session.user.orgId) {
+    return new Response('Forbidden', { status: 403 });
+  }
+
   const isOwner = rule.createdById === session.user.agentUserId;
   const isAdmin = session.user.role === 'admin';
   const isSystemRule = rule.ruleType === 'system';
@@ -47,6 +51,10 @@ export async function DELETE(
 
   const rule = await prisma.rule.findUnique({ where: { id } });
   if (!rule) return new Response('Not found', { status: 404 });
+
+  if (rule.orgId && rule.orgId !== session.user.orgId) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   const isOwner = rule.createdById === session.user.agentUserId;
   const isAdmin = session.user.role === 'admin';
