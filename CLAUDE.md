@@ -38,6 +38,13 @@ src/
   prisma/           # Prisma schema + migrations
 ```
 
+## Session Startup Checklist
+1. Read `DEV_QUEUE.md` — understand current project state and what's in progress
+2. Read this file — architecture and patterns
+3. Read `TEAM.md` — team structure, quality gates, review protocol
+4. Read the latest feature `SUMMARY.md` if continuing work on a feature
+5. Check `AGENTS.md` if you need development patterns or common task guides
+
 ## Related Projects
 - **pco-mcp** (~/projects/pco-mcp): The MCP server this agent connects to. Python, FastMCP, FastAPI. 25 tools for People + Services modules.
 
@@ -52,10 +59,22 @@ src/
 - `make docker-up` — Start via Docker Compose
 - `make seed` — Seed system default rules
 
-## Testing
-- Vitest for unit tests
+## Testing & Quality Gates
+- Vitest for unit tests — **90% coverage required**
 - Playwright for E2E tests
-- Target: 90% coverage on server-side code
+- Stryker for mutation testing — **80% score on business logic**
+- ESLint + TypeScript strict — **0 errors**
+- 5 reviewer subagents after each feature (see TEAM.md)
+
+## Development Workflow
+1. Pick task from DEV_QUEUE.md (move to In Progress)
+2. Implement with TDD
+3. Self-review, commit
+4. Dispatch 5 review subagents in parallel (Sr. Engineer, SRE, Security, UX/PM, Docs)
+5. Fix findings, re-review if needed
+6. Architect final approval
+7. Update feature SUMMARY.md + DEV_QUEUE.md
+8. Move task to Done
 
 ## Important Patterns
 - API keys are Fernet-encrypted before DB storage, decrypted only server-side when making AI calls
