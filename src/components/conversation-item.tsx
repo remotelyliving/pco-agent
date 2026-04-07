@@ -25,7 +25,13 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
     e.stopPropagation();
     if (!confirm('Delete this conversation?')) return;
     await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
-    router.refresh();
+
+    // If we're deleting the currently-viewed conversation, navigate away
+    if (pathname === `/chat/${id}`) {
+      router.push('/chat');
+    } else {
+      router.refresh();
+    }
   }
 
   return (

@@ -25,7 +25,7 @@ export async function saveMessage(data: {
   content: string;
   toolCalls?: unknown;
 }) {
-  return prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       conversationId: data.conversationId,
       role: data.role,
@@ -33,6 +33,14 @@ export async function saveMessage(data: {
       toolCalls: data.toolCalls ?? undefined,
     },
   });
+
+  // Touch conversation to update updatedAt for sidebar sorting
+  await prisma.conversation.update({
+    where: { id: data.conversationId },
+    data: { updatedAt: new Date() },
+  });
+
+  return message;
 }
 
 export async function getMessages(conversationId: string) {

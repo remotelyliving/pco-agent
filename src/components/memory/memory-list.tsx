@@ -175,7 +175,7 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
           <CardTitle className="text-lg">My Facts</CardTitle>
         </CardHeader>
         <CardContent>
-          <MemoryTable memories={userMemories} showDelete={true} />
+          <MemoryTable memories={userMemories} showDelete={isAdmin} />
         </CardContent>
       </Card>
     </div>

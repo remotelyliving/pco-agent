@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { toggleRule } from '@/lib/rules/queries';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
     return Response.json(setting);
   } catch (error) {
-    console.error('[rules/toggle] Database error:', error);
+    logger.error('[rules/toggle] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

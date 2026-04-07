@@ -43,88 +43,105 @@ export async function POST(req: Request) {
     return new Response('No messages provided', { status: 400 });
   }
 
-  // 3. Load user with API key
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.agentUserId },
-  });
-
-  if (!user?.apiProvider || !user?.apiKeyEnc) {
-    return Response.json(
-      { error: 'No API key configured. Go to Settings to add one.' },
-      { status: 400 },
-    );
-  }
-
-  // 4. Decrypt API key
-  const apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
-  const modelId =
-    user.preferredModel ||
-    getDefaultModel(user.apiProvider)?.id ||
-    'claude-sonnet-4-5-20250514';
-
-  // 5. Verify conversation ownership if reusing, or create new
-  if (existingConvId) {
-    const existingConv = await getConversation(existingConvId, session.user.agentUserId);
-    if (!existingConv) {
-      return new Response('Conversation not found', { status: 404 });
-    }
-  }
-  const conversationId =
-    existingConvId ||
-    (await createConversation(session.user.agentUserId)).id;
-
-  // 6. Save the user message
-  const lastUserMessage = messages[messages.length - 1];
-  if (lastUserMessage?.role === 'user') {
-    const textContent = lastUserMessage.parts
-      .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-      .map((p) => p.text)
-      .join('\n');
-    await saveMessage({
-      conversationId,
-      role: 'user',
-      content: textContent,
-    });
-  }
-
-  // 7. Connect to MCP server (using PCO access token from JWT)
+  // 3–8. Pre-stream setup: user lookup, conversation, message save, rules, memory, MCP
   let mcpClient: MCPClient | null = null;
+  // eslint-disable-next-line prefer-const
+  let user!: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
+  let apiKey!: string;
+  let modelId!: string;
+  let conversationId!: string;
+  let lastUserMessage: UIMessage | undefined;
+  let systemPrompt!: string;
   let tools = {};
 
-  const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
+  try {
+    // 3. Load user with API key
+    user = await prisma.user.findUnique({
+      where: { id: session.user.agentUserId },
+    });
 
-  if (pcoAccessToken) {
-    try {
-      mcpClient = await createMCPClient({
-        transport: {
-          type: 'sse',
-          url: process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-          headers: {
-            Authorization: `Bearer ${pcoAccessToken}`,
-          },
-        },
-      });
-      tools = await mcpClient.tools();
-    } catch (error) {
-      logger.error('MCP connection failed', {
-        userId: session.user.agentUserId,
-        orgId: session.user.orgId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Continue without MCP tools -- chat still works, just no PCO data access
+    if (!user?.apiProvider || !user?.apiKeyEnc) {
+      return Response.json(
+        { error: 'No API key configured. Go to Settings to add one.' },
+        { status: 400 },
+      );
     }
-  }
 
-  // 8. Build system prompt with assembled rules and memory (parallelized)
-  const [assembledRules, memoryPrompt] = await Promise.all([
-    assembleRules(session.user.agentUserId, session.user.orgId, { formatAsPrompt: true }),
-    getMemoryPrompt(session.user.orgId, session.user.agentUserId),
-  ]);
-  const systemPrompt = buildSystemPrompt(
-    typeof assembledRules === 'string' ? assembledRules : '',
-    memoryPrompt,
-  );
+    // 4. Decrypt API key
+    apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
+    modelId =
+      user.preferredModel ||
+      getDefaultModel(user.apiProvider)?.id ||
+      'claude-sonnet-4-5-20250514';
+
+    // 5. Verify conversation ownership if reusing, or create new
+    if (existingConvId) {
+      const existingConv = await getConversation(existingConvId, session.user.agentUserId);
+      if (!existingConv) {
+        return new Response('Conversation not found', { status: 404 });
+      }
+    }
+    conversationId =
+      existingConvId ||
+      (await createConversation(session.user.agentUserId)).id;
+
+    // 6. Save the user message
+    lastUserMessage = messages[messages.length - 1];
+    if (lastUserMessage?.role === 'user') {
+      const textContent = lastUserMessage.parts
+        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+        .map((p) => p.text)
+        .join('\n');
+      await saveMessage({
+        conversationId,
+        role: 'user',
+        content: textContent,
+      });
+    }
+
+    // 7. Connect to MCP server (using PCO access token from JWT)
+    const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
+
+    if (pcoAccessToken) {
+      try {
+        mcpClient = await createMCPClient({
+          transport: {
+            type: 'sse',
+            url: process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+            headers: {
+              Authorization: `Bearer ${pcoAccessToken}`,
+            },
+          },
+        });
+        tools = await mcpClient.tools();
+      } catch (error) {
+        logger.error('MCP connection failed', {
+          userId: session.user.agentUserId,
+          orgId: session.user.orgId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        // Continue without MCP tools -- chat still works, just no PCO data access
+      }
+    }
+
+    // 8. Build system prompt with assembled rules and memory (parallelized)
+    const [assembledRules, memoryPrompt] = await Promise.all([
+      assembleRules(session.user.agentUserId, session.user.orgId, { formatAsPrompt: true }),
+      getMemoryPrompt(session.user.orgId, session.user.agentUserId),
+    ]);
+    systemPrompt = buildSystemPrompt(
+      typeof assembledRules === 'string' ? assembledRules : '',
+      memoryPrompt,
+    );
+  } catch (error) {
+    console.error('[chat] Pre-stream error:', error);
+    if (mcpClient) await mcpClient.close();
+    return Response.json(
+      { error: 'Something went wrong. Please try again.' },
+      { status: 500 },
+    );
+  }
 
   // 9. Stream the response
   try {
@@ -162,7 +179,10 @@ export async function POST(req: Request) {
             text,
             user.apiProvider!,
             apiKey,
-          ).catch(console.error);
+          ).catch((err) => logger.error('[chat] Memory extraction failed', {
+            conversationId,
+            error: err instanceof Error ? err.message : String(err),
+          }));
         }
 
         // Close MCP client
@@ -170,7 +190,12 @@ export async function POST(req: Request) {
           await mcpClient.close();
         }
       },
-      onError: async () => {
+      onError: async (error) => {
+        logger.error('[chat] Stream error', {
+          conversationId,
+          userId: session.user.agentUserId,
+          error: error instanceof Error ? error.message : String(error),
+        });
         if (mcpClient) {
           await mcpClient.close();
         }

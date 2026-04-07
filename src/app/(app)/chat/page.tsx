@@ -12,8 +12,13 @@ export default async function ChatPage() {
   const session = await auth();
   if (!session?.user?.agentUserId) redirect('/login');
 
-  if (await needsSetup(session.user.agentUserId)) {
-    redirect('/setup');
+  try {
+    if (await needsSetup(session.user.agentUserId)) {
+      redirect('/setup');
+    }
+  } catch (error) {
+    console.error('[chat] Setup check failed:', error);
+    // Continue to chat — better than breaking the page
   }
 
   return <ChatInterface />;

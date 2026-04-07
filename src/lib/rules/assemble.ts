@@ -34,7 +34,7 @@ export async function assembleRules(
       return override !== false;
     }
     if (rule.createdById === userId) {
-      return true;
+      return override !== false; // own rules on by default, but can be toggled off
     }
     if (rule.ruleType === 'user' && rule.visibility === 'org' && rule.createdById !== userId) {
       return override === true;

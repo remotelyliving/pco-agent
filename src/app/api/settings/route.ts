@@ -4,6 +4,7 @@ import { encrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
 import { SUPPORTED_PROVIDERS } from '@/lib/ai/providers';
 import { MODEL_OPTIONS } from '@/lib/ai/models';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   const session = await auth();
@@ -23,7 +24,7 @@ export async function GET() {
       hasApiKey: !!user?.apiKeyEnc,
     });
   } catch (error) {
-    console.error('[settings] Database error:', error);
+    logger.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -67,6 +68,17 @@ export async function POST(req: Request) {
     preferredModel: preferredModel || null,
   };
 
+  // Check if provider is changing
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.agentUserId },
+    select: { apiProvider: true },
+  });
+
+  if (currentUser?.apiProvider && currentUser.apiProvider !== apiProvider && !apiKey) {
+    // Provider changed but no new key — clear the old one
+    updateData.apiKeyEnc = null;
+  }
+
   if (apiKey) {
     updateData.apiKeyEnc = encrypt(apiKey, getEncryptionKey());
   }
@@ -79,7 +91,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[settings] Database error:', error);
+    logger.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

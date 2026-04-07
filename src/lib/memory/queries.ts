@@ -47,6 +47,10 @@ export async function upsertMemory(
   });
 
   if (existing) {
+    // Don't overwrite manually-set facts with auto-extracted ones
+    if (existing.source === 'manual' && source === 'auto') {
+      return existing;
+    }
     return prisma.memory.update({
       where: { id: existing.id },
       data: { value, source },

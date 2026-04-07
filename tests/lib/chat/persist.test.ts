@@ -63,13 +63,25 @@ describe('chat persistence', () => {
 
   it('saveMessage creates a message record', async () => {
     mockPrisma.message.create.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1', role: 'user', content: 'hello' });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
     const result = await saveMessage({ conversationId: 'conv-1', role: 'user', content: 'hello' });
     expect(result.id).toBe('msg-1');
+  });
+
+  it('saveMessage touches the conversation updatedAt', async () => {
+    mockPrisma.message.create.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1', role: 'user', content: 'hello' });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
+    await saveMessage({ conversationId: 'conv-1', role: 'user', content: 'hello' });
+    expect(mockPrisma.conversation.update).toHaveBeenCalledWith({
+      where: { id: 'conv-1' },
+      data: { updatedAt: expect.any(Date) },
+    });
   });
 
   it('saveMessage stores toolCalls as JSON', async () => {
     const toolCalls = [{ name: 'search', args: { q: 'test' } }];
     mockPrisma.message.create.mockResolvedValue({ id: 'msg-2', toolCalls });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
     await saveMessage({ conversationId: 'conv-1', role: 'assistant', content: 'result', toolCalls });
     expect(mockPrisma.message.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ toolCalls }),

@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { updateMemory, deleteMemory } from '@/lib/memory/queries';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 export async function PATCH(
   req: Request,
@@ -33,7 +34,7 @@ export async function PATCH(
 
     return Response.json(updated);
   } catch (error) {
-    console.error('[memory/id] Database error:', error);
+    logger.error('[memory/id] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -67,7 +68,7 @@ export async function DELETE(
     await deleteMemory(id);
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error('[memory/id] Database error:', error);
+    logger.error('[memory/id] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

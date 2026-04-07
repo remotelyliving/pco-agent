@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { getOrgMemories, getUserMemories, upsertMemory } from '@/lib/memory/queries';
+import { logger } from '@/lib/logger';
 
 const MEMORY_LIMIT = 100;
 
@@ -18,7 +19,7 @@ export async function GET() {
     const userMemories = userMemoriesAll.slice(0, MEMORY_LIMIT);
     return Response.json({ orgMemories, userMemories });
   } catch (error) {
-    console.error('[memory] Database error:', error);
+    logger.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
     const memory = await upsertMemory(session.user.orgId, key, value, 'manual');
     return Response.json(memory, { status: 201 });
   } catch (error) {
-    console.error('[memory] Database error:', error);
+    logger.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
