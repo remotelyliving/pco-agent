@@ -19,11 +19,13 @@ export function RuleEditor({
   const [category, setCategory] = useState('');
   const [ruleType, setRuleType] = useState(isAdmin ? 'org' : 'user');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!content.trim()) return;
 
+    setError('');
     setSaving(true);
     try {
       const res = await fetch('/api/rules', {
@@ -37,8 +39,8 @@ export function RuleEditor({
       });
       if (!res.ok) throw new Error(await res.text());
       onSave();
-    } catch {
-      // Error handling — could add error state
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save rule. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -90,6 +92,12 @@ export function RuleEditor({
                 <option value="org">Organization (visible to all)</option>
                 <option value="user">Personal (just me)</option>
               </select>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+              {error}
             </div>
           )}
 

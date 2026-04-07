@@ -35,11 +35,16 @@ sidebar layout, and Docker deployment configuration.
 - [2026-04-07] Milestone 1 (5 reviewers): Fixed seed ID stability, env validation, Prisma logging, schema type mismatch, docs accuracy
 - [2026-04-07] Milestone 2 (5 reviewers): Fixed access token exposure, redundant DB queries, error handling, responsive sidebar, auth error display, AGENTS.md accuracy
 
+## Polish Pass (2026-04-07)
+Fixed during comprehensive review + polish on branch `fix/buff-and-polish`:
+- Admin race condition → fixed with `$transaction` in auth callback
+- PCO token refresh → implemented in NextAuth `jwt` callback
+- No health check → `/api/health` route added (`src/app/api/health/route.ts`)
+- No HTTP security headers → added in `next.config.ts`
+- No structured logging → `src/lib/logger.ts` created; `src/instrumentation.ts` wires it at startup
+- Mobile sidebar → `src/components/mobile-nav.tsx` mobile drawer added
+- Fragile `getPcoAccessToken` helper → replaced with clean `getToken()` pattern
+
 ## Known Limitations
-- Admin role assignment uses first-user heuristic with race condition (needs $transaction)
-- No PCO token refresh logic (access tokens expire in ~2 hours)
 - Auth callback tests verify structure only, not behavior
-- No health check API endpoint
-- No HTTP security headers in next.config.ts
-- No structured logging (console.error only)
-- Mobile sidebar is hidden, no drawer/hamburger yet
+- First-user-is-admin heuristic (PCO role mapping planned for future)

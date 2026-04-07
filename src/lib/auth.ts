@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import type { NextAuthConfig } from 'next-auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 declare module 'next-auth' {
   interface Session {
@@ -23,6 +24,7 @@ declare module '@auth/core/jwt' {
     role?: string;
     pcoAccessToken?: string;
     pcoRefreshToken?: string;
+    pcoAccessTokenExpires?: number;
   }
 }
 
@@ -83,7 +85,7 @@ export const authConfig: NextAuthConfig = {
 
       const profile = user as Record<string, unknown>;
       if (!profile.pcoOrgId || !profile.pcoPersonId) {
-        console.error('[auth] signIn failed: missing pcoOrgId or pcoPersonId', {
+        logger.error('signIn failed: missing pcoOrgId or pcoPersonId', {
           hasPcoOrgId: !!profile.pcoOrgId,
           hasPcoPersonId: !!profile.pcoPersonId,
         });
@@ -136,7 +138,7 @@ export const authConfig: NextAuthConfig = {
 
         return true;
       } catch (error) {
-        console.error('[auth] signIn failed: database error', {
+        logger.error('signIn failed: database error', {
           pcoOrgId: profile.pcoOrgId,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -151,7 +153,45 @@ export const authConfig: NextAuthConfig = {
         token.role = profile.agentRole as string;
         token.pcoAccessToken = account.access_token ?? undefined;
         token.pcoRefreshToken = account.refresh_token ?? undefined;
+        token.pcoAccessTokenExpires = account.expires_at;
       }
+
+      // Refresh PCO token if it expires within 5 minutes
+      if (!user && token.pcoAccessToken && token.pcoAccessTokenExpires) {
+        const now = Math.floor(Date.now() / 1000);
+        const expiresIn = (token.pcoAccessTokenExpires as number) - now;
+
+        if (expiresIn < 300) {
+          try {
+            const response = await fetch('https://api.planningcenteronline.com/oauth/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: token.pcoRefreshToken as string,
+                client_id: process.env.PCO_CLIENT_ID!,
+                client_secret: process.env.PCO_CLIENT_SECRET!,
+              }),
+            });
+
+            if (response.ok) {
+              const tokens = await response.json();
+              token.pcoAccessToken = tokens.access_token;
+              token.pcoRefreshToken = tokens.refresh_token ?? token.pcoRefreshToken;
+              token.pcoAccessTokenExpires = tokens.expires_in
+                ? now + tokens.expires_in
+                : token.pcoAccessTokenExpires;
+            } else {
+              logger.error('PCO token refresh failed', { status: response.status });
+            }
+          } catch (error) {
+            logger.error('PCO token refresh error', {
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

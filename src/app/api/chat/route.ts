@@ -5,8 +5,10 @@ import {
   type UIMessage,
 } from 'ai';
 import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
+import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import { createModel } from '@/lib/ai/providers';
 import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
@@ -89,7 +91,8 @@ export async function POST(req: Request) {
   let mcpClient: MCPClient | null = null;
   let tools = {};
 
-  const pcoAccessToken = await getPcoAccessToken();
+  const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
 
   if (pcoAccessToken) {
     try {
@@ -104,7 +107,11 @@ export async function POST(req: Request) {
       });
       tools = await mcpClient.tools();
     } catch (error) {
-      console.error('[chat] MCP connection failed:', error);
+      logger.error('MCP connection failed', {
+        userId: session.user.agentUserId,
+        orgId: session.user.orgId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Continue without MCP tools -- chat still works, just no PCO data access
     }
   }
@@ -138,7 +145,7 @@ export async function POST(req: Request) {
 
         // Auto-title from first exchange
         if (!existingConvId && text) {
-          const title = text.slice(0, 100).split('\n')[0];
+          const title = generateTitle(text);
           await updateConversationTitle(conversationId, title);
         }
 
@@ -181,6 +188,13 @@ export async function POST(req: Request) {
   }
 }
 
+function generateTitle(text: string): string {
+  // Take first sentence or first line
+  const firstSentence = text.split(/[.!?\n]/)[0]?.trim() || '';
+  if (firstSentence.length <= 60) return firstSentence;
+  return firstSentence.slice(0, 57) + '...';
+}
+
 function buildSystemPrompt(rules: string, memory?: string): string {
   let prompt = `You are a helpful assistant for church staff who use Planning Center Online.
 
@@ -201,32 +215,3 @@ When you use a tool and get results, summarize them in a clear, readable way.`;
   return prompt;
 }
 
-async function getPcoAccessToken(): Promise<string | null> {
-  try {
-    const { getToken } = await import('next-auth/jwt');
-    const { cookies, headers } = await import('next/headers');
-
-    const cookieStore = await cookies();
-    const headerStore = await headers();
-
-    const reqHeaders = new Headers();
-    headerStore.forEach((value, key) => {
-      reqHeaders.set(key, value);
-    });
-
-    const cookieHeader = cookieStore
-      .getAll()
-      .map((c) => `${c.name}=${c.value}`)
-      .join('; ');
-    reqHeaders.set('cookie', cookieHeader);
-
-    const token = await getToken({
-      req: { headers: reqHeaders } as Parameters<typeof getToken>[0]['req'],
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-    return (token?.pcoAccessToken as string) || null;
-  } catch (error) {
-    console.error('[chat] Failed to get PCO access token:', error);
-    return null;
-  }
-}

@@ -42,6 +42,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
   }
 
   async function handleDelete(ruleId: string) {
+    if (!confirm('Are you sure you want to delete this rule?')) return;
     await fetch(`/api/rules/${ruleId}`, { method: 'DELETE' });
     loadRules();
   }
@@ -92,6 +93,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         isEnabled={isEnabled}
         onToggle={handleToggle}
         onDelete={handleDelete}
+        onReload={loadRules}
         canDelete={false}
         userId={userId}
       />
@@ -101,6 +103,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         isEnabled={isEnabled}
         onToggle={handleToggle}
         onDelete={handleDelete}
+        onReload={loadRules}
         canDelete={isAdmin}
         userId={userId}
       />
@@ -111,6 +114,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
           isEnabled={isEnabled}
           onToggle={handleToggle}
           onDelete={handleDelete}
+          onReload={loadRules}
           canDelete={true}
           userId={userId}
         />
@@ -125,6 +129,7 @@ function RuleSection({
   isEnabled,
   onToggle,
   onDelete,
+  onReload,
   canDelete,
   userId,
 }: {
@@ -133,10 +138,26 @@ function RuleSection({
   isEnabled: (rule: Rule) => boolean;
   onToggle: (id: string, enabled: boolean) => void;
   onDelete: (id: string) => void;
+  onReload: () => void;
   canDelete: boolean;
   userId: string;
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+
   if (rules.length === 0) return null;
+
+  async function handleEdit(ruleId: string) {
+    const res = await fetch(`/api/rules/${ruleId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: editContent }),
+    });
+    if (res.ok) {
+      setEditingId(null);
+      onReload();
+    }
+  }
 
   return (
     <Card>
@@ -152,22 +173,55 @@ function RuleSection({
               aria-label={`Toggle rule: ${rule.content.slice(0, 50)}`}
             />
             <div className="flex-1">
-              <p className="text-sm">{rule.content}</p>
-              {rule.category && (
-                <Badge variant="secondary" className="mt-1">
-                  {rule.category}
-                </Badge>
+              {editingId === rule.id ? (
+                <div className="space-y-2">
+                  <textarea
+                    className="w-full rounded-md border p-2 text-sm"
+                    rows={3}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleEdit(rule.id)}>
+                      Save
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm">{rule.content}</p>
+                  {rule.category && (
+                    <Badge variant="secondary" className="mt-1">
+                      {rule.category}
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
             {(canDelete || rule.createdById === userId) && rule.ruleType !== 'system' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDelete(rule.id)}
-                className="text-red-500 hover:text-red-700"
-              >
-                Delete
-              </Button>
+              <div className="flex gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingId(rule.id);
+                    setEditContent(rule.content);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(rule.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Delete
+                </Button>
+              </div>
             )}
           </div>
         ))}

@@ -15,6 +15,8 @@ export function ApiKeyForm() {
   const [hasExistingKey, setHasExistingKey] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -27,6 +29,23 @@ export function ApiKeyForm() {
   }, []);
 
   const modelsForProvider = MODEL_OPTIONS.filter((m) => m.provider === provider);
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/settings/test', { method: 'POST' });
+      const data = await res.json();
+      setTestResult({
+        success: data.success,
+        message: data.success ? `Connected to ${data.provider}!` : data.error,
+      });
+    } catch {
+      setTestResult({ success: false, message: 'Failed to test connection' });
+    } finally {
+      setTesting(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -131,6 +150,18 @@ export function ApiKeyForm() {
           <Button type="submit" disabled={saving || !provider}>
             {saving ? 'Saving...' : 'Save Settings'}
           </Button>
+
+          {hasExistingKey && (
+            <Button type="button" variant="outline" onClick={handleTest} disabled={testing}>
+              {testing ? 'Testing...' : 'Test Connection'}
+            </Button>
+          )}
+
+          {testResult && (
+            <div className={`rounded-lg p-3 text-sm ${testResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`} role="alert">
+              {testResult.message}
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>

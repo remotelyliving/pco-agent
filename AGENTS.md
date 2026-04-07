@@ -32,15 +32,26 @@ Browser → Next.js App → Vercel AI SDK → [Anthropic|OpenAI|Google] API
 src/app/              → Pages (App Router)
 src/components/       → React components (shadcn/ui based)
 src/lib/              → Server-side business logic (flat files)
-src/lib/auth.ts       → NextAuth config, PCO OAuth provider
+src/lib/auth.ts       → NextAuth config, PCO OAuth provider (with token refresh)
 src/lib/crypto.ts     → Fernet encryption for API keys
 src/lib/db.ts         → Prisma client singleton
 src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
+src/lib/logger.ts     → Structured logger — use instead of console.log in server code
 src/lib/ai/           → AI provider factory and model metadata
 src/lib/chat/         → Conversation and message persistence
 src/middleware.ts     → Route protection middleware (NextAuth)
+src/instrumentation.ts → Next.js instrumentation hook — registers logger at startup
 prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
+
+Key API routes added in polish pass:
+src/app/api/health/route.ts             → GET /api/health — app + DB liveness check
+src/app/api/settings/test/route.ts      → POST /api/settings/test — validate API key live
+src/app/api/conversations/[id]/route.ts → DELETE /api/conversations/[id] — owner-only delete
+
+Key components added in polish pass:
+src/components/mobile-nav.tsx           → Hamburger drawer for mobile screens
+src/components/conversation-item.tsx    → Sidebar conversation item with delete confirm
 ```
 
 ## How Rules Work
@@ -115,7 +126,8 @@ effective_rules = allRules.filter(rule =>
 2. On callback: call PCO `/people/v2/me` for identity
 3. First user in org gets `role = 'admin'`; all subsequent users get `role = 'member'`. PCO role-based mapping is planned but not yet implemented.
 4. Roles synced on every login (PCO is source of truth)
-5. First user from an org → org auto-created
+5. First user from an org → org auto-created (wrapped in `$transaction` to prevent race conditions)
+6. PCO access token is refreshed automatically in the NextAuth `jwt` callback when it expires
 
 > NOTE: The admin role assignment is a placeholder heuristic. A future task will implement proper PCO permissions checking.
 
