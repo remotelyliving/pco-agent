@@ -14,10 +14,21 @@ export default defineConfig({
       include: ['src/lib/**'],
       thresholds: { lines: 90 },
     },
+    server: {
+      deps: {
+        inline: ['next-auth', '@auth/core'],
+      },
+    },
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // next-auth imports `next/server` (bare specifier) which fails ESM
+      // resolution in vitest — alias to the stub
+      'next/server': path.resolve(
+        __dirname,
+        './tests/__mocks__/next-server.ts'
+      ),
     },
   },
 });
