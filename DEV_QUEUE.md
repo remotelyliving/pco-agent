@@ -4,19 +4,19 @@
 
 ## Project Status
 
-**Phase:** Plan 1 ready for execution (scaffolding + auth + DB)
-**Last Updated:** 2026-04-06
-**Last Session Summary:** Complete design + planning session. Spec approved, Plan 1 written (8 tasks), all foundational docs committed. Ready to execute Task 1.
+**Phase:** Plan 1 complete — ready to write Plan 2 (AI Provider + MCP + Chat)
+**Last Updated:** 2026-04-07
+**Last Session Summary:** Executed all 8 tasks in Plan 1. Next.js 16, PCO OAuth, Prisma 7, sidebar layout, Docker config all complete. Two milestone reviews with 5 subagent reviewers each. Feature summary at `docs/features/scaffolding-auth-db/SUMMARY.md`.
 
 ---
 
 ## In Progress
 
-- [ ] **Plan 1: Scaffolding + Auth + Database** — 8 tasks in `docs/plans/2026-04-06-plan-1-scaffolding-auth-db.md`. Execute with subagent-driven-development. Start at Task 1.
+_(none)_
 
 ## Backlog
 
-- [ ] **Plan 2: AI Provider + MCP + Chat** — Vercel AI SDK, multi-provider routing, MCP connector, streaming chat UI. (Plan not yet written — write when Plan 1 is done)
+- [ ] **Plan 2: AI Provider + MCP + Chat** — Vercel AI SDK, multi-provider routing, MCP connector, streaming chat UI. (Plan not yet written — write it next)
 - [ ] **Plan 3: Rules System** — System default rules, org rules, user rules, per-user toggle overrides, rules editor UI, rule assembly into system prompts
 - [ ] **Plan 4: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
 - [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
@@ -25,10 +25,25 @@
 
 - [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)
 - [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
+- [x] **Plan 1: Scaffolding + Auth + Database** — Next.js 16, PCO OAuth, Prisma 7 (agent schema), Fernet crypto, sidebar layout, Docker config. Two milestone reviews (5 reviewers each). See `docs/features/scaffolding-auth-db/SUMMARY.md` (2026-04-07)
 
 ---
 
 ## Session History
+
+### 2026-04-07: Plan 1 Execution (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — Plan 1 COMPLETE:**
+- Task 1: Next.js 16 project init (TypeScript, Tailwind, App Router)
+- Task 2: Prisma 7 schema (orgs, users, conversations, messages, rules, memory) + seed
+- Task 3: Fernet encryption library + env validation
+- Task 4: PCO OAuth via NextAuth + user/org sync on login
+- Task 5: Login page with error display + middleware route protection
+- Task 6: Authenticated sidebar layout (responsive, user info, sign out)
+- Task 7: Docker multi-stage build + docker-compose with shared Postgres
+- Task 8: Feature summary + dev queue update
+- Milestone 1 review (5 subagent reviewers): seed stability, env validation, Prisma logging, schema types, docs
+- Milestone 2 review (5 subagent reviewers): access token exposure, redundant DB queries, error handling, sidebar, auth errors
 
 ### 2026-04-06: Monster Session (pco-mcp + pco-agent)
 
@@ -53,5 +68,5 @@
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
 3. Read `TEAM.md` for quality gates + review protocol
-4. Open `docs/plans/2026-04-06-plan-1-scaffolding-auth-db.md` — start executing Task 1
-5. Use `superpowers:subagent-driven-development` skill for execution
+4. Write Plan 2 (AI Provider + MCP + Chat) — use `superpowers:writing-plans` skill
+5. Then execute Plan 2 with `superpowers:subagent-driven-development` skill
