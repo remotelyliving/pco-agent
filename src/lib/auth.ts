@@ -48,6 +48,9 @@ export const authConfig: NextAuthConfig = {
               headers: { Authorization: `Bearer ${tokens.access_token}` },
             }
           );
+          if (!res.ok) {
+            throw new Error(`PCO userinfo request failed: ${res.status}`);
+          }
           const json = await res.json();
           const person = json.data;
           const org = json.meta?.parent;
@@ -56,7 +59,7 @@ export const authConfig: NextAuthConfig = {
             name: `${person.attributes.first_name} ${person.attributes.last_name}`,
             email:
               person.attributes.email_addresses?.[0]?.address ?? null,
-            pcoPersonId: parseInt(person.id, 10),
+            pcoPersonId: person.id,
             pcoOrgId: org?.id,
             pcoOrgName: org?.attributes?.name,
           };
@@ -83,10 +86,10 @@ export const authConfig: NextAuthConfig = {
       // Upsert organization
       const org = await prisma.organization.upsert({
         where: { pcoOrgId: String(profile.pcoOrgId) },
-        update: { name: (profile.pcoOrgName as string) || 'Unknown' },
+        update: { name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown' },
         create: {
           pcoOrgId: String(profile.pcoOrgId),
-          name: (profile.pcoOrgName as string) || 'Unknown',
+          name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown',
         },
       });
 
@@ -150,11 +153,11 @@ export const authConfig: NextAuthConfig = {
         ...session,
         user: {
           ...session.user,
-          agentUserId: token.agentUserId as string,
-          orgId: token.orgId as string,
-          role: token.role as string,
+          agentUserId: (token.agentUserId as string) ?? '',
+          orgId: (token.orgId as string) ?? '',
+          role: (token.role as string) ?? 'member',
         },
-        pcoAccessToken: token.pcoAccessToken as string,
+        pcoAccessToken: (token.pcoAccessToken as string) ?? '',
       };
     },
   },
