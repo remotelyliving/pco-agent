@@ -45,18 +45,38 @@ prisma/seed.ts        → System default rules seeder
 
 ## How Rules Work
 
-Rules are assembled into the system prompt per-user per-chat:
+Rules are assembled into the system prompt per-user per-chat via `assembleRules(userId, orgId)` in `src/lib/rules/assemble.ts`.
 
+**Rule types and default behavior:**
+
+| ruleType | Default | Can opt out? | Can opt in? |
+|----------|---------|-------------|-------------|
+| `system` | ON | Yes | N/A |
+| `org` | ON | Yes | N/A |
+| `user` (own) | ON | No | N/A |
+| `user` (other user's, `visibility='org'`) | OFF | N/A | Yes |
+
+**Assembly logic (pseudocode):**
 ```
-effective_rules = (
-    system defaults WHERE user has NOT opted out
-    + org rules (visibility='org') WHERE user has NOT opted out
-    + public rules from other users WHERE user has opted IN
-    + user's own enabled rules
+effective_rules = allRules.filter(rule =>
+  if rule.ruleType in ['system', 'org']:
+    userRuleSettings[rule.id] !== false   // on unless explicitly opted out
+  elif rule.createdById === userId:
+    true                                  // user's own rules always active
+  elif rule.ruleType === 'user' and rule.visibility === 'org':
+    userRuleSettings[rule.id] === true    // off unless explicitly opted in
 )
 ```
 
-Resolved via `src/lib/rules/assembleRules.ts`. The `user_rule_settings` table stores per-user overrides (opt-in/opt-out).
+**Key files:**
+- `src/lib/rules/assemble.ts` — `assembleRules(userId, orgId, options?)`. Pass `{ formatAsPrompt: true }` to get a numbered string for direct system prompt injection.
+- `src/lib/rules/queries.ts` — `listRulesForOrg`, `createRule`, `updateRule`, `deleteRule`, `toggleRule`, `getUserRuleSettings`
+- `prisma/schema.prisma` — `Rule` model + `UserRuleSetting` model (unique on `[userId, ruleId]`)
+
+**Access control:**
+- System rules: read-only everywhere. Only changeable via `prisma/seed.ts`.
+- Org rules: admin can create/edit/delete. Members can only toggle.
+- User rules: owner can create/edit/delete. Others can toggle if `visibility='org'`.
 
 ## How Memory Works
 
@@ -99,9 +119,9 @@ Resolved via `src/lib/rules/assembleRules.ts`. The `user_rule_settings` table st
 3. Add E2E test in `tests/e2e/pagename.spec.ts`
 
 ### Adding a new rule category
-1. Add the category string to the `category` check in `src/lib/rules/assembleRules.ts`
-2. Add seed rules in `prisma/seed.ts`
-3. Update the category filter dropdown in `src/components/rules/rule-list.tsx`
+1. Add the category `<option>` to the select in `src/components/rules/rule-editor.tsx`
+2. Add seed rules with the new category in `prisma/seed.ts`
+3. Update any category display logic in `src/components/rules/rule-list.tsx` if needed
 
 ### Adding a new AI provider
 1. Install the AI SDK provider package: `@ai-sdk/providername`

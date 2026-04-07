@@ -37,6 +37,8 @@ src/
           page.tsx    # Conversation resume page
       settings/
         page.tsx      # API key + provider settings
+      rules/
+        page.tsx      # Rules management page
     api/
       auth/
         [...nextauth]/
@@ -45,6 +47,12 @@ src/
         route.ts      # Streaming chat endpoint
       settings/
         route.ts      # Settings API
+      rules/
+        route.ts      # Rules list + create
+        [id]/
+          route.ts    # Rule edit + delete
+        toggle/
+          route.ts    # Per-user rule toggle
   components/
     sidebar.tsx       # Sidebar with nav, user info, sign out
     ui/               # shadcn/ui components
@@ -53,6 +61,9 @@ src/
       message-bubble.tsx  # Message display with tool call support
     settings/
       api-key-form.tsx    # API key entry form
+    rules/
+      rule-list.tsx   # Grouped rule list with toggle switches
+      rule-editor.tsx # Inline form for creating new rules
   lib/
     auth.ts           # NextAuth config + PCO OAuth provider
     crypto.ts         # Fernet encryption for API keys
@@ -64,6 +75,9 @@ src/
       models.ts       # Model options metadata
     chat/
       persist.ts      # Conversation/message CRUD
+    rules/
+      assemble.ts     # assembleRules() — builds effective rule list per user
+      queries.ts      # Rules CRUD + toggle helpers
   middleware.ts       # Route protection — redirects to /login if unauthenticated
 prisma/
   schema.prisma       # Agent schema (7 models)
