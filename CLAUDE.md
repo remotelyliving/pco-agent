@@ -23,20 +23,33 @@ A web-based AI agent for church staff to interact with Planning Center Online th
 ## Project Structure
 ```
 src/
-  app/              # Next.js App Router pages
-    (auth)/         # Login, setup wizard (future)
-    (app)/          # Chat, settings — authenticated (future)
-    api/            # API routes (future)
-  components/       # React components
-    ui/             # shadcn/ui components
-  lib/              # Server-side utilities
-    auth.ts         # NextAuth config + PCO provider (Task 4)
-    crypto.ts       # Fernet encryption for API keys
-    db.ts           # Prisma client singleton
-    env.ts          # Environment variable validation
-prisma/             # Prisma schema + seed (at project root, not under src/)
-  schema.prisma
-  seed.ts
+  app/
+    page.tsx          # Root page — redirects to /chat or /login
+    layout.tsx        # Root layout
+    (auth)/
+      login/
+        page.tsx      # PCO OAuth sign-in page
+    (app)/
+      layout.tsx      # Authenticated layout with sidebar
+      chat/
+        page.tsx      # Skeleton chat page
+    api/
+      auth/
+        [...nextauth]/
+          route.ts    # NextAuth API handler
+  components/
+    sidebar.tsx       # Sidebar with nav, user info, sign out
+    ui/               # shadcn/ui components
+  lib/
+    auth.ts           # NextAuth config + PCO OAuth provider
+    crypto.ts         # Fernet encryption for API keys
+    db.ts             # Prisma client singleton
+    env.ts            # Environment variable validation
+    utils.ts          # shadcn/ui utility (cn function)
+  middleware.ts       # Route protection — redirects to /login if unauthenticated
+prisma/
+  schema.prisma       # Agent schema (7 models)
+  seed.ts             # System default rules seeder
 ```
 
 ## Session Startup Checklist

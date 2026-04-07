@@ -78,7 +78,7 @@ pco-agent/
 **Files:**
 - Create: `package.json`, `tsconfig.json`, `next.config.ts`, `tailwind.config.ts`, `postcss.config.mjs`, `.gitignore`, `.env.example`, `vitest.config.ts`, `tests/setup.ts`
 
-- [ ] **Step 1: Initialize Next.js with TypeScript + Tailwind**
+- [x] **Step 1: Initialize Next.js with TypeScript + Tailwind**
 
 ```bash
 cd /Users/christian/projects/pco-agent
@@ -87,21 +87,21 @@ npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --
 
 Accept defaults. This creates the full Next.js project structure.
 
-- [ ] **Step 2: Install core dependencies**
+- [x] **Step 2: Install core dependencies**
 
 ```bash
 npm install next-auth@beta ai @ai-sdk/anthropic @ai-sdk/openai @ai-sdk/google @ai-sdk/mcp prisma @prisma/client fernet-nodejs
 npm install -D vitest @vitejs/plugin-react @testing-library/react @testing-library/jest-dom jsdom @types/node
 ```
 
-- [ ] **Step 3: Initialize shadcn/ui**
+- [x] **Step 3: Initialize shadcn/ui**
 
 ```bash
 npx shadcn@latest init -d
 npx shadcn@latest add button card input label tabs textarea separator avatar dropdown-menu scroll-area badge switch
 ```
 
-- [ ] **Step 4: Create vitest.config.ts**
+- [x] **Step 4: Create vitest.config.ts**
 
 ```typescript
 // vitest.config.ts
@@ -129,14 +129,14 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 5: Create tests/setup.ts**
+- [x] **Step 5: Create tests/setup.ts**
 
 ```typescript
 // tests/setup.ts
 import '@testing-library/jest-dom/vitest';
 ```
 
-- [ ] **Step 6: Create .env.example**
+- [x] **Step 6: Create .env.example**
 
 ```bash
 # PostgreSQL (shared with pco-mcp)
@@ -157,7 +157,7 @@ PCO_MCP_URL="https://pco-mcp.com/mcp"
 ENCRYPTION_KEY=""  # Generate with: node -e "const f=require('fernet-nodejs');console.log(f.generateKey())"
 ```
 
-- [ ] **Step 7: Update .gitignore**
+- [x] **Step 7: Update .gitignore**
 
 Append to the generated .gitignore:
 ```
@@ -166,7 +166,7 @@ Append to the generated .gitignore:
 prisma/generated/
 ```
 
-- [ ] **Step 8: Add test scripts to package.json**
+- [x] **Step 8: Add test scripts to package.json**
 
 Add to `scripts` in package.json:
 ```json
@@ -175,14 +175,14 @@ Add to `scripts` in package.json:
 "test:coverage": "vitest run --coverage"
 ```
 
-- [ ] **Step 9: Verify project starts**
+- [x] **Step 9: Verify project starts**
 
 ```bash
 npm run dev
 # Should start at http://localhost:3000
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A
@@ -197,13 +197,13 @@ git commit -m "feat: initialize Next.js project with TypeScript, Tailwind, shadc
 - Create: `prisma/schema.prisma`, `prisma/seed.ts`, `src/lib/db.ts`
 - Create: `tests/lib/db.test.ts`
 
-- [ ] **Step 1: Initialize Prisma**
+- [x] **Step 1: Initialize Prisma**
 
 ```bash
 npx prisma init
 ```
 
-- [ ] **Step 2: Write prisma/schema.prisma**
+- [x] **Step 2: Write prisma/schema.prisma**
 
 ```prisma
 datasource db {
@@ -331,7 +331,7 @@ model Memory {
 }
 ```
 
-- [ ] **Step 3: Create Prisma client singleton**
+- [x] **Step 3: Create Prisma client singleton**
 
 ```typescript
 // src/lib/db.ts
@@ -346,7 +346,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 ```
 
-- [ ] **Step 4: Create seed file for system default rules**
+- [x] **Step 4: Create seed file for system default rules**
 
 ```typescript
 // prisma/seed.ts
@@ -422,7 +422,7 @@ Add to package.json:
 }
 ```
 
-- [ ] **Step 5: Write db test**
+- [x] **Step 5: Write db test**
 
 ```typescript
 // tests/lib/db.test.ts
@@ -446,7 +446,7 @@ describe('db', () => {
 });
 ```
 
-- [ ] **Step 6: Push schema to database**
+- [x] **Step 6: Push schema to database**
 
 ```bash
 # Create the agent schema first (Prisma doesn't auto-create schemas)
@@ -457,7 +457,7 @@ npx prisma db push
 npx prisma generate
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -472,7 +472,7 @@ git commit -m "feat: add Prisma schema with agent schema, seed file, and db clie
 - Create: `src/lib/crypto.ts`
 - Create: `tests/lib/crypto.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 // tests/lib/crypto.test.ts
@@ -510,13 +510,13 @@ describe('crypto', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 npx vitest run tests/lib/crypto.test.ts
 ```
 
-- [ ] **Step 3: Implement crypto.ts**
+- [x] **Step 3: Implement crypto.ts**
 
 ```typescript
 // src/lib/crypto.ts
@@ -537,13 +537,13 @@ export function decrypt(encrypted: string, key: string): string {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 ```bash
 npx vitest run tests/lib/crypto.test.ts
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/crypto.ts tests/lib/crypto.test.ts
@@ -560,7 +560,7 @@ git commit -m "feat: add Fernet encryption module for API key storage"
 - Create: `src/middleware.ts`
 - Create: `tests/lib/auth.test.ts`
 
-- [ ] **Step 1: Implement auth.ts**
+- [x] **Step 1: Implement auth.ts**
 
 ```typescript
 // src/lib/auth.ts
@@ -706,7 +706,7 @@ export const authConfig: NextAuthConfig = {
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
 ```
 
-- [ ] **Step 2: Create the API route**
+- [x] **Step 2: Create the API route**
 
 ```typescript
 // src/app/api/auth/[...nextauth]/route.ts
@@ -714,7 +714,7 @@ import { handlers } from '@/lib/auth';
 export const { GET, POST } = handlers;
 ```
 
-- [ ] **Step 3: Create middleware for route protection**
+- [x] **Step 3: Create middleware for route protection**
 
 ```typescript
 // src/middleware.ts
@@ -725,7 +725,7 @@ export const config = {
 };
 ```
 
-- [ ] **Step 4: Write auth test**
+- [x] **Step 4: Write auth test**
 
 ```typescript
 // tests/lib/auth.test.ts
@@ -763,13 +763,13 @@ describe('auth config', () => {
 });
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 ```bash
 npx vitest run
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -783,7 +783,7 @@ git commit -m "feat: add PCO OAuth via NextAuth with user/org sync"
 **Files:**
 - Create: `src/app/(auth)/login/page.tsx`
 
-- [ ] **Step 1: Create login page**
+- [x] **Step 1: Create login page**
 
 ```tsx
 // src/app/(auth)/login/page.tsx
@@ -826,7 +826,7 @@ export default function LoginPage() {
 }
 ```
 
-- [ ] **Step 2: Update root page to redirect**
+- [x] **Step 2: Update root page to redirect**
 
 ```tsx
 // src/app/page.tsx
@@ -842,7 +842,7 @@ export default async function Home() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -858,7 +858,7 @@ git commit -m "feat: add login page with PCO sign-in button"
 - Create: `src/app/(app)/chat/page.tsx`
 - Create: `src/components/sidebar.tsx`
 
-- [ ] **Step 1: Create sidebar component**
+- [x] **Step 1: Create sidebar component**
 
 ```tsx
 // src/components/sidebar.tsx
@@ -925,7 +925,7 @@ export async function Sidebar() {
 }
 ```
 
-- [ ] **Step 2: Create authenticated layout**
+- [x] **Step 2: Create authenticated layout**
 
 ```tsx
 // src/app/(app)/layout.tsx
@@ -941,7 +941,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 3: Create skeleton chat page**
+- [x] **Step 3: Create skeleton chat page**
 
 ```tsx
 // src/app/(app)/chat/page.tsx
@@ -959,7 +959,7 @@ export default function ChatPage() {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A

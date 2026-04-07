@@ -35,7 +35,8 @@ src/lib/              → Server-side business logic (flat files)
 src/lib/auth.ts       → NextAuth config, PCO OAuth provider
 src/lib/crypto.ts     → Fernet encryption for API keys
 src/lib/db.ts         → Prisma client singleton
-src/lib/env.ts        → Environment variable validation
+src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
+src/middleware.ts     → Route protection middleware (NextAuth)
 prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
 ```
@@ -65,10 +66,12 @@ Resolved via `src/lib/rules/assembleRules.ts`. The `user_rule_settings` table st
 ## How Auth Works
 
 1. PCO OAuth flow via NextAuth
-2. On callback: call PCO `/people/v2/me` for identity + `/people/v2/people/{id}` for permissions
-3. PCO Administrator or Editor → `role = 'admin'` in pco-agent
+2. On callback: call PCO `/people/v2/me` for identity
+3. First user in org gets `role = 'admin'`; all subsequent users get `role = 'member'`. PCO role-based mapping is planned but not yet implemented.
 4. Roles synced on every login (PCO is source of truth)
 5. First user from an org → org auto-created
+
+> NOTE: The admin role assignment is a placeholder heuristic. A future task will implement proper PCO permissions checking.
 
 ## How AI Provider Routing Works
 
