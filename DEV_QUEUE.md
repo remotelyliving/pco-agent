@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** Plan 3 complete — ready to write Plan 4 (Memory System)
+**Phase:** Plan 4 complete — ready to write Plan 5 (Setup Wizard + UX Polish)
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Executed all 6 tasks in Plan 3. Three-layer rules system (system/org/user), per-user toggle overrides, rules CRUD API, rules list + editor UI all complete. Feature summary at `docs/features/rules-system/SUMMARY.md`.
+**Last Session Summary:** Executed all 6 tasks in Plan 4. Dual-scoped memory system (org-level + user-level), auto-extraction after each response, memory injected into system prompt, admin memory management UI at `/memory`. Feature summary at `docs/features/memory-system/SUMMARY.md`.
 
 ---
 
@@ -16,7 +16,6 @@ _(none)_
 
 ## Backlog
 
-- [ ] **Plan 4: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
 - [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
 
 ## Done
@@ -26,10 +25,21 @@ _(none)_
 - [x] **Plan 1: Scaffolding + Auth + Database** — Next.js 16, PCO OAuth, Prisma 7 (agent schema), Fernet crypto, sidebar layout, Docker config. Two milestone reviews (5 reviewers each). See `docs/features/scaffolding-auth-db/SUMMARY.md` (2026-04-07)
 - [x] **Plan 2: AI Provider + MCP + Chat** — Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence. See `docs/features/ai-provider-mcp-chat/SUMMARY.md` (2026-04-07)
 - [x] **Plan 3: Rules System** — Three-layer rules (system/org/user), per-user toggle overrides, rules CRUD API, rules list + editor UI, rule assembly into system prompts. See `docs/features/rules-system/SUMMARY.md` (2026-04-07)
+- [x] **Plan 4: Memory System** — Dual-scoped key-value fact store (org + user), auto-extraction via cheapest model after each response, memory injected into system prompt, admin memory management UI. See `docs/features/memory-system/SUMMARY.md` (2026-04-07)
 
 ---
 
 ## Session History
+
+### 2026-04-07: Plan 4 Execution (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — Plan 4 COMPLETE:**
+- Task 1: Memory queries (`src/lib/memory/queries.ts`) — getOrgMemories, getUserMemories, getAllMemoriesForUser, upsertMemory, updateMemory, deleteMemory
+- Task 2: Memory extraction (`src/lib/memory/extract.ts`) — extractAndSaveMemories() using cheapest model per provider, fire-and-forget
+- Task 3: Memory retrieval (`src/lib/memory/retrieve.ts`) — getMemoryPrompt() with dual org/user sections
+- Task 4: Memory API routes (`src/app/api/memory/route.ts`, `[id]/route.ts`) — CRUD with admin-only writes
+- Task 5: MemoryList component (`src/components/memory/memory-list.tsx`) — org fact list with add form and delete (admin-gated)
+- Task 6: Documentation + dev queue update
 
 ### 2026-04-07: Plan 3 Execution (pco-agent)
 
@@ -89,5 +99,5 @@ _(none)_
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
 3. Read `TEAM.md` for quality gates + review protocol
-4. Write Plan 4 (Memory System) — use `superpowers:writing-plans` skill
-5. Then execute Plan 4 with `superpowers:subagent-driven-development` skill
+4. Write Plan 5 (Setup Wizard + UX Polish) — use `superpowers:writing-plans` skill
+5. Then execute Plan 5 with `superpowers:subagent-driven-development` skill
