@@ -12,14 +12,16 @@ export async function Sidebar() {
   const initials =
     user?.name
       ?.split(' ')
+      .filter(Boolean)
       .map((n) => n[0])
       .join('')
+      .slice(0, 2)
       .toUpperCase() || '?';
 
   return (
-    <nav className="flex h-full w-64 flex-col border-r bg-gray-50">
+    <nav className="hidden md:flex h-full w-64 flex-col border-r bg-gray-50" aria-label="Main navigation">
       <header className="p-4">
-        <h2 className="text-lg font-semibold">PCO Assistant</h2>
+        <h2 className="text-lg font-semibold">Planning Center Assistant</h2>
         <p className="text-sm text-gray-500">
           {user?.role === 'admin' ? 'Admin' : 'Member'}
         </p>

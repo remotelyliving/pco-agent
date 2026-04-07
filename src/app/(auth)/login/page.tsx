@@ -1,9 +1,15 @@
 import { signIn } from '@/lib/auth';
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
+      <main className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Planning Center Assistant
@@ -14,7 +20,18 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700" role="alert">
+            <p className="font-medium">Unable to sign in</p>
+            <p className="mt-1">
+              Something went wrong. Please try again or contact your church admin
+              if this keeps happening.
+            </p>
+          </div>
+        )}
+
         <form
+          aria-label="Sign in"
           action={async () => {
             'use server';
             await signIn('planning-center', { redirectTo: '/chat' });
@@ -31,7 +48,7 @@ export default function LoginPage() {
         <p className="text-center text-sm text-gray-500">
           Uses your Planning Center account. No separate password needed.
         </p>
-      </div>
+      </main>
     </div>
   );
 }
