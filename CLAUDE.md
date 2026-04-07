@@ -13,7 +13,7 @@ A web-based AI agent for church staff to interact with Planning Center Online th
 - **Deployment**: Docker on homelab (Cloudflare tunnel), Vercel-ready.
 
 ## Tech Stack
-- Next.js 15, TypeScript, React
+- Next.js 16, TypeScript, React
 - Vercel AI SDK v6 (@ai-sdk/anthropic, @ai-sdk/openai, @ai-sdk/google, @ai-sdk/mcp)
 - NextAuth.js with custom PCO OAuth provider
 - Prisma + PostgreSQL
@@ -23,19 +23,33 @@ A web-based AI agent for church staff to interact with Planning Center Online th
 ## Project Structure
 ```
 src/
-  app/              # Next.js App Router pages
-    (auth)/         # Login, setup wizard
-    (app)/          # Chat, settings (authenticated)
-    api/            # API routes (chat, auth, rules, memory)
-  components/       # React components
-  lib/              # Server-side utilities
-    ai/             # AI provider routing, MCP config
-    auth/           # NextAuth config, PCO OAuth provider
-    db/             # Prisma client, queries
-    rules/          # Rule assembly logic
-    memory/         # Memory extraction + retrieval
-    crypto/         # Fernet encryption for API keys
-  prisma/           # Prisma schema + migrations
+  app/
+    page.tsx          # Root page — redirects to /chat or /login
+    layout.tsx        # Root layout
+    (auth)/
+      login/
+        page.tsx      # PCO OAuth sign-in page
+    (app)/
+      layout.tsx      # Authenticated layout with sidebar
+      chat/
+        page.tsx      # Skeleton chat page
+    api/
+      auth/
+        [...nextauth]/
+          route.ts    # NextAuth API handler
+  components/
+    sidebar.tsx       # Sidebar with nav, user info, sign out
+    ui/               # shadcn/ui components
+  lib/
+    auth.ts           # NextAuth config + PCO OAuth provider
+    crypto.ts         # Fernet encryption for API keys
+    db.ts             # Prisma client singleton
+    env.ts            # Environment variable validation
+    utils.ts          # shadcn/ui utility (cn function)
+  middleware.ts       # Route protection — redirects to /login if unauthenticated
+prisma/
+  schema.prisma       # Agent schema (7 models)
+  seed.ts             # System default rules seeder
 ```
 
 ## Session Startup Checklist

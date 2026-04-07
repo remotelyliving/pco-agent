@@ -1,0 +1,11 @@
+node_modules
+.next
+.env
+.env.local
+.git
+coverage
+tests
+*.md
+!README.md
+docs
+.claude

@@ -23,7 +23,7 @@ Browser → Next.js App → Vercel AI SDK → [Anthropic|OpenAI|Google] API
 3. **`agent` schema** in PostgreSQL. All tables are prefixed with `agent.` schema. Do not create tables in the public schema.
 4. **PCO is source of truth for roles.** Do not add role management UI. Roles sync from PCO on login.
 5. **Rules are plain text.** They are injected into system prompts. They do not execute code, call APIs, or have logic beyond what the AI interprets.
-6. **API keys are Fernet-encrypted.** Use `lib/crypto.ts` for all encrypt/decrypt. Never log or return decrypted keys.
+6. **API keys are Fernet-encrypted.** Use `src/lib/crypto.ts` for all encrypt/decrypt. Never log or return decrypted keys.
 7. **pco-mcp is a separate service.** Do not import pco-mcp code. Connect via MCP protocol only.
 
 ## File Organization
@@ -31,14 +31,13 @@ Browser → Next.js App → Vercel AI SDK → [Anthropic|OpenAI|Google] API
 ```
 src/app/              → Pages (App Router)
 src/components/       → React components (shadcn/ui based)
-src/lib/              → Server-side business logic
-src/lib/ai/           → AI provider config, MCP connector setup
-src/lib/auth/         → NextAuth, PCO OAuth provider
-src/lib/db/           → Prisma client, typed query helpers
-src/lib/rules/        → Rule assembly (system + org + user → system prompt)
-src/lib/memory/       → Memory extraction + retrieval
-src/lib/crypto/       → Fernet encryption for API keys
-prisma/               → Schema + migrations
+src/lib/              → Server-side business logic (flat files)
+src/lib/auth.ts       → NextAuth config, PCO OAuth provider
+src/lib/crypto.ts     → Fernet encryption for API keys
+src/lib/db.ts         → Prisma client singleton
+src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
+src/middleware.ts     → Route protection middleware (NextAuth)
+prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
 ```
 
@@ -55,22 +54,24 @@ effective_rules = (
 )
 ```
 
-Resolved via `lib/rules/assembleRules.ts`. The `user_rule_settings` table stores per-user overrides (opt-in/opt-out).
+Resolved via `src/lib/rules/assembleRules.ts`. The `user_rule_settings` table stores per-user overrides (opt-in/opt-out).
 
 ## How Memory Works
 
 1. After each assistant response, a cheap follow-up call extracts key-value facts
 2. Facts stored in `agent.memory` (org-level, shared across all users in the org)
 3. Facts included at the top of every conversation's system prompt
-4. Extraction logic in `lib/memory/extract.ts`, retrieval in `lib/memory/retrieve.ts`
+4. Extraction logic in `src/lib/memory/extract.ts`, retrieval in `src/lib/memory/retrieve.ts`
 
 ## How Auth Works
 
 1. PCO OAuth flow via NextAuth
-2. On callback: call PCO `/people/v2/me` for identity + `/people/v2/people/{id}` for permissions
-3. PCO Administrator or Editor → `role = 'admin'` in pco-agent
+2. On callback: call PCO `/people/v2/me` for identity
+3. First user in org gets `role = 'admin'`; all subsequent users get `role = 'member'`. PCO role-based mapping is planned but not yet implemented.
 4. Roles synced on every login (PCO is source of truth)
 5. First user from an org → org auto-created
+
+> NOTE: The admin role assignment is a placeholder heuristic. A future task will implement proper PCO permissions checking.
 
 ## How AI Provider Routing Works
 
@@ -94,7 +95,7 @@ Resolved via `lib/rules/assembleRules.ts`. The `user_rule_settings` table stores
 3. Add E2E test in `tests/e2e/pagename.spec.ts`
 
 ### Adding a new rule category
-1. Add the category string to the `category` check in `lib/rules/assembleRules.ts`
+1. Add the category string to the `category` check in `src/lib/rules/assembleRules.ts`
 2. Add seed rules in `prisma/seed.ts`
 3. Update the category filter dropdown in `src/components/rules/rule-list.tsx`
 
@@ -108,7 +109,7 @@ Resolved via `lib/rules/assembleRules.ts`. The `user_rule_settings` table stores
 1. Edit `prisma/schema.prisma`
 2. Run `make db-migrate` to create a migration
 3. Run `make db-push` to apply in development
-4. Update any affected query helpers in `src/lib/db/`
+4. Update any affected query helpers in `src/lib/`
 
 ## Environment Variables
 
