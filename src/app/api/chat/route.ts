@@ -4,12 +4,14 @@ import {
   stepCountIs,
   type UIMessage,
 } from 'ai';
-import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
+import type { MCPClient } from '@ai-sdk/mcp';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 import { createModel } from '@/lib/ai/providers';
+import { getMCPClient } from '@/lib/mcp-pool';
 import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
@@ -26,6 +28,10 @@ import { extractAndSaveMemories } from '@/lib/memory/extract';
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
+  // 0. Request tracing
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   // 1. Authenticate
   const session = await auth();
   if (!session?.user?.agentUserId) {
@@ -105,18 +111,13 @@ export async function POST(req: Request) {
 
     if (pcoAccessToken) {
       try {
-        mcpClient = await createMCPClient({
-          transport: {
-            type: 'sse',
-            url: process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-            headers: {
-              Authorization: `Bearer ${pcoAccessToken}`,
-            },
-          },
-        });
+        mcpClient = await getMCPClient(
+          process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+          pcoAccessToken,
+        );
         tools = await mcpClient.tools();
       } catch (error) {
-        logger.error('MCP connection failed', {
+        log.error('MCP connection failed', {
           userId: session.user.agentUserId,
           orgId: session.user.orgId,
           error: error instanceof Error ? error.message : String(error),
@@ -135,8 +136,7 @@ export async function POST(req: Request) {
       memoryPrompt,
     );
   } catch (error) {
-    console.error('[chat] Pre-stream error:', error);
-    if (mcpClient) await mcpClient.close();
+    log.error('[chat] Pre-stream error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 },
@@ -179,36 +179,30 @@ export async function POST(req: Request) {
             text,
             user.apiProvider!,
             apiKey,
-          ).catch((err) => logger.error('[chat] Memory extraction failed', {
+          ).catch((err) => log.error('[chat] Memory extraction failed', {
             conversationId,
             error: err instanceof Error ? err.message : String(err),
           }));
         }
 
-        // Close MCP client
-        if (mcpClient) {
-          await mcpClient.close();
-        }
+        // MCP client lifecycle managed by connection pool
       },
       onError: async (error) => {
-        logger.error('[chat] Stream error', {
+        log.error('[chat] Stream error', {
           conversationId,
           userId: session.user.agentUserId,
           error: error instanceof Error ? error.message : String(error),
         });
-        if (mcpClient) {
-          await mcpClient.close();
-        }
       },
     });
 
     return result.toUIMessageStreamResponse({
       headers: {
         'x-conversation-id': conversationId,
+        'x-request-id': requestId,
       },
     });
   } catch (error) {
-    if (mcpClient) await mcpClient.close();
     throw error;
   }
 }

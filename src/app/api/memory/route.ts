@@ -1,10 +1,14 @@
 import { auth } from '@/lib/auth';
 import { getOrgMemories, getUserMemories, upsertMemory } from '@/lib/memory/queries';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 
 const MEMORY_LIMIT = 100;
 
 export async function GET() {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.orgId || !session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
@@ -19,7 +23,7 @@ export async function GET() {
     const userMemories = userMemoriesAll.slice(0, MEMORY_LIMIT);
     return Response.json({ orgMemories, userMemories });
   } catch (error) {
-    logger.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -28,6 +32,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId || !session?.user?.orgId) {
     return new Response('Unauthorized', { status: 401 });
@@ -48,7 +55,7 @@ export async function POST(req: Request) {
     const memory = await upsertMemory(session.user.orgId, key, value, 'manual');
     return Response.json(memory, { status: 201 });
   } catch (error) {
-    logger.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

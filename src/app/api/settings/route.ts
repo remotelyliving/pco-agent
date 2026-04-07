@@ -5,8 +5,12 @@ import { getEncryptionKey } from '@/lib/env';
 import { SUPPORTED_PROVIDERS } from '@/lib/ai/providers';
 import { MODEL_OPTIONS } from '@/lib/ai/models';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 
 export async function GET() {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
@@ -24,7 +28,7 @@ export async function GET() {
       hasApiKey: !!user?.apiKeyEnc,
     });
   } catch (error) {
-    logger.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -33,6 +37,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
@@ -91,7 +98,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    logger.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
