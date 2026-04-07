@@ -4,13 +4,14 @@ import {
   stepCountIs,
   type UIMessage,
 } from 'ai';
-import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
+import type { MCPClient } from '@ai-sdk/mcp';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
 import { createModel } from '@/lib/ai/providers';
+import { getMCPClient } from '@/lib/mcp-pool';
 import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
@@ -110,15 +111,10 @@ export async function POST(req: Request) {
 
     if (pcoAccessToken) {
       try {
-        mcpClient = await createMCPClient({
-          transport: {
-            type: 'sse',
-            url: process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-            headers: {
-              Authorization: `Bearer ${pcoAccessToken}`,
-            },
-          },
-        });
+        mcpClient = await getMCPClient(
+          process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+          pcoAccessToken,
+        );
         tools = await mcpClient.tools();
       } catch (error) {
         log.error('MCP connection failed', {
@@ -141,7 +137,6 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     log.error('[chat] Pre-stream error', { error: error instanceof Error ? error.message : String(error) });
-    if (mcpClient) await mcpClient.close();
     return Response.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 },
@@ -190,10 +185,7 @@ export async function POST(req: Request) {
           }));
         }
 
-        // Close MCP client
-        if (mcpClient) {
-          await mcpClient.close();
-        }
+        // MCP client lifecycle managed by connection pool
       },
       onError: async (error) => {
         log.error('[chat] Stream error', {
@@ -201,9 +193,6 @@ export async function POST(req: Request) {
           userId: session.user.agentUserId,
           error: error instanceof Error ? error.message : String(error),
         });
-        if (mcpClient) {
-          await mcpClient.close();
-        }
       },
     });
 
@@ -214,7 +203,6 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    if (mcpClient) await mcpClient.close();
     throw error;
   }
 }
