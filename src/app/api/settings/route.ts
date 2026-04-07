@@ -67,6 +67,17 @@ export async function POST(req: Request) {
     preferredModel: preferredModel || null,
   };
 
+  // Check if provider is changing
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.agentUserId },
+    select: { apiProvider: true },
+  });
+
+  if (currentUser?.apiProvider && currentUser.apiProvider !== apiProvider && !apiKey) {
+    // Provider changed but no new key — clear the old one
+    updateData.apiKeyEnc = null;
+  }
+
   if (apiKey) {
     updateData.apiKeyEnc = encrypt(apiKey, getEncryptionKey());
   }

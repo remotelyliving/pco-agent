@@ -157,7 +157,7 @@ export const authConfig: NextAuthConfig = {
       }
 
       // Refresh PCO token if it expires within 5 minutes
-      if (!user && token.pcoAccessToken && token.pcoAccessTokenExpires) {
+      if (!user && token.pcoAccessToken && token.pcoAccessTokenExpires && token.pcoRefreshToken) {
         const now = Math.floor(Date.now() / 1000);
         const expiresIn = (token.pcoAccessTokenExpires as number) - now;
 

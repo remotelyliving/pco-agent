@@ -1,11 +1,15 @@
 import { prisma } from '@/lib/db';
 
-export async function listRulesForOrg(orgId: string) {
+export async function listRulesForOrg(orgId: string, userId?: string) {
   return prisma.rule.findMany({
     where: {
       OR: [
         { ruleType: 'system' },
-        { orgId },
+        { ruleType: 'org', orgId },
+        // User's own rules (any visibility)
+        ...(userId ? [{ createdById: userId, orgId }] : []),
+        // Other users' public rules only
+        { ruleType: 'user', visibility: 'org', orgId },
       ],
     },
     orderBy: [{ ruleType: 'asc' }, { sortOrder: 'asc' }],

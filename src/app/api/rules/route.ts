@@ -8,7 +8,7 @@ export async function GET() {
   }
 
   try {
-    const rules = await listRulesForOrg(session.user.orgId);
+    const rules = await listRulesForOrg(session.user.orgId, session.user.agentUserId);
     const settings = await getUserRuleSettings(session.user.agentUserId);
 
     return Response.json({ rules, settings });
@@ -41,6 +41,11 @@ export async function POST(req: Request) {
 
   // Non-admins can only create personal rules
   const effectiveRuleType = session.user.role === 'admin' ? (ruleType || 'org') : 'user';
+
+  const ALLOWED_RULE_TYPES = ['org', 'user'] as const;
+  if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as any)) {
+    return Response.json({ error: 'Invalid rule type' }, { status: 400 });
+  }
 
   try {
     const rule = await createRule({

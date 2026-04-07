@@ -41,7 +41,8 @@ describe('rule queries', () => {
       where: {
         OR: [
           { ruleType: 'system' },
-          { orgId: 'org-1' },
+          { ruleType: 'org', orgId: 'org-1' },
+          { ruleType: 'user', visibility: 'org', orgId: 'org-1' },
         ],
       },
       orderBy: [{ ruleType: 'asc' }, { sortOrder: 'asc' }],
