@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** ALL PLANS COMPLETE — pco-agent feature-complete
+**Phase:** ALL PLANS COMPLETE + COMPREHENSIVE REVIEW DONE — pco-agent production-ready
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Executed all 4 tasks in Plan 5. First-time setup wizard for API key configuration, setup detection + redirect, page metadata for all routes. Feature summary at `docs/features/setup-wizard-ux/SUMMARY.md`.
+**Last Session Summary:** Comprehensive review + polish pass on branch `fix/buff-and-polish`. Fixed 22 issues across security, correctness, UX, and code quality. All Known Limitations from previous milestones resolved. See session history entry below for full detail.
 
 ---
 
@@ -31,6 +31,43 @@ _(none — all planned features complete)_
 ---
 
 ## Session History
+
+### 2026-04-07: Comprehensive Review + Polish (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — branch: `fix/buff-and-polish`**
+
+Full codebase audit and polish pass resolving all Known Limitations flagged across Plans 1–5. 22 issues fixed:
+
+**Security fixes:**
+- Cross-org rule access → added `orgId` checks on all rules API routes
+- Conversation injection → added ownership verification before returning/modifying conversations
+- Settings auth check → added session guard to settings and memory API routes
+
+**Correctness fixes:**
+- Admin race condition → wrapped first-user org creation in `$transaction`
+- PCO token refresh → implemented in NextAuth `jwt` callback
+- Memory NULL uniqueness → `upsertMemory` now uses `findFirst` pattern for `userId=null` case
+- MCP client leak → wrapped in try/catch with proper resource cleanup
+- `DRY getDefaultModelId` → removed duplicate; unified through `getDefaultModel()`
+- Sequential queries → parallelized with `Promise.all` in rules and settings routes
+
+**New features/capabilities:**
+- Conversation deletion → `DELETE /api/conversations/[id]` + inline confirm in sidebar (`src/components/conversation-item.tsx`)
+- Health check → `GET /api/health` returns app + DB status (`src/app/api/health/route.ts`)
+- Test connection → `POST /api/settings/test` + button on API key form (`src/app/api/settings/test/route.ts`)
+- Mobile nav → hamburger drawer added (`src/components/mobile-nav.tsx`)
+- Structured logging → `src/lib/logger.ts` created; `src/instrumentation.ts` registers at startup
+- HTTP security headers → added in `next.config.ts`
+- `maxDuration` → added to chat route
+
+**UX fixes:**
+- `RuleEditor` error swallowing → save failures now show a user-facing error message
+- Delete confirmations → `confirm()` dialogs added to rules and conversation delete actions
+- Inline rule editing → rules can now be edited in place (no delete-and-recreate)
+- `/memory` page → now shows user's personal memories in addition to org memories
+- Memory source labels → friendly display names instead of raw `auto`/`manual` strings
+- Auto-resize textarea + example prompts → added to empty chat state
+- Auto-title → improved to use first meaningful assistant sentence
 
 ### 2026-04-07: Plan 5 Execution (pco-agent)
 

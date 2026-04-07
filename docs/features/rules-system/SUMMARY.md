@@ -30,10 +30,16 @@ user can toggle individual rules on or off independently.
 - System rules are immutable — `PATCH` and `DELETE` return 403 for `ruleType === 'system'`
 - Optimistic UI toggle in `RuleList` — state updated immediately, API call fires async
 
+## Polish Pass (2026-04-07)
+Fixed during comprehensive review + polish on branch `fix/buff-and-polish`:
+- Inline rule editing → implemented; rules can now be edited in place without delete-and-recreate
+- `RuleEditor` error swallowing → fixed; save failures now show a user-facing error message
+- Delete confirmations → `confirm()` dialogs added before destructive actions
+- Cross-org rule access → fixed with `orgId` checks on all rule API routes
+- Sequential rule queries → parallelized with `Promise.all`
+
 ## Known Limitations
 - No drag-and-drop reorder for `sortOrder` — currently only set at creation time
-- No inline edit for existing rules — must delete and recreate to change content
-- `RuleEditor` error state is swallowed silently (no user-facing error message on save failure)
 - No category filter on the rules page — all categories shown in a single grouped view
 - No bulk enable/disable — each rule must be toggled individually
 - `system` rules can only be changed via `prisma/seed.ts` re-seed, not through the UI

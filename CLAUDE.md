@@ -48,13 +48,20 @@ src/
         [...nextauth]/
           route.ts    # NextAuth API handler
       chat/
-        route.ts      # Streaming chat endpoint
+        route.ts      # Streaming chat endpoint (with maxDuration)
+      conversations/
+        [id]/
+          route.ts    # Conversation delete (DELETE, owner-only)
+      health/
+        route.ts      # Health check endpoint (GET — returns app + DB status)
       settings/
         route.ts      # Settings API
+        test/
+          route.ts    # Test connection endpoint (POST — validates API key live)
       rules/
         route.ts      # Rules list + create
         [id]/
-          route.ts    # Rule edit + delete
+          route.ts    # Rule edit + delete (with orgId ownership check)
         toggle/
           route.ts    # Per-user rule toggle
       memory/
@@ -62,25 +69,28 @@ src/
         [id]/
           route.ts    # Memory update (PATCH) + delete (DELETE, admin only)
   components/
-    sidebar.tsx       # Sidebar with nav, user info, sign out
+    sidebar.tsx           # Sidebar with nav, user info, sign out
+    mobile-nav.tsx        # Mobile hamburger drawer for small screens
+    conversation-item.tsx # Sidebar conversation list item with inline delete confirm
     ui/               # shadcn/ui components
     chat/
-      chat-interface.tsx  # useChat() client component
+      chat-interface.tsx  # useChat() client component with auto-resize textarea + example prompts
       message-bubble.tsx  # Message display with tool call support
     settings/
-      api-key-form.tsx    # API key entry form
+      api-key-form.tsx    # API key entry form with test connection button
     rules/
-      rule-list.tsx   # Grouped rule list with toggle switches
-      rule-editor.tsx # Inline form for creating new rules
+      rule-list.tsx   # Grouped rule list with toggle switches and inline edit
+      rule-editor.tsx # Inline form for creating new rules (with error display)
     memory/
-      memory-list.tsx # Org memory list with add form and delete (admin-gated)
+      memory-list.tsx # Org + user memory list with add form and delete (admin-gated)
     setup/
       setup-wizard.tsx  # Multi-step wizard: welcome, provider pick, API key entry, success
   lib/
-    auth.ts           # NextAuth config + PCO OAuth provider
+    auth.ts           # NextAuth config + PCO OAuth provider (with token refresh)
     crypto.ts         # Fernet encryption for API keys
     db.ts             # Prisma client singleton
     env.ts            # Environment variable validation
+    logger.ts         # Structured logger (pino/winston wrapper)
     utils.ts          # shadcn/ui utility (cn function)
     ai/
       providers.ts    # Runtime AI provider factory
@@ -96,6 +106,7 @@ src/
       retrieve.ts     # getMemoryPrompt() — returns formatted org+user memory string for system prompt
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
   middleware.ts       # Route protection — redirects to /login if unauthenticated
+  instrumentation.ts  # Next.js instrumentation hook — registers logger at server startup
 prisma/
   schema.prisma       # Agent schema (7 models)
   seed.ts             # System default rules seeder
