@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** Plan 2 complete — ready to write Plan 3 (Rules System)
+**Phase:** Plan 3 complete — ready to write Plan 4 (Memory System)
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Executed all 7 tasks in Plan 2. Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence all complete. Feature summary at `docs/features/ai-provider-mcp-chat/SUMMARY.md`.
+**Last Session Summary:** Executed all 6 tasks in Plan 3. Three-layer rules system (system/org/user), per-user toggle overrides, rules CRUD API, rules list + editor UI all complete. Feature summary at `docs/features/rules-system/SUMMARY.md`.
 
 ---
 
@@ -16,7 +16,6 @@ _(none)_
 
 ## Backlog
 
-- [ ] **Plan 3: Rules System** — System default rules, org rules, user rules, per-user toggle overrides, rules editor UI, rule assembly into system prompts
 - [ ] **Plan 4: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
 - [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
 
@@ -26,10 +25,21 @@ _(none)_
 - [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
 - [x] **Plan 1: Scaffolding + Auth + Database** — Next.js 16, PCO OAuth, Prisma 7 (agent schema), Fernet crypto, sidebar layout, Docker config. Two milestone reviews (5 reviewers each). See `docs/features/scaffolding-auth-db/SUMMARY.md` (2026-04-07)
 - [x] **Plan 2: AI Provider + MCP + Chat** — Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence. See `docs/features/ai-provider-mcp-chat/SUMMARY.md` (2026-04-07)
+- [x] **Plan 3: Rules System** — Three-layer rules (system/org/user), per-user toggle overrides, rules CRUD API, rules list + editor UI, rule assembly into system prompts. See `docs/features/rules-system/SUMMARY.md` (2026-04-07)
 
 ---
 
 ## Session History
+
+### 2026-04-07: Plan 3 Execution (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — Plan 3 COMPLETE:**
+- Task 1: Rules queries (`src/lib/rules/queries.ts`) — listRulesForOrg, createRule, updateRule, deleteRule, toggleRule, getUserRuleSettings
+- Task 2: Rule assembly (`src/lib/rules/assemble.ts`) — assembleRules() with default-on/off logic, formatAsPrompt option
+- Task 3: Rules API routes (`src/app/api/rules/route.ts`, `[id]/route.ts`, `toggle/route.ts`) — CRUD + toggle with auth + ownership checks
+- Task 4: RuleList component (`src/components/rules/rule-list.tsx`) — grouped sections, toggle switches, optimistic UI
+- Task 5: RuleEditor component (`src/components/rules/rule-editor.tsx`) — inline form, scope selector (admin only)
+- Task 6: Documentation + dev queue update
 
 ### 2026-04-07: Plan 2 Execution (pco-agent)
 
@@ -79,5 +89,5 @@ _(none)_
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
 3. Read `TEAM.md` for quality gates + review protocol
-4. Write Plan 3 (Rules System) — use `superpowers:writing-plans` skill
-5. Then execute Plan 3 with `superpowers:subagent-driven-development` skill
+4. Write Plan 4 (Memory System) — use `superpowers:writing-plans` skill
+5. Then execute Plan 4 with `superpowers:subagent-driven-development` skill
