@@ -3,6 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from '@/components/chat/message-bubble';
@@ -15,6 +16,7 @@ export function ChatInterface({
   conversationId?: string;
   initialMessages?: Array<{ id: string; role: 'user' | 'assistant'; content: string }>;
 }) {
+  const router = useRouter();
   const [convId, setConvId] = useState<string | undefined>(conversationId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -39,6 +41,7 @@ export function ChatInterface({
       if (newConvId && !convId) {
         setConvId(newConvId);
         window.history.replaceState(null, '', `/chat/${newConvId}`);
+        router.refresh(); // Refresh server components (sidebar)
       }
       return response;
     };
