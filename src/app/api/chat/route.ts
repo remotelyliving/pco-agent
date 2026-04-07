@@ -5,6 +5,7 @@ import {
   type UIMessage,
 } from 'ai';
 import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
+import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createModel } from '@/lib/ai/providers';
@@ -89,7 +90,8 @@ export async function POST(req: Request) {
   let mcpClient: MCPClient | null = null;
   let tools = {};
 
-  const pcoAccessToken = await getPcoAccessToken();
+  const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
 
   if (pcoAccessToken) {
     try {
@@ -201,32 +203,3 @@ When you use a tool and get results, summarize them in a clear, readable way.`;
   return prompt;
 }
 
-async function getPcoAccessToken(): Promise<string | null> {
-  try {
-    const { getToken } = await import('next-auth/jwt');
-    const { cookies, headers } = await import('next/headers');
-
-    const cookieStore = await cookies();
-    const headerStore = await headers();
-
-    const reqHeaders = new Headers();
-    headerStore.forEach((value, key) => {
-      reqHeaders.set(key, value);
-    });
-
-    const cookieHeader = cookieStore
-      .getAll()
-      .map((c) => `${c.name}=${c.value}`)
-      .join('; ');
-    reqHeaders.set('cookie', cookieHeader);
-
-    const token = await getToken({
-      req: { headers: reqHeaders } as Parameters<typeof getToken>[0]['req'],
-      secret: process.env.NEXTAUTH_SECRET,
-    });
-    return (token?.pcoAccessToken as string) || null;
-  } catch (error) {
-    console.error('[chat] Failed to get PCO access token:', error);
-    return null;
-  }
-}

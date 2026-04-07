@@ -23,6 +23,7 @@ declare module '@auth/core/jwt' {
     role?: string;
     pcoAccessToken?: string;
     pcoRefreshToken?: string;
+    pcoAccessTokenExpires?: number;
   }
 }
 
@@ -151,7 +152,43 @@ export const authConfig: NextAuthConfig = {
         token.role = profile.agentRole as string;
         token.pcoAccessToken = account.access_token ?? undefined;
         token.pcoRefreshToken = account.refresh_token ?? undefined;
+        token.pcoAccessTokenExpires = account.expires_at;
       }
+
+      // Refresh PCO token if it expires within 5 minutes
+      if (!user && token.pcoAccessToken && token.pcoAccessTokenExpires) {
+        const now = Math.floor(Date.now() / 1000);
+        const expiresIn = (token.pcoAccessTokenExpires as number) - now;
+
+        if (expiresIn < 300) {
+          try {
+            const response = await fetch('https://api.planningcenteronline.com/oauth/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: token.pcoRefreshToken as string,
+                client_id: process.env.PCO_CLIENT_ID!,
+                client_secret: process.env.PCO_CLIENT_SECRET!,
+              }),
+            });
+
+            if (response.ok) {
+              const tokens = await response.json();
+              token.pcoAccessToken = tokens.access_token;
+              token.pcoRefreshToken = tokens.refresh_token ?? token.pcoRefreshToken;
+              token.pcoAccessTokenExpires = tokens.expires_in
+                ? now + tokens.expires_in
+                : token.pcoAccessTokenExpires;
+            } else {
+              console.error('[auth] PCO token refresh failed:', response.status);
+            }
+          } catch (error) {
+            console.error('[auth] PCO token refresh error:', error);
+          }
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
