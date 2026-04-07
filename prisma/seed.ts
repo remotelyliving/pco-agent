@@ -3,34 +3,13 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const SYSTEM_RULES = [
-  {
-    content: 'Always check a person\'s blockout dates before scheduling them for a service.',
-    category: 'scheduling',
-  },
-  {
-    content: 'Confirm with the user before creating, updating, or removing any records.',
-    category: 'general',
-  },
-  {
-    content: 'When scheduling volunteers, check when they last served to distribute fairly.',
-    category: 'scheduling',
-  },
-  {
-    content: 'When planning songs for a service, check when each song was last used to avoid repeating too soon.',
-    category: 'scheduling',
-  },
-  {
-    content: 'Use plain, friendly language. Avoid technical jargon.',
-    category: 'general',
-  },
-  {
-    content: 'When showing lists of people, include their role and contact info when available.',
-    category: 'people',
-  },
-  {
-    content: 'If you\'re unsure about something, say so rather than guessing.',
-    category: 'general',
-  },
+  { id: 'system-scheduling-blockout', content: "Always check a person's blockout dates before scheduling them for a service.", category: 'scheduling' },
+  { id: 'system-general-confirm', content: 'Confirm with the user before creating, updating, or removing any records.', category: 'general' },
+  { id: 'system-scheduling-fair-rotation', content: 'When scheduling volunteers, check when they last served to distribute fairly.', category: 'scheduling' },
+  { id: 'system-scheduling-song-repeat', content: 'When planning songs for a service, check when each song was last used to avoid repeating too soon.', category: 'scheduling' },
+  { id: 'system-general-plain-language', content: 'Use plain, friendly language. Avoid technical jargon.', category: 'general' },
+  { id: 'system-people-contact-info', content: 'When showing lists of people, include their role and contact info when available.', category: 'people' },
+  { id: 'system-general-admit-uncertainty', content: "If you're unsure about something, say so rather than guessing.", category: 'general' },
 ];
 
 async function main() {
@@ -38,12 +17,10 @@ async function main() {
 
   for (const rule of SYSTEM_RULES) {
     await prisma.rule.upsert({
-      where: {
-        id: `system-${rule.category}-${SYSTEM_RULES.indexOf(rule)}`,
-      },
+      where: { id: rule.id },
       update: { content: rule.content },
       create: {
-        id: `system-${rule.category}-${SYSTEM_RULES.indexOf(rule)}`,
+        id: rule.id,
         content: rule.content,
         category: rule.category,
         ruleType: 'system',
