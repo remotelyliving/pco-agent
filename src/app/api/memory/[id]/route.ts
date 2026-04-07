@@ -17,20 +17,28 @@ export async function PATCH(
 
   const { id } = await params;
 
-  const memory = await prisma.memory.findUnique({ where: { id } });
-  if (!memory) return new Response('Not found', { status: 404 });
+  try {
+    const memory = await prisma.memory.findUnique({ where: { id } });
+    if (!memory) return new Response('Not found', { status: 404 });
 
-  if (memory.orgId !== session.user.orgId) {
-    return new Response('Forbidden', { status: 403 });
+    if (memory.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const body = await req.json();
+    const updated = await updateMemory(id, {
+      key: body.key,
+      value: body.value,
+    });
+
+    return Response.json(updated);
+  } catch (error) {
+    console.error('[memory/id] Database error:', error);
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
   }
-
-  const body = await req.json();
-  const updated = await updateMemory(id, {
-    key: body.key,
-    value: body.value,
-  });
-
-  return Response.json(updated);
 }
 
 export async function DELETE(
@@ -48,13 +56,21 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const memory = await prisma.memory.findUnique({ where: { id } });
-  if (!memory) return new Response('Not found', { status: 404 });
+  try {
+    const memory = await prisma.memory.findUnique({ where: { id } });
+    if (!memory) return new Response('Not found', { status: 404 });
 
-  if (memory.orgId !== session.user.orgId) {
-    return new Response('Forbidden', { status: 403 });
+    if (memory.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    await deleteMemory(id);
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    console.error('[memory/id] Database error:', error);
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
   }
-
-  await deleteMemory(id);
-  return new Response(null, { status: 204 });
 }

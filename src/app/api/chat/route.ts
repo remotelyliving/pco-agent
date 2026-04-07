@@ -8,6 +8,7 @@ import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { createModel } from '@/lib/ai/providers';
+import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
 import {
@@ -19,6 +20,8 @@ import {
 import { assembleRules } from '@/lib/rules/assemble';
 import { getMemoryPrompt } from '@/lib/memory/retrieve';
 import { extractAndSaveMemories } from '@/lib/memory/extract';
+
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   // 1. Authenticate
@@ -52,7 +55,10 @@ export async function POST(req: Request) {
 
   // 4. Decrypt API key
   const apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
-  const modelId = user.preferredModel || getDefaultModelId(user.apiProvider);
+  const modelId =
+    user.preferredModel ||
+    getDefaultModel(user.apiProvider)?.id ||
+    'claude-sonnet-4-5-20250514';
 
   // 5. Verify conversation ownership if reusing, or create new
   if (existingConvId) {
@@ -103,85 +109,75 @@ export async function POST(req: Request) {
     }
   }
 
-  // 8. Build system prompt with assembled rules and memory
-  const assembledRules = await assembleRules(
-    session.user.agentUserId,
-    session.user.orgId,
-    { formatAsPrompt: true },
-  );
-  const memoryPrompt = await getMemoryPrompt(session.user.orgId, session.user.agentUserId);
+  // 8. Build system prompt with assembled rules and memory (parallelized)
+  const [assembledRules, memoryPrompt] = await Promise.all([
+    assembleRules(session.user.agentUserId, session.user.orgId, { formatAsPrompt: true }),
+    getMemoryPrompt(session.user.orgId, session.user.agentUserId),
+  ]);
   const systemPrompt = buildSystemPrompt(
     typeof assembledRules === 'string' ? assembledRules : '',
     memoryPrompt,
   );
 
   // 9. Stream the response
-  const result = streamText({
-    model: createModel(user.apiProvider, modelId, apiKey),
-    system: systemPrompt,
-    messages: await convertToModelMessages(messages),
-    tools,
-    stopWhen: stepCountIs(5),
-    onFinish: async ({ text, toolCalls }) => {
-      // Save assistant message
-      await saveMessage({
-        conversationId,
-        role: 'assistant',
-        content: text || '',
-        toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
-      });
+  try {
+    const result = streamText({
+      model: createModel(user.apiProvider, modelId, apiKey),
+      system: systemPrompt,
+      messages: await convertToModelMessages(messages),
+      tools,
+      stopWhen: stepCountIs(5),
+      onFinish: async ({ text, toolCalls }) => {
+        // Save assistant message
+        await saveMessage({
+          conversationId,
+          role: 'assistant',
+          content: text || '',
+          toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+        });
 
-      // Auto-title from first exchange
-      if (!existingConvId && text) {
-        const title = text.slice(0, 100).split('\n')[0];
-        await updateConversationTitle(conversationId, title);
-      }
+        // Auto-title from first exchange
+        if (!existingConvId && text) {
+          const title = text.slice(0, 100).split('\n')[0];
+          await updateConversationTitle(conversationId, title);
+        }
 
-      // Fire-and-forget memory extraction
-      if (text && lastUserMessage?.role === 'user') {
-        const userText = lastUserMessage.parts
-          .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-          .map((p) => p.text)
-          .join('\n');
-        extractAndSaveMemories(
-          session.user.orgId,
-          session.user.agentUserId,
-          userText,
-          text,
-          user.apiProvider!,
-          apiKey,
-        ).catch(console.error);
-      }
+        // Fire-and-forget memory extraction
+        if (text && lastUserMessage?.role === 'user') {
+          const userText = lastUserMessage.parts
+            .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+            .map((p) => p.text)
+            .join('\n');
+          extractAndSaveMemories(
+            session.user.orgId,
+            session.user.agentUserId,
+            userText,
+            text,
+            user.apiProvider!,
+            apiKey,
+          ).catch(console.error);
+        }
 
-      // Close MCP client
-      if (mcpClient) {
-        await mcpClient.close();
-      }
-    },
-    onError: async () => {
-      if (mcpClient) {
-        await mcpClient.close();
-      }
-    },
-  });
+        // Close MCP client
+        if (mcpClient) {
+          await mcpClient.close();
+        }
+      },
+      onError: async () => {
+        if (mcpClient) {
+          await mcpClient.close();
+        }
+      },
+    });
 
-  return result.toUIMessageStreamResponse({
-    headers: {
-      'x-conversation-id': conversationId,
-    },
-  });
-}
-
-function getDefaultModelId(provider: string): string {
-  switch (provider) {
-    case 'anthropic':
-      return 'claude-sonnet-4-5-20250514';
-    case 'openai':
-      return 'gpt-4o';
-    case 'google':
-      return 'gemini-2.0-flash';
-    default:
-      return 'claude-sonnet-4-5-20250514';
+    return result.toUIMessageStreamResponse({
+      headers: {
+        'x-conversation-id': conversationId,
+      },
+    });
+  } catch (error) {
+    if (mcpClient) await mcpClient.close();
+    throw error;
   }
 }
 
