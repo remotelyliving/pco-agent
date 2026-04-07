@@ -33,7 +33,7 @@ export async function upsertMemory(
 ) {
   const resolvedUserId = userId ?? null;
   return prisma.memory.upsert({
-    where: { orgId_userId_key: { orgId, userId: resolvedUserId, key } },
+    where: { orgId_userId_key: { orgId, userId: resolvedUserId ?? '', key } },
     update: { value, source },
     create: { orgId, userId: resolvedUserId, key, value, source },
   });
