@@ -46,6 +46,12 @@ export async function Sidebar() {
           Rules
         </Link>
         <Link
+          href="/memory"
+          className={cn(buttonVariants({ variant: 'ghost' }), 'w-full')}
+        >
+          Memory
+        </Link>
+        <Link
           href="/settings"
           className={cn(buttonVariants({ variant: 'ghost' }), 'w-full')}
         >

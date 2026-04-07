@@ -80,10 +80,34 @@ effective_rules = allRules.filter(rule =>
 
 ## How Memory Works
 
-1. After each assistant response, a cheap follow-up call extracts key-value facts
-2. Facts stored in `agent.memory` (org-level, shared across all users in the org)
-3. Facts included at the top of every conversation's system prompt
-4. Extraction logic in `src/lib/memory/extract.ts`, retrieval in `src/lib/memory/retrieve.ts`
+**Dual scoping:** The `agent.memory` table has an optional `userId` column.
+- `userId = null` → org-level fact, shared across all users in the org
+- `userId` set → user-level fact, visible only to that user
+
+**Auto-extraction (fire-and-forget):**
+1. After each assistant response, the chat route calls `extractAndSaveMemories()` without `await`
+2. Extraction uses the cheapest available model for the user's configured provider (`claude-haiku-4-5`, `gpt-4o-mini`, or `gemini-2.0-flash`)
+3. The model returns structured `{ key, value }` facts about the church or org
+4. Each fact is upserted via `@@unique([orgId, userId, key])` — same key updates in place
+5. Failures are silently caught and never surface to the user
+
+**Memory prompt injection:**
+1. `getMemoryPrompt(orgId, userId)` fetches both org memories (`userId=null`) and personal memories for that user
+2. Returns two labeled sections: `## Known facts about this church` and `## Your personal notes`
+3. Returns an empty string if no memories exist (no prompt pollution)
+4. Injected after the rules block in every conversation's system prompt
+
+**Admin memory management:**
+- Admins can view, add, and delete org-level facts at `/memory`
+- `source` field distinguishes `"auto"` (extracted) from `"manual"` (admin-created), displayed as a badge
+- Members can view org memories but cannot add or delete
+
+**Key files:**
+- `src/lib/memory/queries.ts` — `getOrgMemories`, `getUserMemories`, `getAllMemoriesForUser`, `upsertMemory`, `updateMemory`, `deleteMemory`
+- `src/lib/memory/extract.ts` — `extractAndSaveMemories(orgId, userId, userMsg, assistantMsg, provider, apiKey)`
+- `src/lib/memory/retrieve.ts` — `getMemoryPrompt(orgId, userId)`
+- `src/app/api/memory/route.ts` — `GET` (list), `POST` (admin create)
+- `src/app/api/memory/[id]/route.ts` — `PATCH` (admin update), `DELETE` (admin delete)
 
 ## How Auth Works
 

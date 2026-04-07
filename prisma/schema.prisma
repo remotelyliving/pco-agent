@@ -38,6 +38,7 @@ model User {
   conversations  Conversation[]
   rules          Rule[]       @relation("CreatedBy")
   ruleSettings   UserRuleSetting[]
+  memories       Memory[]
 
   @@unique([orgId, pcoPersonId])
   @@map("users")
@@ -108,15 +109,17 @@ model UserRuleSetting {
 model Memory {
   id        String   @id @default(uuid())
   orgId     String   @map("org_id")
+  userId    String?  @map("user_id")
   key       String
   value     String
   source    String   @default("auto")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  org Organization @relation(fields: [orgId], references: [id])
+  org  Organization @relation(fields: [orgId], references: [id])
+  user User?        @relation(fields: [userId], references: [id])
 
-  @@unique([orgId, key])
+  @@unique([orgId, userId, key])
   @@map("memory")
   @@schema("agent")
 }

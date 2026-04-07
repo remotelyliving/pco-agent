@@ -39,6 +39,8 @@ src/
         page.tsx      # API key + provider settings
       rules/
         page.tsx      # Rules management page
+      memory/
+        page.tsx      # Memory management page (admin view/add/delete org facts)
     api/
       auth/
         [...nextauth]/
@@ -53,6 +55,10 @@ src/
           route.ts    # Rule edit + delete
         toggle/
           route.ts    # Per-user rule toggle
+      memory/
+        route.ts      # Memory list (GET) + create (POST, admin only)
+        [id]/
+          route.ts    # Memory update (PATCH) + delete (DELETE, admin only)
   components/
     sidebar.tsx       # Sidebar with nav, user info, sign out
     ui/               # shadcn/ui components
@@ -64,6 +70,8 @@ src/
     rules/
       rule-list.tsx   # Grouped rule list with toggle switches
       rule-editor.tsx # Inline form for creating new rules
+    memory/
+      memory-list.tsx # Org memory list with add form and delete (admin-gated)
   lib/
     auth.ts           # NextAuth config + PCO OAuth provider
     crypto.ts         # Fernet encryption for API keys
@@ -78,6 +86,10 @@ src/
     rules/
       assemble.ts     # assembleRules() — builds effective rule list per user
       queries.ts      # Rules CRUD + toggle helpers
+    memory/
+      queries.ts      # Memory CRUD — getOrgMemories, getUserMemories, getAllMemoriesForUser, upsertMemory
+      extract.ts      # extractAndSaveMemories() — fire-and-forget post-response fact extraction
+      retrieve.ts     # getMemoryPrompt() — returns formatted org+user memory string for system prompt
   middleware.ts       # Route protection — redirects to /login if unauthenticated
 prisma/
   schema.prisma       # Agent schema (7 models)
