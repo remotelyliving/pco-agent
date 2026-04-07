@@ -119,9 +119,26 @@ effective_rules = allRules.filter(rule =>
 
 > NOTE: The admin role assignment is a placeholder heuristic. A future task will implement proper PCO permissions checking.
 
+## How Setup Detection Works
+
+New users who have not configured an AI provider are redirected to `/setup` automatically.
+
+1. `/chat` page calls `needsSetup(userId)` from `src/lib/setup.ts`
+2. `needsSetup` checks whether `User.apiProvider` and `User.apiKeyEnc` are both set
+3. If either is missing, the user is redirected to `/setup`
+4. `/setup` renders the `SetupWizard` component (`src/components/setup/setup-wizard.tsx`)
+5. Wizard guides user through: welcome → provider selection → API key entry → success
+6. On save, the wizard calls `POST /api/settings` (same endpoint as the settings page)
+7. After success, the wizard redirects to `/chat`
+
+**Key files:**
+- `src/lib/setup.ts` — `needsSetup(userId): Promise<boolean>`
+- `src/components/setup/setup-wizard.tsx` — client component, 4-step wizard
+- `src/app/(app)/setup/page.tsx` — page container
+
 ## How AI Provider Routing Works
 
-1. User saves api_provider + API key via Settings page (/settings)
+1. User saves api_provider + API key via Settings page (/settings) or Setup wizard (/setup)
 2. Key is Fernet-encrypted, stored in User.apiKeyEnc
 3. On chat request: decrypt key, create provider via createModel() in src/lib/ai/providers.ts
 4. Connect to pco-mcp via @ai-sdk/mcp with user's PCO access token from JWT

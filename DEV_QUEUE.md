@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** Plan 4 complete — ready to write Plan 5 (Setup Wizard + UX Polish)
+**Phase:** ALL PLANS COMPLETE — pco-agent feature-complete
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Executed all 6 tasks in Plan 4. Dual-scoped memory system (org-level + user-level), auto-extraction after each response, memory injected into system prompt, admin memory management UI at `/memory`. Feature summary at `docs/features/memory-system/SUMMARY.md`.
+**Last Session Summary:** Executed all 4 tasks in Plan 5. First-time setup wizard for API key configuration, setup detection + redirect, page metadata for all routes. Feature summary at `docs/features/setup-wizard-ux/SUMMARY.md`.
 
 ---
 
@@ -16,7 +16,7 @@ _(none)_
 
 ## Backlog
 
-- [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
+_(none — all planned features complete)_
 
 ## Done
 
@@ -26,10 +26,22 @@ _(none)_
 - [x] **Plan 2: AI Provider + MCP + Chat** — Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence. See `docs/features/ai-provider-mcp-chat/SUMMARY.md` (2026-04-07)
 - [x] **Plan 3: Rules System** — Three-layer rules (system/org/user), per-user toggle overrides, rules CRUD API, rules list + editor UI, rule assembly into system prompts. See `docs/features/rules-system/SUMMARY.md` (2026-04-07)
 - [x] **Plan 4: Memory System** — Dual-scoped key-value fact store (org + user), auto-extraction via cheapest model after each response, memory injected into system prompt, admin memory management UI. See `docs/features/memory-system/SUMMARY.md` (2026-04-07)
+- [x] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding wizard (welcome → provider pick → API key → success), setup detection + redirect, page metadata for all routes. See `docs/features/setup-wizard-ux/SUMMARY.md` (2026-04-07)
 
 ---
 
 ## Session History
+
+### 2026-04-07: Plan 5 Execution (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — Plan 5 COMPLETE:**
+- Task 1: Setup detection (`src/lib/setup.ts`) — `needsSetup(userId)` checks apiProvider + apiKeyEnc
+- Task 2: Chat page redirect — redirects unconfigured users to `/setup` before rendering chat
+- Task 3: Setup wizard (`src/components/setup/setup-wizard.tsx`) — 4-step wizard: welcome, provider pick, API key entry, success
+- Task 4: Setup page (`src/app/(app)/setup/page.tsx`) — page container for the wizard
+- Task 5: Page metadata — added `export const metadata` to all 6 routes (login, chat, settings, rules, memory, setup)
+- Task 6: Documentation + dev queue update
+- Bug fix: pre-existing TypeScript error in `src/lib/memory/queries.ts` (null vs string in Prisma unique where)
 
 ### 2026-04-07: Plan 4 Execution (pco-agent)
 
@@ -96,8 +108,9 @@ _(none)_
 
 ## How to Resume
 
+All planned features are complete. The app is ready for production deployment and further iterations based on real user feedback.
+
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
 3. Read `TEAM.md` for quality gates + review protocol
-4. Write Plan 5 (Setup Wizard + UX Polish) — use `superpowers:writing-plans` skill
-5. Then execute Plan 5 with `superpowers:subagent-driven-development` skill
+4. Check feature summaries in `docs/features/` for implementation details

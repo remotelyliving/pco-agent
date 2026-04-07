@@ -41,6 +41,8 @@ src/
         page.tsx      # Rules management page
       memory/
         page.tsx      # Memory management page (admin view/add/delete org facts)
+      setup/
+        page.tsx      # First-time setup wizard page (redirected from /chat if no API key)
     api/
       auth/
         [...nextauth]/
@@ -72,6 +74,8 @@ src/
       rule-editor.tsx # Inline form for creating new rules
     memory/
       memory-list.tsx # Org memory list with add form and delete (admin-gated)
+    setup/
+      setup-wizard.tsx  # Multi-step wizard: welcome, provider pick, API key entry, success
   lib/
     auth.ts           # NextAuth config + PCO OAuth provider
     crypto.ts         # Fernet encryption for API keys
@@ -90,6 +94,7 @@ src/
       queries.ts      # Memory CRUD — getOrgMemories, getUserMemories, getAllMemoriesForUser, upsertMemory
       extract.ts      # extractAndSaveMemories() — fire-and-forget post-response fact extraction
       retrieve.ts     # getMemoryPrompt() — returns formatted org+user memory string for system prompt
+    setup.ts          # needsSetup(userId) — returns true if user has no API key configured
   middleware.ts       # Route protection — redirects to /login if unauthenticated
 prisma/
   schema.prisma       # Agent schema (7 models)
