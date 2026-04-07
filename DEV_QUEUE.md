@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** Plan 1 complete — ready to write Plan 2 (AI Provider + MCP + Chat)
+**Phase:** Plan 2 complete — ready to write Plan 3 (Rules System)
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Executed all 8 tasks in Plan 1. Next.js 16, PCO OAuth, Prisma 7, sidebar layout, Docker config all complete. Two milestone reviews with 5 subagent reviewers each. Feature summary at `docs/features/scaffolding-auth-db/SUMMARY.md`.
+**Last Session Summary:** Executed all 7 tasks in Plan 2. Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence all complete. Feature summary at `docs/features/ai-provider-mcp-chat/SUMMARY.md`.
 
 ---
 
@@ -16,7 +16,6 @@ _(none)_
 
 ## Backlog
 
-- [ ] **Plan 2: AI Provider + MCP + Chat** — Vercel AI SDK, multi-provider routing, MCP connector, streaming chat UI. (Plan not yet written — write it next)
 - [ ] **Plan 3: Rules System** — System default rules, org rules, user rules, per-user toggle overrides, rules editor UI, rule assembly into system prompts
 - [ ] **Plan 4: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
 - [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
@@ -26,10 +25,22 @@ _(none)_
 - [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)
 - [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
 - [x] **Plan 1: Scaffolding + Auth + Database** — Next.js 16, PCO OAuth, Prisma 7 (agent schema), Fernet crypto, sidebar layout, Docker config. Two milestone reviews (5 reviewers each). See `docs/features/scaffolding-auth-db/SUMMARY.md` (2026-04-07)
+- [x] **Plan 2: AI Provider + MCP + Chat** — Multi-provider AI chat (Anthropic/OpenAI/Google), MCP connector to pco-mcp, streaming chat UI, settings page, conversation persistence. See `docs/features/ai-provider-mcp-chat/SUMMARY.md` (2026-04-07)
 
 ---
 
 ## Session History
+
+### 2026-04-07: Plan 2 Execution (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — Plan 2 COMPLETE:**
+- Task 1: AI provider factory (`src/lib/ai/providers.ts`) + model metadata (`src/lib/ai/models.ts`)
+- Task 2: Conversation/message persistence (`src/lib/chat/persist.ts`) with auto-title
+- Task 3: Streaming chat API route (`src/app/api/chat/route.ts`) with MCP connector + graceful degradation
+- Task 4: Settings API route (`src/app/api/settings/route.ts`) with Fernet key encryption
+- Task 5: Chat UI components (`chat-interface.tsx`, `message-bubble.tsx`) with tool call display
+- Task 6: Settings page + API key form (`src/app/(app)/settings/page.tsx`, `api-key-form.tsx`)
+- Task 7: Feature summary + dev queue update
 
 ### 2026-04-07: Plan 1 Execution (pco-agent)
 
@@ -68,5 +79,5 @@ _(none)_
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
 3. Read `TEAM.md` for quality gates + review protocol
-4. Write Plan 2 (AI Provider + MCP + Chat) — use `superpowers:writing-plans` skill
-5. Then execute Plan 2 with `superpowers:subagent-driven-development` skill
+4. Write Plan 3 (Rules System) — use `superpowers:writing-plans` skill
+5. Then execute Plan 3 with `superpowers:subagent-driven-development` skill

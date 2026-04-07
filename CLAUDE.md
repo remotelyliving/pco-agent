@@ -32,20 +32,38 @@ src/
     (app)/
       layout.tsx      # Authenticated layout with sidebar
       chat/
-        page.tsx      # Skeleton chat page
+        page.tsx      # New conversation page
+        [id]/
+          page.tsx    # Conversation resume page
+      settings/
+        page.tsx      # API key + provider settings
     api/
       auth/
         [...nextauth]/
           route.ts    # NextAuth API handler
+      chat/
+        route.ts      # Streaming chat endpoint
+      settings/
+        route.ts      # Settings API
   components/
     sidebar.tsx       # Sidebar with nav, user info, sign out
     ui/               # shadcn/ui components
+    chat/
+      chat-interface.tsx  # useChat() client component
+      message-bubble.tsx  # Message display with tool call support
+    settings/
+      api-key-form.tsx    # API key entry form
   lib/
     auth.ts           # NextAuth config + PCO OAuth provider
     crypto.ts         # Fernet encryption for API keys
     db.ts             # Prisma client singleton
     env.ts            # Environment variable validation
     utils.ts          # shadcn/ui utility (cn function)
+    ai/
+      providers.ts    # Runtime AI provider factory
+      models.ts       # Model options metadata
+    chat/
+      persist.ts      # Conversation/message CRUD
   middleware.ts       # Route protection — redirects to /login if unauthenticated
 prisma/
   schema.prisma       # Agent schema (7 models)

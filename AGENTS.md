@@ -36,6 +36,8 @@ src/lib/auth.ts       → NextAuth config, PCO OAuth provider
 src/lib/crypto.ts     → Fernet encryption for API keys
 src/lib/db.ts         → Prisma client singleton
 src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
+src/lib/ai/           → AI provider factory and model metadata
+src/lib/chat/         → Conversation and message persistence
 src/middleware.ts     → Route protection middleware (NextAuth)
 prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
@@ -75,10 +77,12 @@ Resolved via `src/lib/rules/assembleRules.ts`. The `user_rule_settings` table st
 
 ## How AI Provider Routing Works
 
-1. User's `api_provider` and encrypted `api_key_enc` stored in DB
-2. On chat request: decrypt key, create provider instance via AI SDK
-3. Attach MCP connector pointing to pco-mcp server URL
-4. Stream response back to client via AI SDK's `streamText()`
+1. User saves api_provider + API key via Settings page (/settings)
+2. Key is Fernet-encrypted, stored in User.apiKeyEnc
+3. On chat request: decrypt key, create provider via createModel() in src/lib/ai/providers.ts
+4. Connect to pco-mcp via @ai-sdk/mcp with user's PCO access token from JWT
+5. Stream response via streamText() in src/app/api/chat/route.ts
+6. Persist conversation and messages via src/lib/chat/persist.ts
 
 ## Testing Patterns
 
