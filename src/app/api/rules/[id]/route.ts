@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { updateRule, deleteRule } from '@/lib/rules/queries';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 export async function PATCH(
   req: Request,
@@ -38,7 +39,7 @@ export async function PATCH(
 
     return Response.json(updated);
   } catch (error) {
-    console.error('[rules/id] Database error:', error);
+    logger.error('[rules/id] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -76,7 +77,7 @@ export async function DELETE(
     await deleteRule(id);
     return new Response(null, { status: 204 });
   } catch (error) {
-    console.error('[rules/id] Database error:', error);
+    logger.error('[rules/id] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

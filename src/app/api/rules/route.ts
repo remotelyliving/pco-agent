@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { listRulesForOrg, createRule, getUserRuleSettings } from '@/lib/rules/queries';
+import { logger } from '@/lib/logger';
 
 export async function GET() {
   const session = await auth();
@@ -13,7 +14,7 @@ export async function GET() {
 
     return Response.json({ rules, settings });
   } catch (error) {
-    console.error('[rules] Database error:', error);
+    logger.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
 
     return Response.json(rule, { status: 201 });
   } catch (error) {
-    console.error('[rules] Database error:', error);
+    logger.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
