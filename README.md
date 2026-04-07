@@ -53,7 +53,7 @@ Browser → Next.js App → AI Provider API (your key)
                          pco-mcp server → Planning Center API
 ```
 
-- **Next.js 15** + TypeScript
+- **Next.js 16** + TypeScript
 - **Vercel AI SDK v6** for multi-provider AI + MCP
 - **NextAuth.js** with Planning Center OAuth
 - **Prisma** + PostgreSQL

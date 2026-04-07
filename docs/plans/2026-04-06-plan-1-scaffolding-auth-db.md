@@ -1,12 +1,18 @@
 # Plan 1: Project Scaffolding + Auth + Database
 
+> **Execution Notes (2026-04-06):**
+> - Next.js 16 installed (plan written for 15) — `create-next-app@latest` resolved to v16
+> - Prisma 7 installed — `url` moved from schema.prisma to prisma.config.ts
+> - Tailwind v4 installed — no `tailwind.config.ts` (uses CSS-first config in globals.css)
+> - Seed IDs changed from index-based to stable named IDs (e.g., `system-scheduling-blockout`)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Set up the Next.js project with PCO OAuth authentication, Prisma database (agent schema), and a skeleton authenticated layout so users can sign in with Planning Center and see their org.
 
-**Architecture:** Next.js 15 App Router with TypeScript. NextAuth v5 handles PCO OAuth. Prisma manages the `agent` schema in the shared PostgreSQL instance. Tailwind + shadcn/ui for styling. Docker for homelab deployment.
+**Architecture:** Next.js 16 App Router with TypeScript. NextAuth v5 handles PCO OAuth. Prisma manages the `agent` schema in the shared PostgreSQL instance. Tailwind + shadcn/ui for styling. Docker for homelab deployment.
 
-**Tech Stack:** Next.js 15, TypeScript, NextAuth v5, Prisma, PostgreSQL, Tailwind CSS, shadcn/ui, fernet-nodejs, Docker
+**Tech Stack:** Next.js 16, TypeScript, NextAuth v5, Prisma 7, PostgreSQL, Tailwind CSS v4, shadcn/ui, fernet-nodejs, Docker
 
 ---
 
@@ -21,7 +27,7 @@ pco-agent/
 ├── next.config.ts
 ├── package.json
 ├── tsconfig.json
-├── tailwind.config.ts
+├── # tailwind.config.ts    # Not needed in Tailwind v4 (CSS-first config in globals.css)
 ├── postcss.config.mjs
 ├── components.json           # shadcn/ui config
 ├── prisma/
@@ -1103,7 +1109,7 @@ git commit -m "feat: add Docker configuration for homelab deployment"
 **Last Updated:** YYYY-MM-DD
 
 ## What It Does
-Next.js 15 project with PCO OAuth authentication, Prisma database (agent schema),
+Next.js 16 project with PCO OAuth authentication, Prisma 7 database (agent schema),
 sidebar layout, and Docker deployment configuration.
 
 ## Key Files
