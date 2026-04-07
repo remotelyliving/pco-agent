@@ -29,12 +29,18 @@ export async function Sidebar() {
 
       <Separator />
 
-      <div className="p-4">
+      <div className="space-y-2 p-4">
         <Link
           href="/chat"
           className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
         >
           + New Chat
+        </Link>
+        <Link
+          href="/settings"
+          className={cn(buttonVariants({ variant: 'ghost' }), 'w-full')}
+        >
+          Settings
         </Link>
       </div>
 
