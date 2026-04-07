@@ -40,6 +40,12 @@ export async function Sidebar() {
           + New Chat
         </Link>
         <Link
+          href="/rules"
+          className={cn(buttonVariants({ variant: 'ghost' }), 'w-full')}
+        >
+          Rules
+        </Link>
+        <Link
           href="/settings"
           className={cn(buttonVariants({ variant: 'ghost' }), 'w-full')}
         >
