@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import type { NextAuthConfig } from 'next-auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 declare module 'next-auth' {
   interface Session {
@@ -84,7 +85,7 @@ export const authConfig: NextAuthConfig = {
 
       const profile = user as Record<string, unknown>;
       if (!profile.pcoOrgId || !profile.pcoPersonId) {
-        console.error('[auth] signIn failed: missing pcoOrgId or pcoPersonId', {
+        logger.error('signIn failed: missing pcoOrgId or pcoPersonId', {
           hasPcoOrgId: !!profile.pcoOrgId,
           hasPcoPersonId: !!profile.pcoPersonId,
         });
@@ -137,7 +138,7 @@ export const authConfig: NextAuthConfig = {
 
         return true;
       } catch (error) {
-        console.error('[auth] signIn failed: database error', {
+        logger.error('signIn failed: database error', {
           pcoOrgId: profile.pcoOrgId,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -181,10 +182,12 @@ export const authConfig: NextAuthConfig = {
                 ? now + tokens.expires_in
                 : token.pcoAccessTokenExpires;
             } else {
-              console.error('[auth] PCO token refresh failed:', response.status);
+              logger.error('PCO token refresh failed', { status: response.status });
             }
           } catch (error) {
-            console.error('[auth] PCO token refresh error:', error);
+            logger.error('PCO token refresh error', {
+              error: error instanceof Error ? error.message : String(error),
+            });
           }
         }
       }

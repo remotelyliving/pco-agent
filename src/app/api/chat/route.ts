@@ -8,6 +8,7 @@ import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import { createModel } from '@/lib/ai/providers';
 import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
@@ -106,7 +107,11 @@ export async function POST(req: Request) {
       });
       tools = await mcpClient.tools();
     } catch (error) {
-      console.error('[chat] MCP connection failed:', error);
+      logger.error('MCP connection failed', {
+        userId: session.user.agentUserId,
+        orgId: session.user.orgId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       // Continue without MCP tools -- chat still works, just no PCO data access
     }
   }
