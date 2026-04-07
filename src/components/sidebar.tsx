@@ -66,7 +66,7 @@ export async function Sidebar() {
         ) : (
           <div className="space-y-1">
             {conversations.map((conv) => (
-              <ConversationItem key={conv.id} id={conv.id} title={conv.title} />
+              <ConversationItem key={conv.id} id={conv.id} title={conv.title} updatedAt={conv.updatedAt.toISOString()} />
             ))}
           </div>
         )}

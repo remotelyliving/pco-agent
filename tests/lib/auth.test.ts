@@ -68,4 +68,67 @@ describe('auth config', () => {
   it('redirects to /login for sign in', () => {
     expect(authConfig.pages?.signIn).toBe('/login');
   });
+
+  describe('signIn callback', () => {
+    it('returns false when account is null', async () => {
+      const signIn = authConfig.callbacks!.signIn!;
+      const result = await signIn({ user: {}, account: null } as any);
+      expect(result).toBe(false);
+    });
+
+    it('returns false when provider is not planning-center', async () => {
+      const signIn = authConfig.callbacks!.signIn!;
+      const result = await signIn({
+        user: {},
+        account: { provider: 'github' },
+      } as any);
+      expect(result).toBe(false);
+    });
+
+    it('returns false when pcoOrgId is missing', async () => {
+      const signIn = authConfig.callbacks!.signIn!;
+      const result = await signIn({
+        user: { pcoPersonId: '123' },
+        account: { provider: 'planning-center' },
+      } as any);
+      expect(result).toBe(false);
+    });
+
+    it('returns false when pcoPersonId is missing', async () => {
+      const signIn = authConfig.callbacks!.signIn!;
+      const result = await signIn({
+        user: { pcoOrgId: '456' },
+        account: { provider: 'planning-center' },
+      } as any);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('session callback', () => {
+    it('maps token fields to session with fallbacks', async () => {
+      const session = authConfig.callbacks!.session!;
+      const result = await session({
+        session: { user: { name: 'Test', email: 'test@test.com' }, expires: '' },
+        token: {
+          agentUserId: 'user-1',
+          orgId: 'org-1',
+          role: 'admin',
+        },
+      } as any);
+      expect((result as any).user.agentUserId).toBe('user-1');
+      expect((result as any).user.orgId).toBe('org-1');
+      expect((result as any).user.role).toBe('admin');
+    });
+
+    it('uses fallback values when token fields are missing', async () => {
+      const session = authConfig.callbacks!.session!;
+      const result = await session({
+        session: { user: { name: 'Test' }, expires: '' },
+        token: {},
+      } as any);
+      expect((result as any).user.agentUserId).toBe('');
+      expect((result as any).user.orgId).toBe('');
+      expect((result as any).user.role).toBe('member');
+    });
+  });
 });

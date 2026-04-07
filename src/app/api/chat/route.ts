@@ -145,7 +145,7 @@ export async function POST(req: Request) {
 
         // Auto-title from first exchange
         if (!existingConvId && text) {
-          const title = text.slice(0, 100).split('\n')[0];
+          const title = generateTitle(text);
           await updateConversationTitle(conversationId, title);
         }
 
@@ -186,6 +186,13 @@ export async function POST(req: Request) {
     if (mcpClient) await mcpClient.close();
     throw error;
   }
+}
+
+function generateTitle(text: string): string {
+  // Take first sentence or first line
+  const firstSentence = text.split(/[.!?\n]/)[0]?.trim() || '';
+  if (firstSentence.length <= 60) return firstSentence;
+  return firstSentence.slice(0, 57) + '...';
 }
 
 function buildSystemPrompt(rules: string, memory?: string): string {
