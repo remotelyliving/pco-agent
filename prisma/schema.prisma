@@ -1,0 +1,122 @@
+datasource db {
+  provider = "postgresql"
+  schemas  = ["agent"]
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  pcoOrgId  String   @unique @map("pco_org_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users   User[]
+  rules   Rule[]
+  memory  Memory[]
+
+  @@map("organizations")
+  @@schema("agent")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  orgId          String   @map("org_id")
+  pcoPersonId    BigInt   @map("pco_person_id")
+  name           String?
+  email          String?
+  role           String   @default("member")
+  apiProvider    String?  @map("api_provider")
+  apiKeyEnc      Bytes?   @map("api_key_enc")
+  preferredModel String?  @map("preferred_model")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  org            Organization @relation(fields: [orgId], references: [id])
+  conversations  Conversation[]
+  rules          Rule[]       @relation("CreatedBy")
+  ruleSettings   UserRuleSetting[]
+
+  @@unique([orgId, pcoPersonId])
+  @@map("users")
+  @@schema("agent")
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  messages Message[]
+
+  @@map("conversations")
+  @@schema("agent")
+}
+
+model Message {
+  id             String   @id @default(uuid())
+  conversationId String   @map("conversation_id")
+  role           String
+  content        String
+  toolCalls      Json?    @map("tool_calls")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  @@map("messages")
+  @@schema("agent")
+}
+
+model Rule {
+  id          String   @id @default(uuid())
+  orgId       String?  @map("org_id")
+  createdById String?  @map("created_by")
+  content     String
+  category    String?
+  ruleType    String   @map("rule_type")
+  visibility  String   @default("private")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  org       Organization?     @relation(fields: [orgId], references: [id])
+  createdBy User?             @relation("CreatedBy", fields: [createdById], references: [id])
+  settings  UserRuleSetting[]
+
+  @@map("rules")
+  @@schema("agent")
+}
+
+model UserRuleSetting {
+  id      String  @id @default(uuid())
+  userId  String  @map("user_id")
+  ruleId  String  @map("rule_id")
+  enabled Boolean
+
+  user User @relation(fields: [userId], references: [id])
+  rule Rule @relation(fields: [ruleId], references: [id])
+
+  @@unique([userId, ruleId])
+  @@map("user_rule_settings")
+  @@schema("agent")
+}
+
+model Memory {
+  id        String   @id @default(uuid())
+  orgId     String   @map("org_id")
+  key       String
+  value     String
+  source    String   @default("auto")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  org Organization @relation(fields: [orgId], references: [id])
+
+  @@unique([orgId, key])
+  @@map("memory")
+  @@schema("agent")
+}

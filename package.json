@@ -42,9 +42,13 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "jsdom": "^29.0.1",
-    "tailwindcss": "^4",
-    "typescript": "^5",
     "shadcn": "^4.1.2",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5",
     "vitest": "^4.1.2"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   }
 }
