@@ -1,15 +1,22 @@
 import { auth } from '@/lib/auth';
-import { getOrgMemories, upsertMemory } from '@/lib/memory/queries';
+import { getOrgMemories, getUserMemories, upsertMemory } from '@/lib/memory/queries';
+
+const MEMORY_LIMIT = 100;
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.agentUserId || !session?.user?.orgId) {
+  if (!session?.user?.orgId || !session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
   }
 
   try {
-    const memories = await getOrgMemories(session.user.orgId);
-    return Response.json({ memories });
+    const [orgMemoriesAll, userMemoriesAll] = await Promise.all([
+      getOrgMemories(session.user.orgId),
+      getUserMemories(session.user.orgId, session.user.agentUserId),
+    ]);
+    const orgMemories = orgMemoriesAll.slice(0, MEMORY_LIMIT);
+    const userMemories = userMemoriesAll.slice(0, MEMORY_LIMIT);
+    return Response.json({ orgMemories, userMemories });
   } catch (error) {
     console.error('[memory] Database error:', error);
     return Response.json(
