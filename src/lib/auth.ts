@@ -12,7 +12,7 @@ declare module 'next-auth' {
       email?: string | null;
       image?: string | null;
     };
-    pcoAccessToken: string;
+    // NO pcoAccessToken here — it stays in JWT only
   }
 }
 
@@ -46,6 +46,7 @@ export const authConfig: NextAuthConfig = {
             'https://api.planningcenteronline.com/people/v2/me',
             {
               headers: { Authorization: `Bearer ${tokens.access_token}` },
+              signal: AbortSignal.timeout(5000),
             }
           );
           if (!res.ok) {
@@ -81,70 +82,77 @@ export const authConfig: NextAuthConfig = {
       if (!account || account.provider !== 'planning-center') return false;
 
       const profile = user as Record<string, unknown>;
-      if (!profile.pcoOrgId || !profile.pcoPersonId) return false;
+      if (!profile.pcoOrgId || !profile.pcoPersonId) {
+        console.error('[auth] signIn failed: missing pcoOrgId or pcoPersonId', {
+          hasPcoOrgId: !!profile.pcoOrgId,
+          hasPcoPersonId: !!profile.pcoPersonId,
+        });
+        return false;
+      }
 
-      // Upsert organization
-      const org = await prisma.organization.upsert({
-        where: { pcoOrgId: String(profile.pcoOrgId) },
-        update: { name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown' },
-        create: {
-          pcoOrgId: String(profile.pcoOrgId),
-          name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown',
-        },
-      });
-
-      // First user in org = admin, rest = member
-      const existingUsers = await prisma.user.count({
-        where: { orgId: org.id },
-      });
-      const role = existingUsers === 0 ? 'admin' : 'member';
-
-      // Upsert user
-      await prisma.user.upsert({
-        where: {
-          orgId_pcoPersonId: {
-            orgId: org.id,
-            pcoPersonId: BigInt(profile.pcoPersonId as number),
+      try {
+        // Upsert organization
+        const org = await prisma.organization.upsert({
+          where: { pcoOrgId: String(profile.pcoOrgId) },
+          update: { name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown' },
+          create: {
+            pcoOrgId: String(profile.pcoOrgId),
+            name: profile.pcoOrgName ? String(profile.pcoOrgName) : 'Unknown',
           },
-        },
-        update: {
-          name: profile.name as string,
-          email: profile.email as string | null,
-        },
-        create: {
-          orgId: org.id,
-          pcoPersonId: BigInt(profile.pcoPersonId as number),
-          name: profile.name as string,
-          email: profile.email as string | null,
-          role,
-        },
-      });
+        });
 
-      return true;
+        // TODO: Race condition — two simultaneous first-logins can both get admin.
+        // Fix by wrapping in prisma.$transaction or using DB-level constraint.
+        // See: Milestone 2 review findings.
+        // First user in org = admin, rest = member
+        const existingUsers = await prisma.user.count({
+          where: { orgId: org.id },
+        });
+        const role = existingUsers === 0 ? 'admin' : 'member';
+
+        // Upsert user
+        const agentUser = await prisma.user.upsert({
+          where: {
+            orgId_pcoPersonId: {
+              orgId: org.id,
+              pcoPersonId: BigInt(String(profile.pcoPersonId)),
+            },
+          },
+          update: {
+            name: profile.name as string,
+            email: profile.email as string | null,
+          },
+          create: {
+            orgId: org.id,
+            pcoPersonId: BigInt(String(profile.pcoPersonId)),
+            name: profile.name as string,
+            email: profile.email as string | null,
+            role,
+          },
+        });
+
+        // Attach to user so jwt callback doesn't need to re-query
+        (user as Record<string, unknown>).agentUserId = agentUser.id;
+        (user as Record<string, unknown>).orgId = org.id;
+        (user as Record<string, unknown>).agentRole = agentUser.role;
+
+        return true;
+      } catch (error) {
+        console.error('[auth] signIn failed: database error', {
+          pcoOrgId: profile.pcoOrgId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        return false;
+      }
     },
     async jwt({ token, user, account }) {
       if (user && account) {
         const profile = user as Record<string, unknown>;
-        const org = await prisma.organization.findUnique({
-          where: { pcoOrgId: String(profile.pcoOrgId) },
-        });
-        if (org) {
-          const agentUser = await prisma.user.findUnique({
-            where: {
-              orgId_pcoPersonId: {
-                orgId: org.id,
-                pcoPersonId: BigInt(profile.pcoPersonId as number),
-              },
-            },
-          });
-          if (agentUser) {
-            token.agentUserId = agentUser.id;
-            token.orgId = org.id;
-            token.role = agentUser.role;
-            token.pcoAccessToken = account.access_token ?? undefined;
-            token.pcoRefreshToken = account.refresh_token ?? undefined;
-          }
-        }
+        token.agentUserId = profile.agentUserId as string;
+        token.orgId = profile.orgId as string;
+        token.role = profile.agentRole as string;
+        token.pcoAccessToken = account.access_token ?? undefined;
+        token.pcoRefreshToken = account.refresh_token ?? undefined;
       }
       return token;
     },
@@ -157,7 +165,7 @@ export const authConfig: NextAuthConfig = {
           orgId: (token.orgId as string) ?? '',
           role: (token.role as string) ?? 'member',
         },
-        pcoAccessToken: (token.pcoAccessToken as string) ?? '',
+        // pcoAccessToken removed — access via JWT in server-side code only
       };
     },
   },
