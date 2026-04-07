@@ -15,6 +15,7 @@ import {
   saveMessage,
   updateConversationTitle,
 } from '@/lib/chat/persist';
+import { assembleRules } from '@/lib/rules/assemble';
 
 export async function POST(req: Request) {
   // 1. Authenticate
@@ -93,8 +94,13 @@ export async function POST(req: Request) {
     }
   }
 
-  // 8. Build system prompt
-  const systemPrompt = buildSystemPrompt();
+  // 8. Build system prompt with assembled rules
+  const assembledRules = await assembleRules(
+    session.user.agentUserId,
+    session.user.orgId,
+    { formatAsPrompt: true },
+  );
+  const systemPrompt = buildSystemPrompt(typeof assembledRules === 'string' ? assembledRules : '');
 
   // 9. Stream the response
   const result = streamText({
@@ -150,14 +156,20 @@ function getDefaultModelId(provider: string): string {
   }
 }
 
-function buildSystemPrompt(): string {
-  return `You are a helpful assistant for church staff who use Planning Center Online.
+function buildSystemPrompt(rules: string): string {
+  let prompt = `You are a helpful assistant for church staff who use Planning Center Online.
 
 You have access to tools that can search people, view services, check schedules, and manage church data in Planning Center. Use these tools when the user asks about their church data.
 
 Be friendly, use plain language, and avoid technical jargon. If you're unsure about something, say so rather than guessing.
 
 When you use a tool and get results, summarize them in a clear, readable way.`;
+
+  if (rules) {
+    prompt += `\n\n## Rules\n\nFollow these rules in all your responses:\n${rules}`;
+  }
+
+  return prompt;
 }
 
 async function getPcoAccessToken(): Promise<string | null> {
