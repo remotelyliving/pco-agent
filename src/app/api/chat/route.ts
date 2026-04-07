@@ -9,6 +9,7 @@ import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 import { createModel } from '@/lib/ai/providers';
 import { getDefaultModel } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
@@ -26,6 +27,10 @@ import { extractAndSaveMemories } from '@/lib/memory/extract';
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
+  // 0. Request tracing
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   // 1. Authenticate
   const session = await auth();
   if (!session?.user?.agentUserId) {
@@ -116,7 +121,7 @@ export async function POST(req: Request) {
         });
         tools = await mcpClient.tools();
       } catch (error) {
-        logger.error('MCP connection failed', {
+        log.error('MCP connection failed', {
           userId: session.user.agentUserId,
           orgId: session.user.orgId,
           error: error instanceof Error ? error.message : String(error),
@@ -135,7 +140,7 @@ export async function POST(req: Request) {
       memoryPrompt,
     );
   } catch (error) {
-    console.error('[chat] Pre-stream error:', error);
+    log.error('[chat] Pre-stream error', { error: error instanceof Error ? error.message : String(error) });
     if (mcpClient) await mcpClient.close();
     return Response.json(
       { error: 'Something went wrong. Please try again.' },
@@ -179,7 +184,7 @@ export async function POST(req: Request) {
             text,
             user.apiProvider!,
             apiKey,
-          ).catch((err) => logger.error('[chat] Memory extraction failed', {
+          ).catch((err) => log.error('[chat] Memory extraction failed', {
             conversationId,
             error: err instanceof Error ? err.message : String(err),
           }));
@@ -191,7 +196,7 @@ export async function POST(req: Request) {
         }
       },
       onError: async (error) => {
-        logger.error('[chat] Stream error', {
+        log.error('[chat] Stream error', {
           conversationId,
           userId: session.user.agentUserId,
           error: error instanceof Error ? error.message : String(error),
@@ -205,6 +210,7 @@ export async function POST(req: Request) {
     return result.toUIMessageStreamResponse({
       headers: {
         'x-conversation-id': conversationId,
+        'x-request-id': requestId,
       },
     });
   } catch (error) {

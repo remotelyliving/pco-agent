@@ -2,8 +2,12 @@ import { auth } from '@/lib/auth';
 import { toggleRule } from '@/lib/rules/queries';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 
 export async function POST(req: Request) {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
@@ -29,7 +33,7 @@ export async function POST(req: Request) {
     const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
     return Response.json(setting);
   } catch (error) {
-    logger.error('[rules/toggle] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[rules/toggle] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },

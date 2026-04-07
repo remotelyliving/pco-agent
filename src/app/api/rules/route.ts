@@ -1,8 +1,12 @@
 import { auth } from '@/lib/auth';
 import { listRulesForOrg, createRule, getUserRuleSettings } from '@/lib/rules/queries';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/request-context';
 
 export async function GET() {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId || !session?.user?.orgId) {
     return new Response('Unauthorized', { status: 401 });
@@ -14,7 +18,7 @@ export async function GET() {
 
     return Response.json({ rules, settings });
   } catch (error) {
-    logger.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
   const session = await auth();
   if (!session?.user?.agentUserId || !session?.user?.orgId) {
     return new Response('Unauthorized', { status: 401 });
@@ -60,7 +67,7 @@ export async function POST(req: Request) {
 
     return Response.json(rule, { status: 201 });
   } catch (error) {
-    logger.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
+    log.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
       { status: 500 },
