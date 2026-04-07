@@ -41,7 +41,7 @@ export const authConfig: NextAuthConfig = {
       token: 'https://api.planningcenteronline.com/oauth/token',
       userinfo: {
         url: 'https://api.planningcenteronline.com/people/v2/me',
-        async request({ tokens }) {
+        async request({ tokens }: { tokens: { access_token?: string } }) {
           const res = await fetch(
             'https://api.planningcenteronline.com/people/v2/me',
             {

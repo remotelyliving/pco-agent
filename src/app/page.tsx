@@ -1,7 +1,10 @@
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-gray-500">Redirecting...</p>
-    </div>
-  );
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+
+export default async function Home() {
+  const session = await auth();
+  if (session) {
+    redirect('/chat');
+  }
+  redirect('/login');
 }
