@@ -4,53 +4,54 @@
 
 ## Project Status
 
-**Phase:** Pre-implementation (spec approved, planning next)
+**Phase:** Plan 1 ready for execution (scaffolding + auth + DB)
 **Last Updated:** 2026-04-06
-**Last Session Summary:** Initial project setup — spec, README, CLAUDE.md, AGENTS.md, Makefile, team structure committed.
+**Last Session Summary:** Complete design + planning session. Spec approved, Plan 1 written (8 tasks), all foundational docs committed. Ready to execute Task 1.
 
 ---
-
-## Backlog
-
-- [ ] **Sub-project 1: Core Chat App** — Next.js scaffolding, PCO OAuth auth, multi-provider AI routing, MCP connector to pco-mcp, chat UI with streaming, conversation persistence
-- [ ] **Sub-project 2: Rules System** — System default rules, org rules, user rules, per-user toggle overrides, rules editor UI, rule assembly into system prompts
-- [ ] **Sub-project 3: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
-- [ ] **Sub-project 4: Setup Wizard** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection
-- [ ] **Sub-project 5: Settings Pages** — AI provider settings, rules management, org admin panel
-- [ ] **Sub-project 6: Billing (future)** — Stripe integration, subscription tiers, usage tracking
 
 ## In Progress
 
-_(none)_
+- [ ] **Plan 1: Scaffolding + Auth + Database** — 8 tasks in `docs/plans/2026-04-06-plan-1-scaffolding-auth-db.md`. Execute with subagent-driven-development. Start at Task 1.
 
-## In Review
+## Backlog
 
-_(none)_
+- [ ] **Plan 2: AI Provider + MCP + Chat** — Vercel AI SDK, multi-provider routing, MCP connector, streaming chat UI. (Plan not yet written — write when Plan 1 is done)
+- [ ] **Plan 3: Rules System** — System default rules, org rules, user rules, per-user toggle overrides, rules editor UI, rule assembly into system prompts
+- [ ] **Plan 4: Memory System** — Org-level key-value facts, auto-extraction after responses, memory in system prompt, admin memory management UI
+- [ ] **Plan 5: Setup Wizard + UX Polish** — First-time onboarding flow, API key setup with provider-specific how-to guides, test connection, settings pages
 
 ## Done
 
-- [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, Makefile, team structure (2026-04-06)
+- [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)
+- [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
 
 ---
 
-## How to Use This File
+## Session History
 
-### Starting a new session
-1. Read this file to understand what's in progress
-2. Read the latest feature summary in the relevant `docs/features/` folder
-3. Pick up the next item from "In Progress" or move one from "Backlog"
+### 2026-04-06: Monster Session (pco-mcp + pco-agent)
 
-### During development
-- Move tasks between columns as work progresses
-- Update "Last Updated" and "Last Session Summary" after each session
-- After each commit, update the feature summary document
+**pco-mcp (~/projects/pco-mcp) — COMPLETE:**
+- Built from scratch: 25 MCP tools, dual OAuth, PCO API client
+- 269 tests, 96% coverage
+- 4 audits (Security, SRE, Code Quality, Monetization)
+- All 3 tiers of fixes (security, stability, code quality)
+- Deployed to homelab, live at pco-mcp.com
+- Key debugging: Cloudflare bot protection was blocking ChatGPT (root cause of "RFC 7591" error)
 
-### After completing a feature
-- Move to "In Review"
-- Dispatch all 5 review subagents
-- After reviews pass, move to "Done" with completion date
+**pco-agent (~/projects/pco-agent) — DESIGN COMPLETE:**
+- Spec approved: Next.js + Vercel AI SDK v6 + PCO OAuth + Prisma
+- Multi-provider (Anthropic/OpenAI/Google), BYO API key
+- 3-layer rules system (system + org + user with per-user toggles)
+- Persistent memory (conversations + key-value facts)
+- 5-reviewer team defined (Sr. Engineer, SRE, Security, UX/PM, Docs)
+- Plan 1 written and committed, ready for execution
 
-### Format for task entries
-```
-- [ ] **Task Name** — Brief description. Assigned to: [agent/human]. Status notes.
-```
+## How to Resume
+
+1. Read this file (you're here)
+2. Read `CLAUDE.md` for architecture + session checklist
+3. Read `TEAM.md` for quality gates + review protocol
+4. Open `docs/plans/2026-04-06-plan-1-scaffolding-auth-db.md` — start executing Task 1
+5. Use `superpowers:subagent-driven-development` skill for execution
