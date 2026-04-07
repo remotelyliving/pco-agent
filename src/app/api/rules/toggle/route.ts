@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { toggleRule } from '@/lib/rules/queries';
+import { prisma } from '@/lib/db';
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -14,6 +15,23 @@ export async function POST(req: Request) {
     return new Response('ruleId and enabled are required', { status: 400 });
   }
 
-  const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
-  return Response.json(setting);
+  try {
+    // Verify the rule belongs to the user's org
+    const rule = await prisma.rule.findUnique({ where: { id: ruleId } });
+    if (!rule) {
+      return new Response('Rule not found', { status: 404 });
+    }
+    if (rule.orgId && rule.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
+    return Response.json(setting);
+  } catch (error) {
+    console.error('[rules/toggle] Database error:', error);
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
+  }
 }

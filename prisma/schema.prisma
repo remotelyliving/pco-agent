@@ -52,9 +52,10 @@ model Conversation {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User      @relation(fields: [userId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]
 
+  @@index([userId, updatedAt])
   @@map("conversations")
   @@schema("agent")
 }
@@ -67,8 +68,9 @@ model Message {
   toolCalls      Json?    @map("tool_calls")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  conversation Conversation @relation(fields: [conversationId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
+  @@index([conversationId, createdAt])
   @@map("messages")
   @@schema("agent")
 }
@@ -88,6 +90,7 @@ model Rule {
   createdBy User?             @relation("CreatedBy", fields: [createdById], references: [id])
   settings  UserRuleSetting[]
 
+  @@index([orgId, ruleType])
   @@map("rules")
   @@schema("agent")
 }
@@ -98,8 +101,8 @@ model UserRuleSetting {
   ruleId  String  @map("rule_id")
   enabled Boolean
 
-  user User @relation(fields: [userId], references: [id])
-  rule Rule @relation(fields: [ruleId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rule Rule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ruleId])
   @@map("user_rule_settings")
@@ -117,7 +120,7 @@ model Memory {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   org  Organization @relation(fields: [orgId], references: [id])
-  user User?        @relation(fields: [userId], references: [id])
+  user User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@unique([orgId, userId, key])
   @@map("memory")

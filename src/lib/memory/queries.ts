@@ -28,15 +28,33 @@ export async function upsertMemory(
   orgId: string,
   key: string,
   value: string,
-  source: string,
+  source: string = 'auto',
   userId?: string,
 ) {
-  const resolvedUserId = userId ?? null;
-  return prisma.memory.upsert({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    where: { orgId_userId_key: { orgId, userId: resolvedUserId as any, key } },
-    update: { value, source },
-    create: { orgId, userId: resolvedUserId, key, value, source },
+  if (userId) {
+    // User-scoped: composite unique works correctly
+    return prisma.memory.upsert({
+      where: { orgId_userId_key: { orgId, userId, key } },
+      update: { value, source },
+      create: { orgId, userId, key, value, source },
+    });
+  }
+
+  // Org-scoped (userId=null): unique constraint doesn't enforce uniqueness for NULLs
+  // Use findFirst + create/update to prevent duplicates
+  const existing = await prisma.memory.findFirst({
+    where: { orgId, userId: null, key },
+  });
+
+  if (existing) {
+    return prisma.memory.update({
+      where: { id: existing.id },
+      data: { value, source },
+    });
+  }
+
+  return prisma.memory.create({
+    data: { orgId, key, value, source },
   });
 }
 

@@ -13,25 +13,37 @@ export async function PATCH(
 
   const { id } = await params;
 
-  // Verify ownership or admin
-  const rule = await prisma.rule.findUnique({ where: { id } });
-  if (!rule) return new Response('Not found', { status: 404 });
+  try {
+    // Verify ownership or admin
+    const rule = await prisma.rule.findUnique({ where: { id } });
+    if (!rule) return new Response('Not found', { status: 404 });
 
-  const isOwner = rule.createdById === session.user.agentUserId;
-  const isAdmin = session.user.role === 'admin';
-  const isSystemRule = rule.ruleType === 'system';
+    if (rule.orgId && rule.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
-  if (isSystemRule || (!isOwner && !isAdmin)) {
-    return new Response('Forbidden', { status: 403 });
+    const isOwner = rule.createdById === session.user.agentUserId;
+    const isAdmin = session.user.role === 'admin';
+    const isSystemRule = rule.ruleType === 'system';
+
+    if (isSystemRule || (!isOwner && !isAdmin)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const body = await req.json();
+    const updated = await updateRule(id, {
+      content: body.content,
+      category: body.category,
+    });
+
+    return Response.json(updated);
+  } catch (error) {
+    console.error('[rules/id] Database error:', error);
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
   }
-
-  const body = await req.json();
-  const updated = await updateRule(id, {
-    content: body.content,
-    category: body.category,
-  });
-
-  return Response.json(updated);
 }
 
 export async function DELETE(
@@ -45,17 +57,29 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const rule = await prisma.rule.findUnique({ where: { id } });
-  if (!rule) return new Response('Not found', { status: 404 });
+  try {
+    const rule = await prisma.rule.findUnique({ where: { id } });
+    if (!rule) return new Response('Not found', { status: 404 });
 
-  const isOwner = rule.createdById === session.user.agentUserId;
-  const isAdmin = session.user.role === 'admin';
-  const isSystemRule = rule.ruleType === 'system';
+    if (rule.orgId && rule.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
 
-  if (isSystemRule || (!isOwner && !isAdmin)) {
-    return new Response('Forbidden', { status: 403 });
+    const isOwner = rule.createdById === session.user.agentUserId;
+    const isAdmin = session.user.role === 'admin';
+    const isSystemRule = rule.ruleType === 'system';
+
+    if (isSystemRule || (!isOwner && !isAdmin)) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    await deleteRule(id);
+    return new Response(null, { status: 204 });
+  } catch (error) {
+    console.error('[rules/id] Database error:', error);
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
   }
-
-  await deleteRule(id);
-  return new Response(null, { status: 204 });
 }
