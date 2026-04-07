@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from '@/components/chat/message-bubble';
@@ -17,6 +17,7 @@ export function ChatInterface({
 }) {
   const [convId, setConvId] = useState<string | undefined>(conversationId);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Build initial UIMessages from plain message objects
   const uiInitialMessages = useMemo<UIMessage[] | undefined>(() => {
@@ -73,14 +74,26 @@ export function ChatInterface({
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  function handleInput(e: React.FormEvent<HTMLTextAreaElement>) {
+    const textarea = e.currentTarget;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+  }
+
+  const submitText = useCallback(async (text: string) => {
+    if (!text.trim() || isStreaming) return;
+    if (textareaRef.current) {
+      textareaRef.current.value = '';
+      textareaRef.current.style.height = 'auto';
+    }
+    await sendMessage({ text: text.trim() });
+  }, [isStreaming, sendMessage]);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = e.currentTarget;
-    const textarea = form.querySelector('textarea') as HTMLTextAreaElement;
-    const text = textarea.value.trim();
-    if (!text || isStreaming) return;
-    textarea.value = '';
-    await sendMessage({ text });
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    await submitText(textarea.value);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -95,8 +108,27 @@ export function ChatInterface({
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 && (
-          <div className="flex h-full items-center justify-center text-gray-400">
-            <p>Ask anything about your Planning Center data.</p>
+          <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-gray-700">What can I help with?</h2>
+              <p className="mt-1 text-sm text-gray-400">Try one of these, or ask your own question.</p>
+            </div>
+            <div className="grid gap-2 w-full max-w-md">
+              {[
+                "Who is volunteering this Sunday?",
+                "Show me people added in the last month",
+                "What songs have we played most recently?",
+                "Help me plan next week's service",
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => submitText(prompt)}
+                  className="rounded-lg border border-gray-200 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((message) => (
@@ -123,8 +155,10 @@ export function ChatInterface({
       <form onSubmit={handleSubmit} className="border-t p-4">
         <div className="flex gap-2">
           <Textarea
+            ref={textareaRef}
             placeholder="Ask about your church data..."
             onKeyDown={handleKeyDown}
+            onInput={handleInput}
             rows={1}
             className="min-h-[44px] flex-1 resize-none"
             disabled={isStreaming}

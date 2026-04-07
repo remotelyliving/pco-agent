@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { listConversations } from '@/lib/chat/persist';
+import { ConversationItem } from '@/components/conversation-item';
 
 export async function Sidebar() {
   const session = await auth();
@@ -65,13 +66,7 @@ export async function Sidebar() {
         ) : (
           <div className="space-y-1">
             {conversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/chat/${conv.id}`}
-                className="block truncate rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
-              >
-                {conv.title || 'Untitled conversation'}
-              </Link>
+              <ConversationItem key={conv.id} id={conv.id} title={conv.title} />
             ))}
           </div>
         )}
