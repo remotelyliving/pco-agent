@@ -30,7 +30,7 @@ model User {
   email          String?
   role           String   @default("member")
   apiProvider    String?  @map("api_provider")
-  apiKeyEnc      Bytes?   @map("api_key_enc")
+  apiKeyEnc      String?  @map("api_key_enc")
   preferredModel String?  @map("preferred_model")
   createdAt      DateTime @default(now()) @map("created_at")
 
