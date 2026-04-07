@@ -1,4 +1,9 @@
+import type { Metadata } from 'next';
 import { signIn } from '@/lib/auth';
+
+export const metadata: Metadata = {
+  title: 'Sign In — Planning Center Assistant',
+};
 
 export default async function LoginPage({
   searchParams,
