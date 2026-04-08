@@ -50,11 +50,6 @@
 
 ## Operations
 
-### Docker Seed Command May Not Work Inside Container
-**Status:** Deferred
-**Impact:** README step 6 suggests `docker compose exec pco-agent node -e "require('./prisma/seed')"` but the seed file is TypeScript and may not be compiled in the runner image.
-**Fix:** Either add a compiled seed script to the Docker image, provide a dedicated seed container command, or document that seeding should be done from the host.
-
 ### Prisma Migrations — Only Partial Index Migration Exists
 **Status:** Deferred — needs running DB to generate baseline
 **Impact:** The spec called for 4 migrations (init, enums, partial index, tokenCount). Only the partial unique index migration was created. Enum and tokenCount changes were applied via `db push`. A fresh deployment using `prisma migrate deploy` alone won't create the full schema.

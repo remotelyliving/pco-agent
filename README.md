@@ -115,16 +115,8 @@ The entrypoint script waits for the database to be reachable, then runs `prisma 
 On first deploy, seed the system default rules:
 
 ```bash
-docker compose exec pco-agent node -e "require('./prisma/seed')"
+make docker-seed
 ```
-
-Or from outside the container (if you have Node.js locally):
-
-```bash
-make seed
-```
-
-> **Note:** The seed file is TypeScript. If running inside the container, ensure tsx is available or seed from the host with `make seed`.
 
 ### 7. Verify It's Running
 
@@ -186,11 +178,14 @@ make docker-up    # Migrations run automatically on restart
 | `make db-push` | Push schema to database (dev only) |
 | `make db-migrate` | Create a new Prisma migration (dev only) |
 | `make db-deploy` | Apply pending migrations (production) |
-| `make seed` | Seed system default rules |
+| `make seed` | Seed system default rules (local) |
 | `make docker-build` | Build Docker image |
 | `make docker-up` | Start via Docker Compose |
 | `make docker-down` | Stop Docker Compose |
 | `make docker-logs` | Tail container logs |
+| `make docker-db-push` | Push schema via container (reaches DB on homelab-net) |
+| `make docker-db-deploy` | Apply migrations via container |
+| `make docker-seed` | Seed rules via container |
 | `make test-mutation` | Run Stryker mutation testing |
 | `make test-e2e` | Run Playwright E2E tests |
 

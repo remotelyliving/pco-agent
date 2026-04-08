@@ -1,4 +1,4 @@
-.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean test-mutation test-e2e
+.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean test-mutation test-e2e docker-db-push docker-db-migrate docker-db-deploy docker-seed
 
 # Development
 install:
@@ -37,7 +37,7 @@ lint:
 format:
 	npx prettier --write "src/**/*.{ts,tsx,js,jsx}"
 
-# Database
+# Database (local — requires DB reachable at DATABASE_URL in .env)
 db-push:
 	npx prisma db push
 
@@ -55,6 +55,22 @@ db-reset:
 
 db-deploy:
 	npx prisma migrate deploy
+
+# Database (Docker — runs inside pco-agent container on homelab-net)
+# Uses node path directly since npx may not resolve in production image
+PRISMA_CMD = node ./node_modules/prisma/build/index.js
+
+docker-db-push:
+	docker compose exec pco-agent $(PRISMA_CMD) db push
+
+docker-db-migrate:
+	docker compose exec pco-agent $(PRISMA_CMD) migrate dev
+
+docker-db-deploy:
+	docker compose exec pco-agent $(PRISMA_CMD) migrate deploy
+
+docker-seed:
+	docker compose exec pco-agent npx tsx prisma/seed.ts
 
 # Docker
 docker-build:

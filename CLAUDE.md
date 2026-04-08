@@ -144,8 +144,11 @@ See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) for the full list of accepted
 - `make docker-up` — Start via Docker Compose
 - `make docker-down` — Stop Docker Compose
 - `make docker-logs` — Tail container logs
-- `make seed` — Seed system default rules
+- `make seed` — Seed system default rules (local)
 - `make db-deploy` — Apply pending migrations (production)
+- `make docker-db-push` — Push schema via container (DB on homelab-net)
+- `make docker-db-deploy` — Apply migrations via container
+- `make docker-seed` — Seed rules via container
 
 ## Testing & Quality Gates
 - Vitest for unit tests — **90% coverage required**
