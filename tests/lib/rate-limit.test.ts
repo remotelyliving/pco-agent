@@ -61,4 +61,17 @@ describe('rate limiter', () => {
     _resetBuckets();
     expect(checkRateLimit('user-1', 5).allowed).toBe(true);
   });
+
+  it('evicts stale entries older than 2 minutes during next call', () => {
+    // Exhaust the bucket for user-stale so an entry exists in the map
+    for (let i = 0; i < 5; i++) {
+      checkRateLimit('user-stale', 5);
+    }
+    // Advance time past the 2-minute TTL
+    vi.advanceTimersByTime(121_000);
+    // A call for a different user triggers the sweep; user-stale should be evicted
+    checkRateLimit('user-other', 5);
+    // Now user-stale should start fresh (allowed with full tokens)
+    expect(checkRateLimit('user-stale', 5).allowed).toBe(true);
+  });
 });

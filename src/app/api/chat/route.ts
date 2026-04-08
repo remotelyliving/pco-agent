@@ -42,10 +42,10 @@ export async function POST(req: Request) {
   // 1b. Rate limit (20 requests/minute per user)
   const rateLimit = checkRateLimit(session.user.agentUserId, 20);
   if (!rateLimit.allowed) {
-    return new Response('Too Many Requests', {
-      status: 429,
-      headers: { 'Retry-After': String(rateLimit.retryAfter) },
-    });
+    return Response.json(
+      { error: 'You\'re sending messages too quickly. Please wait a few seconds and try again.' },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
+    );
   }
 
   // 2. Parse request
@@ -121,21 +121,26 @@ export async function POST(req: Request) {
 
     if (pcoAccessToken) {
       try {
-        const mcpSetup = async () => {
-          const client = await getMCPClient(
-            process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-            pcoAccessToken,
-          );
-          const mcpTools = await client.tools();
-          return { client, mcpTools };
-        };
-
-        const result = await Promise.race([
-          mcpSetup(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('MCP setup timeout (30s)')), 30_000),
-          ),
-        ]);
+        const result = await new Promise<{ client: Awaited<ReturnType<typeof getMCPClient>>; mcpTools: Record<string, unknown> }>(
+          async (resolve, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error('MCP setup timeout (30s)')),
+              30_000,
+            );
+            try {
+              const client = await getMCPClient(
+                process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+                pcoAccessToken,
+              );
+              const mcpTools = await client.tools();
+              clearTimeout(timer);
+              resolve({ client, mcpTools });
+            } catch (err) {
+              clearTimeout(timer);
+              reject(err);
+            }
+          },
+        );
         // mcpClient lifecycle managed by connection pool — no need to track reference
         tools = result.mcpTools;
       } catch (error) {

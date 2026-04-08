@@ -74,20 +74,26 @@ export async function getMCPClient(
     }
   }
 
-  const client = await Promise.race([
-    createMCPClient({
-      transport: {
-        type: 'sse',
-        url: mcpUrl,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+  const client = await new Promise<MCPClient>(async (resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('MCP connection timeout')),
+      CONNECTION_TIMEOUT_MS,
+    );
+    try {
+      const result = await createMCPClient({
+        transport: {
+          type: 'sse',
+          url: mcpUrl,
+          headers: { Authorization: `Bearer ${accessToken}` },
         },
-      },
-    }),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('MCP connection timeout')), CONNECTION_TIMEOUT_MS),
-    ),
-  ]);
+      });
+      clearTimeout(timer);
+      resolve(result);
+    } catch (err) {
+      clearTimeout(timer);
+      reject(err);
+    }
+  });
 
   pool.set(key, { client, createdAt: now, lastUsed: now });
   startCleanup();
