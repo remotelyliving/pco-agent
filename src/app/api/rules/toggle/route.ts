@@ -30,6 +30,14 @@ export async function POST(req: Request) {
       return new Response('Forbidden', { status: 403 });
     }
 
+    // System rules can only be toggled by admins
+    if (rule.ruleType === 'system' && session.user.role !== 'admin') {
+      return Response.json(
+        { error: 'Only administrators can modify system rules.' },
+        { status: 403 },
+      );
+    }
+
     const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
     return Response.json(setting);
   } catch (error) {

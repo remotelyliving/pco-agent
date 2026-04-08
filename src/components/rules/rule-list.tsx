@@ -53,8 +53,8 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
     if (rule.ruleType === 'system' || rule.ruleType === 'org') {
       return override !== false;
     }
-    // User's own rules: always enabled
-    if (rule.createdById === userId) return true;
+    // User's own rules: enabled unless explicitly opted out
+    if (rule.createdById === userId) return override !== false;
     // Other users' public rules: disabled unless opted in
     return override === true;
   }
@@ -96,6 +96,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         onReload={loadRules}
         canDelete={false}
         userId={userId}
+        isAdmin={isAdmin}
       />
       <RuleSection
         title="Organization Rules"
@@ -106,6 +107,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         onReload={loadRules}
         canDelete={isAdmin}
         userId={userId}
+        isAdmin={isAdmin}
       />
       {userRules.length > 0 && (
         <RuleSection
@@ -117,6 +119,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
           onReload={loadRules}
           canDelete={true}
           userId={userId}
+          isAdmin={isAdmin}
         />
       )}
     </div>
@@ -132,6 +135,7 @@ function RuleSection({
   onReload,
   canDelete,
   userId,
+  isAdmin,
 }: {
   title: string;
   rules: Rule[];
@@ -141,6 +145,7 @@ function RuleSection({
   onReload: () => void;
   canDelete: boolean;
   userId: string;
+  isAdmin: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -170,8 +175,12 @@ function RuleSection({
             <Switch
               checked={isEnabled(rule)}
               onCheckedChange={(checked) => onToggle(rule.id, checked)}
+              disabled={rule.ruleType === 'system' && !isAdmin}
               aria-label={`Toggle rule: ${rule.content.slice(0, 50)}`}
             />
+            {rule.ruleType === 'system' && !isAdmin && (
+              <span className="text-xs text-gray-400 ml-1">Admin only</span>
+            )}
             <div className="flex-1">
               {editingId === rule.id ? (
                 <div className="space-y-2">
