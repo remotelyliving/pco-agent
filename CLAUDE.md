@@ -112,12 +112,16 @@ prisma/
   seed.ts             # System default rules seeder
 ```
 
+## Known Issues & Deferrals
+See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) for the full list of accepted limitations and deferred work. Check this file before flagging issues in reviews — if it's listed there, it's known and tracked.
+
 ## Session Startup Checklist
 1. Read `DEV_QUEUE.md` — understand current project state and what's in progress
 2. Read this file — architecture and patterns
-3. Read `TEAM.md` — team structure, quality gates, review protocol
-4. Read the latest feature `SUMMARY.md` if continuing work on a feature
-5. Check `AGENTS.md` if you need development patterns or common task guides
+3. Read [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) — known limitations and accepted deferrals
+4. Read `TEAM.md` — team structure, quality gates, review protocol
+5. Read the latest feature `SUMMARY.md` if continuing work on a feature
+6. Check `AGENTS.md` if you need development patterns or common task guides
 
 ## Related Projects
 - **pco-mcp** (~/projects/pco-mcp): The MCP server this agent connects to. Python, FastMCP, FastAPI. 25 tools for People + Services modules.
