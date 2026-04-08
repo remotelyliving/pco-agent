@@ -16,10 +16,6 @@ export async function PATCH(
     return new Response('Unauthorized', { status: 401 });
   }
 
-  if (session.user.role !== 'admin') {
-    return new Response('Forbidden', { status: 403 });
-  }
-
   const { id } = await params;
 
   try {
@@ -27,6 +23,11 @@ export async function PATCH(
     if (!memory) return new Response('Not found', { status: 404 });
 
     if (memory.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const isOwner = memory.userId === session.user.agentUserId;
+    if (session.user.role !== 'admin' && !isOwner) {
       return new Response('Forbidden', { status: 403 });
     }
 
@@ -69,10 +70,6 @@ export async function DELETE(
     return new Response('Unauthorized', { status: 401 });
   }
 
-  if (session.user.role !== 'admin') {
-    return new Response('Forbidden', { status: 403 });
-  }
-
   const { id } = await params;
 
   try {
@@ -80,6 +77,11 @@ export async function DELETE(
     if (!memory) return new Response('Not found', { status: 404 });
 
     if (memory.orgId !== session.user.orgId) {
+      return new Response('Forbidden', { status: 403 });
+    }
+
+    const isOwner = memory.userId === session.user.agentUserId;
+    if (session.user.role !== 'admin' && !isOwner) {
       return new Response('Forbidden', { status: 403 });
     }
 
