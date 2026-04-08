@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import type { NextAuthConfig } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
+import { Prisma } from '@prisma/client';
 
 declare module 'next-auth' {
   interface Session {
@@ -25,6 +26,7 @@ declare module '@auth/core/jwt' {
     pcoAccessToken?: string;
     pcoRefreshToken?: string;
     pcoAccessTokenExpires?: number;
+    roleCheckedAt?: number;
   }
 }
 
@@ -129,7 +131,7 @@ export const authConfig: NextAuthConfig = {
               role,
             },
           });
-        });
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
         // Attach to user so jwt callback doesn't need to re-query
         (user as Record<string, unknown>).agentUserId = agentUser.id;
@@ -172,6 +174,7 @@ export const authConfig: NextAuthConfig = {
                 client_id: process.env.PCO_CLIENT_ID!,
                 client_secret: process.env.PCO_CLIENT_SECRET!,
               }),
+              signal: AbortSignal.timeout(10000),
             });
 
             if (response.ok) {
@@ -186,6 +189,28 @@ export const authConfig: NextAuthConfig = {
             }
           } catch (error) {
             logger.error('PCO token refresh error', {
+              error: error instanceof Error ? error.message : String(error),
+            });
+          }
+        }
+      }
+
+      // Re-sync role from DB every 15 minutes
+      if (!user && token.agentUserId) {
+        const now2 = Math.floor(Date.now() / 1000);
+        const lastCheck = (token.roleCheckedAt as number) ?? 0;
+        if (now2 - lastCheck > 900) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: token.agentUserId as string },
+              select: { role: true },
+            });
+            if (dbUser) {
+              token.role = dbUser.role;
+            }
+            token.roleCheckedAt = now2;
+          } catch (error) {
+            logger.error('JWT role re-sync failed', {
               error: error instanceof Error ? error.message : String(error),
             });
           }
