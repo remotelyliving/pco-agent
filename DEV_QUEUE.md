@@ -4,8 +4,8 @@
 
 ## Project Status
 
-**Phase:** HARDENING COMPLETE — ready for deployment
-**Last Updated:** 2026-04-07
+**Phase:** AUDIT REMEDIATION COMPLETE — ready for deployment
+**Last Updated:** 2026-04-08
 **Last Session Summary:** Resolved 14 of 15 known issues (rate limiting, stale JWT, CSP, PCO role mapping, admin race condition, memory partial unique index, Prisma migrations, message content cap, memory TTL/cap, message pagination, MCP timeout, token refresh timeout, token usage tracking, enum constraints). 1 accepted deferral remains (Rule sortOrder). See `docs/KNOWN_ISSUES.md`.
 
 ---
@@ -20,6 +20,7 @@ _(none)_
 
 ## Done
 
+- [x] **Audit Remediation** — 33 items across 6 sections: infrastructure (pino logger, proxy.ts rate limiting), critical fixes (onFinish error handling, Dockerfile, token refresh, markdown rendering, error boundaries, rule toggle restrictions), code quality (req.json validation, memory extraction, input length, user-scoped memory), testing (Stryker mutation testing, Playwright E2E), UX (mobile nav, loading states, error mapping, AlertDialog, shadcn selects), minor polish + documentation (2026-04-08)
 - [x] **Known Issues Hardening** — Resolved 14 of 15 known issues; 1 accepted deferral (Rule sortOrder). See `docs/KNOWN_ISSUES.md` (2026-04-07)
 - [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)
 - [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
