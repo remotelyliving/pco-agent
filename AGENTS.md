@@ -21,7 +21,7 @@ Browser → Next.js App → Vercel AI SDK → [Anthropic|OpenAI|Google] API
 1. **Vercel AI SDK v6** is the AI abstraction layer. Do not add LangChain, LlamaIndex, or other agent frameworks.
 2. **Prisma** is the ORM. Do not use raw SQL or another ORM.
 3. **`agent` schema** in PostgreSQL. All tables are prefixed with `agent.` schema. Do not create tables in the public schema.
-4. **PCO is source of truth for roles.** Do not add role management UI. Roles sync from PCO on login.
+4. **PCO is source of truth for roles.** Do not add role management UI. Roles sync from PCO on login. Three roles: `admin`, `editor` (can manage rules via `canManageRules()` helper, not org memory), `member`.
 5. **Rules are plain text.** They are injected into system prompts. They do not execute code, call APIs, or have logic beyond what the AI interprets.
 6. **API keys are Fernet-encrypted.** Use `src/lib/crypto.ts` for all encrypt/decrypt. Never log or return decrypted keys.
 7. **pco-mcp is a separate service.** Do not import pco-mcp code. Connect via MCP protocol only.
@@ -39,7 +39,8 @@ src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
 src/lib/logger.ts     → Structured logger — use instead of console.log in server code
 src/lib/ai/           → AI provider factory and model metadata
 src/lib/chat/         → Conversation and message persistence
-src/middleware.ts     → Route protection middleware (NextAuth)
+src/middleware.ts     → Route protection middleware (NextAuth) + CSP nonce + security headers
+src/lib/rate-limit.ts → In-memory token bucket rate limiter (20/min chat, 60/min mutations)
 src/instrumentation.ts → Next.js instrumentation hook — registers logger at startup
 prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
@@ -124,12 +125,10 @@ effective_rules = allRules.filter(rule =>
 
 1. PCO OAuth flow via NextAuth
 2. On callback: call PCO `/people/v2/me` for identity
-3. First user in org gets `role = 'admin'`; all subsequent users get `role = 'member'`. PCO role-based mapping is planned but not yet implemented.
+3. Roles are derived from PCO permissions on every login: `site_administrator` → admin, `people_permissions: Manager` → admin, `Editor` → editor, `Viewer` or null → member. The `editor` role can manage rules but not org memory.
 4. Roles synced on every login (PCO is source of truth)
 5. First user from an org → org auto-created (wrapped in `$transaction` to prevent race conditions)
 6. PCO access token is refreshed automatically in the NextAuth `jwt` callback when it expires
-
-> NOTE: The admin role assignment is a placeholder heuristic. A future task will implement proper PCO permissions checking.
 
 ## How Setup Detection Works
 

@@ -27,6 +27,8 @@ export default auth((req) => {
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('x-request-id', requestId);
+  // x-nonce header available for server components via headers().get('x-nonce')
+  // Next.js applies the nonce from the CSP header to its own inline scripts automatically
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
 
