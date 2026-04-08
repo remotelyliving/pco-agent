@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export function MobileNav({ userName, userRole }: { userName?: string | null; userRole?: string }) {
+export function MobileNav({ userName, userRole, onSignOut }: { userName?: string | null; userRole?: string; onSignOut?: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
 
   const roleLabel = userRole === 'admin' ? 'Admin' : userRole === 'editor' ? 'Editor' : 'Member';
@@ -45,11 +45,13 @@ export function MobileNav({ userName, userRole }: { userName?: string | null; us
             </div>
             <div className="p-4 border-t">
               <p className="text-sm font-medium">{userName || 'User'}</p>
-              <form action="/api/auth/signout" method="POST" className="mt-2">
-                <Button variant="ghost" size="sm" type="submit" className="w-full justify-start">
-                  Sign out
-                </Button>
-              </form>
+              {onSignOut && (
+                <form action={onSignOut} className="mt-2">
+                  <Button variant="ghost" size="sm" type="submit" className="w-full justify-start">
+                    Sign out
+                  </Button>
+                </form>
+              )}
             </div>
           </nav>
         </div>
