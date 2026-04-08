@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** ALL PLANS COMPLETE + 4 REVIEW ROUNDS DONE — hardening pass next
+**Phase:** HARDENING COMPLETE — ready for deployment
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Built all 5 plans (31 tasks), ran 4 rounds of reviews (comprehensive 6-reviewer audit, E2E bug hunting, final sign-off), fixed 50+ issues, added request tracing + MCP connection pooling. 15 known issues remain — see `docs/KNOWN_ISSUES.md`.
+**Last Session Summary:** Resolved 14 of 15 known issues (rate limiting, stale JWT, CSP, PCO role mapping, admin race condition, memory partial unique index, Prisma migrations, message content cap, memory TTL/cap, message pagination, MCP timeout, token refresh timeout, token usage tracking, enum constraints). 1 accepted deferral remains (Rule sortOrder). See `docs/KNOWN_ISSUES.md`.
 
 ---
 
@@ -16,10 +16,11 @@ _(none)_
 
 ## Backlog
 
-- [ ] **Known Issues Hardening** — 15 items in `docs/KNOWN_ISSUES.md`. Work through them by category: Security first, then Auth, Data, Operations, Schema. Each item has status, impact, and fix instructions.
+_(none)_
 
 ## Done
 
+- [x] **Known Issues Hardening** — Resolved 14 of 15 known issues; 1 accepted deferral (Rule sortOrder). See `docs/KNOWN_ISSUES.md` (2026-04-07)
 - [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)
 - [x] **Plan 1 Written** — 8 tasks covering Next.js init, Prisma schema, Fernet crypto, PCO OAuth, login page, authenticated layout, Docker config (2026-04-06)
 - [x] **Plan 1: Scaffolding + Auth + Database** — Next.js 16, PCO OAuth, Prisma 7 (agent schema), Fernet crypto, sidebar layout, Docker config. Two milestone reviews (5 reviewers each). See `docs/features/scaffolding-auth-db/SUMMARY.md` (2026-04-07)
@@ -31,6 +32,36 @@ _(none)_
 ---
 
 ## Session History
+
+### 2026-04-07: Known Issues Hardening (pco-agent)
+
+**pco-agent (~/projects/pco-agent) — branch: `fix/known-issues-hardening`**
+
+Resolved 14 of 15 known issues. 1 accepted deferral (Rule sortOrder — no action planned until drag-and-drop reorder UI).
+
+**Security:**
+- Rate limiting — in-memory token bucket, 20 req/min on `/api/chat`
+- Stale JWT role — re-synced from DB every 15 minutes in `jwt` callback
+- Content Security Policy — nonce-based CSP header via middleware
+
+**Authentication:**
+- PCO role-based admin mapping — `site_administrator` + `people_permissions` synced on login
+- Admin race condition — `$transaction` upgraded to SERIALIZABLE isolation
+
+**Data & Storage:**
+- Memory partial unique index — raw SQL migration adds partial unique index on `(org_id, key) WHERE user_id IS NULL`
+- Prisma migrations directory — migration infrastructure created; `db-deploy` Makefile target added
+- Message content unbounded — application-layer 64KB cap in chat route
+- Memory TTL / expiry — 200 per-org cap with oldest auto-extracted evicted
+- Conversation / message pagination — last 100 messages on load; cursor-based `getMessages`
+
+**Operations:**
+- MCP per-request timeout — 15s connection + 30s total setup timeout
+- Token refresh fetch timeout — `AbortSignal.timeout(10000)` on PCO OAuth refresh fetch
+- Token usage tracking — `tokenCount` stored in Message model via `onFinish` callback
+
+**Schema Constraints:**
+- Enum-like string fields — Prisma enums with DB CHECK constraints for `User.role`, `Rule.ruleType`, `Rule.visibility`, `Memory.source`, `Message.role`
 
 ### 2026-04-07: Comprehensive Review + Polish (pco-agent)
 
@@ -145,13 +176,10 @@ Full codebase audit and polish pass resolving all Known Limitations flagged acro
 
 ## How to Resume
 
-**Next task: Work through the 15 known issues in `docs/KNOWN_ISSUES.md`.**
+**Hardening is complete. The app is ready for deployment.**
 
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
-3. Read `docs/KNOWN_ISSUES.md` — **this is your work list**. Each item has status, impact, and specific fix instructions
+3. Read `docs/KNOWN_ISSUES.md` — only 1 accepted deferral remains (Rule sortOrder); nothing blocking
 4. Read `TEAM.md` for quality gates + review protocol
-5. Create a branch `fix/known-issues-hardening`
-6. Work through items by category priority: Security → Auth → Data → Operations → Schema
-7. Use `superpowers:subagent-driven-development` for execution
-8. After fixing all items, run a final team review to verify
+5. Next work: post-launch improvements, new feature requests, or drag-and-drop rule reorder (which will resolve the last known issue)
