@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MODEL_OPTIONS } from '@/lib/ai/models';
 import { SUPPORTED_PROVIDERS } from '@/lib/ai/providers';
 
@@ -85,40 +86,38 @@ export function ApiKeyForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="provider">AI Provider</Label>
-            <select
-              id="provider"
-              value={provider}
-              onChange={(e) => { setProvider(e.target.value); setModel(''); }}
-              className="w-full rounded-md border p-2"
-              required
-            >
-              <option value="">Select a provider...</option>
-              {SUPPORTED_PROVIDERS.map((p) => (
-                <option key={p} value={p}>
-                  {p === 'anthropic' ? 'Anthropic (Claude)' :
-                   p === 'openai' ? 'OpenAI (GPT)' :
-                   p === 'google' ? 'Google (Gemini)' : p}
-                </option>
-              ))}
-            </select>
+            <Select value={provider} onValueChange={(v) => { setProvider(v); setModel(''); }}>
+              <SelectTrigger id="provider">
+                <SelectValue placeholder="Select a provider..." />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_PROVIDERS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p === 'anthropic' ? 'Anthropic (Claude)' :
+                     p === 'openai' ? 'OpenAI (GPT)' :
+                     p === 'google' ? 'Google (Gemini)' : p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {provider && (
             <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <select
-                id="model"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full rounded-md border p-2"
-              >
-                <option value="">Use default</option>
-                {modelsForProvider.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} — {m.description}
-                  </option>
-                ))}
-              </select>
+              <Select value={model} onValueChange={setModel}>
+                <SelectTrigger id="model">
+                  <SelectValue placeholder="Use default" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Use default</SelectItem>
+                  {modelsForProvider.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name} — {m.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
