@@ -45,6 +45,4 @@ Fixed during comprehensive review + polish on branch `fix/buff-and-polish`:
 
 ## Known Limitations
 - No message editing or regeneration
-- No token usage tracking
-- No rate limiting on chat route
 - Sidebar conversation list is not real-time (requires page refresh)

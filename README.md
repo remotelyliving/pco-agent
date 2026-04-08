@@ -129,6 +129,8 @@ Or from outside the container (if you have Node.js locally):
 make seed
 ```
 
+> **Note:** The seed file is TypeScript. If running inside the container, ensure tsx is available or seed from the host with `make seed`.
+
 ### 7. Verify It's Running
 
 ```bash
@@ -194,6 +196,8 @@ make docker-up    # Migrations run automatically on restart
 | `make docker-up` | Start via Docker Compose |
 | `make docker-down` | Stop Docker Compose |
 | `make docker-logs` | Tail container logs |
+| `make test-mutation` | Run Stryker mutation testing |
+| `make test-e2e` | Run Playwright E2E tests |
 
 ## How It Works
 

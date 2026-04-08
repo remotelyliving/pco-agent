@@ -9,7 +9,7 @@ A web-based AI agent for church staff to interact with Planning Center Online th
 - **Auth**: PCO OAuth via NextAuth. PCO is source of truth for user identity and roles. Roles synced on every login.
 - **Database**: PostgreSQL shared with pco-mcp, using separate `agent` schema. ORM: Prisma.
 - **Rules system**: Three layers — system defaults (shipped by us), org rules (admin-created), user rules (personal). Per-user toggle overrides via `user_rule_settings` table.
-- **Memory**: Conversation history in Postgres + org-level key-value facts auto-extracted after each response.
+- **Memory**: Conversation history in Postgres + org-level and user-level key-value facts auto-extracted after each response.
 - **Deployment**: Docker on homelab (Cloudflare tunnel), Vercel-ready.
 
 ## Tech Stack
@@ -90,7 +90,8 @@ src/
     crypto.ts         # Fernet encryption for API keys
     db.ts             # Prisma client singleton
     env.ts            # Environment variable validation
-    logger.ts         # Structured logger (pino/winston wrapper)
+    logger.ts         # Structured JSON logger (pino)
+    mcp-pool.ts       # MCP client connection pool with TTL and LRU eviction
     utils.ts          # shadcn/ui utility (cn function)
     ai/
       providers.ts    # Runtime AI provider factory
@@ -107,7 +108,7 @@ src/
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
     rate-limit.ts     # In-memory token bucket rate limiter
     request-context.ts # Request ID from headers
-  middleware.ts       # Route protection + CSP nonce generation + security headers
+  proxy.ts          # Centralized auth + rate limiting + CSP nonce + security headers (Node.js runtime)
   instrumentation.ts  # Next.js instrumentation hook — registers logger at server startup
 prisma/
   schema.prisma       # Agent schema (7 models)
@@ -130,14 +131,19 @@ See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) for the full list of accepted
 - **pco-mcp** (~/projects/pco-mcp): The MCP server this agent connects to. Python, FastMCP, FastAPI. 25 tools for People + Services modules.
 
 ## Commands
+- `make install` — Install dependencies
 - `make dev` — Start development server
 - `make build` — Production build
 - `make test` — Run tests
+- `make test-mutation` — Run Stryker mutation testing
+- `make test-e2e` — Run Playwright E2E tests
 - `make lint` — Lint + type check
 - `make db-push` — Push Prisma schema to DB
 - `make db-migrate` — Create + apply migration
 - `make docker-build` — Build Docker image
 - `make docker-up` — Start via Docker Compose
+- `make docker-down` — Stop Docker Compose
+- `make docker-logs` — Tail container logs
 - `make seed` — Seed system default rules
 - `make db-deploy` — Apply pending migrations (production)
 
