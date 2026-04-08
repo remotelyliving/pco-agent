@@ -10,7 +10,6 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { createModel } from '@/lib/ai/providers';
 import { getMCPClient } from '@/lib/mcp-pool';
 import { getDefaultModel } from '@/lib/ai/models';
@@ -37,15 +36,6 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
-  }
-
-  // 1b. Rate limit (20 requests/minute per user)
-  const rateLimit = checkRateLimit(session.user.agentUserId, 20);
-  if (!rateLimit.allowed) {
-    return Response.json(
-      { error: 'You\'re sending messages too quickly. Please wait a few seconds and try again.' },
-      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
-    );
   }
 
   // 2. Parse request
