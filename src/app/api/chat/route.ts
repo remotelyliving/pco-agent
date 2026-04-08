@@ -168,41 +168,49 @@ export async function POST(req: Request) {
       tools,
       stopWhen: stepCountIs(5),
       onFinish: async ({ text, toolCalls, usage }) => {
-        // Save assistant message
-        await saveMessage({
-          conversationId,
-          role: MessageRole.assistant,
-          content: text || '',
-          toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
-          tokenCount: usage?.totalTokens ?? null,
-        });
-
-        // Auto-title from first exchange
-        if (!existingConvId && text) {
-          const title = generateTitle(text);
-          await updateConversationTitle(conversationId, title);
-        }
-
-        // Fire-and-forget memory extraction
-        if (text && lastUserMessage?.role === 'user') {
-          const userText = lastUserMessage.parts
-            .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-            .map((p) => p.text)
-            .join('\n');
-          extractAndSaveMemories(
-            session.user.orgId,
-            session.user.agentUserId,
-            userText,
-            text,
-            user.apiProvider!,
-            apiKey,
-          ).catch((err) => log.error('[chat] Memory extraction failed', {
+        try {
+          // Save assistant message
+          await saveMessage({
             conversationId,
-            error: err instanceof Error ? err.message : String(err),
-          }));
-        }
+            role: MessageRole.assistant,
+            content: text || '',
+            toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+            tokenCount: usage?.totalTokens ?? null,
+          });
 
-        // MCP client lifecycle managed by connection pool
+          // Auto-title from first exchange
+          if (!existingConvId && text) {
+            const title = generateTitle(text);
+            await updateConversationTitle(conversationId, title);
+          }
+
+          // Fire-and-forget memory extraction
+          if (text && lastUserMessage?.role === 'user') {
+            const userText = lastUserMessage.parts
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('\n');
+            extractAndSaveMemories(
+              session.user.orgId,
+              session.user.agentUserId,
+              userText,
+              text,
+              user.apiProvider!,
+              apiKey,
+            ).catch((err) => log.error('[chat] Memory extraction failed', {
+              conversationId,
+              error: err instanceof Error ? err.message : String(err),
+            }));
+          }
+
+          // MCP client lifecycle managed by connection pool
+        } catch (error) {
+          log.error('[chat] onFinish failed — message may not be persisted', {
+            conversationId,
+            userId: session.user.agentUserId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       },
       onError: async ({ error }) => {
         log.error('[chat] Stream error', {
