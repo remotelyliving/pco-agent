@@ -44,17 +44,20 @@ export async function POST(req: Request) {
     return new Response('Forbidden', { status: 403 });
   }
 
-  const body = await req.json();
-  const { key, value } = body as { key: string; value: string };
-
-  if (!key || !value) {
-    return new Response('Key and value are required', { status: 400 });
-  }
-
   try {
+    const body = await req.json();
+    const { key, value } = body as { key: string; value: string };
+
+    if (!key || !value) {
+      return new Response('Key and value are required', { status: 400 });
+    }
+
     const memory = await upsertMemory(session.user.orgId, key, value, MemorySource.manual);
     return Response.json(memory, { status: 201 });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
