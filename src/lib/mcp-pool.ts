@@ -10,6 +10,7 @@ interface PoolEntry {
 const CLIENT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const CLEANUP_INTERVAL_MS = 60 * 1000; // 1 minute
 const MAX_POOL_SIZE = 100;
+const CONNECTION_TIMEOUT_MS = 15_000; // 15 seconds
 const pool = new Map<string, PoolEntry>();
 
 let cleanupTimer: ReturnType<typeof setInterval> | null = null;
@@ -73,15 +74,20 @@ export async function getMCPClient(
     }
   }
 
-  const client = await createMCPClient({
-    transport: {
-      type: 'sse',
-      url: mcpUrl,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+  const client = await Promise.race([
+    createMCPClient({
+      transport: {
+        type: 'sse',
+        url: mcpUrl,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    },
-  });
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('MCP connection timeout')), CONNECTION_TIMEOUT_MS),
+    ),
+  ]);
 
   pool.set(key, { client, createdAt: now, lastUsed: now });
   startCleanup();

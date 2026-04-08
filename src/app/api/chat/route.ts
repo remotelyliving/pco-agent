@@ -111,11 +111,23 @@ export async function POST(req: Request) {
 
     if (pcoAccessToken) {
       try {
-        mcpClient = await getMCPClient(
-          process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-          pcoAccessToken,
-        );
-        tools = await mcpClient.tools();
+        const mcpSetup = async () => {
+          const client = await getMCPClient(
+            process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+            pcoAccessToken,
+          );
+          const mcpTools = await client.tools();
+          return { client, mcpTools };
+        };
+
+        const result = await Promise.race([
+          mcpSetup(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('MCP setup timeout (30s)')), 30_000),
+          ),
+        ]);
+        mcpClient = result.client;
+        tools = result.mcpTools;
       } catch (error) {
         log.error('MCP connection failed', {
           userId: session.user.agentUserId,
