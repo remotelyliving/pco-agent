@@ -18,12 +18,9 @@ export function MobileNav({ userName, userRole, onSignOut }: { userName?: string
         </Button>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-black/50 transition-opacity duration-200"
-            onClick={() => setOpen(false)}
-          />
+      <div className={`fixed inset-0 z-50 flex transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+        {open && (
           <nav className="relative z-10 w-64 bg-white h-full flex flex-col border-r shadow-lg" aria-label="Mobile navigation">
             <div className="p-4 border-b">
               <p className="font-semibold">Planning Center Assistant</p>
@@ -54,8 +51,8 @@ export function MobileNav({ userName, userRole, onSignOut }: { userName?: string
               )}
             </div>
           </nav>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
