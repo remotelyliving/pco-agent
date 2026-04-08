@@ -4,29 +4,22 @@ interface Bucket {
 }
 
 const buckets = new Map<string, Bucket>();
-
 const BUCKET_TTL_MS = 120_000; // 2 minutes
+const CLEANUP_INTERVAL_MS = 60_000; // 1 minute
+
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
 
 export function checkRateLimit(
-  userId: string,
+  key: string,
   limitPerMinute: number,
 ): { allowed: true; retryAfter?: undefined } | { allowed: false; retryAfter: number } {
   const now = Date.now();
   const refillRate = limitPerMinute / 60;
 
-  // Lazy cleanup: remove stale entries (older than 2 minutes)
-  if (buckets.size > 0) {
-    for (const [key, b] of buckets) {
-      if (now - b.lastRefill > BUCKET_TTL_MS) {
-        buckets.delete(key);
-      }
-    }
-  }
-
-  let bucket = buckets.get(userId);
+  let bucket = buckets.get(key);
   if (!bucket) {
     bucket = { tokens: limitPerMinute, lastRefill: now };
-    buckets.set(userId, bucket);
+    buckets.set(key, bucket);
   }
 
   const elapsed = (now - bucket.lastRefill) / 1000;
@@ -42,6 +35,29 @@ export function checkRateLimit(
   return { allowed: false, retryAfter };
 }
 
+export function startPeriodicCleanup(): void {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, b] of buckets) {
+      if (now - b.lastRefill > BUCKET_TTL_MS) {
+        buckets.delete(key);
+      }
+    }
+  }, CLEANUP_INTERVAL_MS);
+  if (cleanupTimer && typeof cleanupTimer === 'object' && 'unref' in cleanupTimer) {
+    (cleanupTimer as NodeJS.Timeout).unref();
+  }
+}
+
+export function stopPeriodicCleanup(): void {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
+}
+
 export function _resetBuckets(): void {
   buckets.clear();
+  stopPeriodicCleanup();
 }
