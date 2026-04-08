@@ -105,11 +105,14 @@ src/
       extract.ts      # extractAndSaveMemories() — fire-and-forget post-response fact extraction
       retrieve.ts     # getMemoryPrompt() — returns formatted org+user memory string for system prompt
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
-  middleware.ts       # Route protection — redirects to /login if unauthenticated
+    rate-limit.ts     # In-memory token bucket rate limiter
+    request-context.ts # Request ID from headers
+  middleware.ts       # Route protection + CSP nonce generation + security headers
   instrumentation.ts  # Next.js instrumentation hook — registers logger at server startup
 prisma/
   schema.prisma       # Agent schema (7 models)
   seed.ts             # System default rules seeder
+entrypoint.sh        # Docker entrypoint — runs migrations before server start
 ```
 
 ## Known Issues & Deferrals
@@ -136,6 +139,7 @@ See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) for the full list of accepted
 - `make docker-build` — Build Docker image
 - `make docker-up` — Start via Docker Compose
 - `make seed` — Seed system default rules
+- `make db-deploy` — Apply pending migrations (production)
 
 ## Testing & Quality Gates
 - Vitest for unit tests — **90% coverage required**
@@ -149,10 +153,11 @@ See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) for the full list of accepted
 2. Implement with TDD
 3. Self-review, commit
 4. Dispatch 5 review subagents in parallel (Sr. Engineer, SRE, Security, UX/PM, Docs)
-5. Fix findings, re-review if needed
-6. Architect final approval
-7. Update feature SUMMARY.md + DEV_QUEUE.md
-8. Move task to Done
+5. Fix all Critical and Important findings, re-review if needed
+6. **Memoize deferrals:** Any review finding or known issue that is intentionally deferred MUST be added to `docs/KNOWN_ISSUES.md` with Status, Impact, and Fix fields. This prevents knowledge loss across sessions. Never silently skip an issue — either fix it or write it down.
+7. Architect final approval
+8. Update feature SUMMARY.md + DEV_QUEUE.md
+9. Move task to Done
 
 ## Important Patterns
 - API keys are Fernet-encrypted before DB storage, decrypted only server-side when making AI calls

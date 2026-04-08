@@ -1,3 +1,4 @@
+import { MemorySource } from '@prisma/client';
 import { prisma } from '@/lib/db';
 
 export async function getOrgMemories(orgId: string) {
@@ -28,7 +29,7 @@ export async function upsertMemory(
   orgId: string,
   key: string,
   value: string,
-  source: string = 'auto',
+  source: MemorySource = MemorySource.auto,
   userId?: string,
 ) {
   if (userId) {
@@ -71,11 +72,30 @@ export async function upsertMemory(
 export async function updateMemory(
   id: string,
   orgId: string,
-  data: { key?: string; value?: string; source?: string },
+  data: { key?: string; value?: string; source?: MemorySource },
 ) {
   return prisma.memory.update({ where: { id, orgId }, data });
 }
 
 export async function deleteMemory(id: string, orgId: string) {
   return prisma.memory.delete({ where: { id, orgId } });
+}
+
+export async function enforceMemoryCap(orgId: string, maxCount: number = 200): Promise<void> {
+  const count = await prisma.memory.count({ where: { orgId } });
+  if (count <= maxCount) return;
+
+  const excess = count - maxCount;
+  const oldestAuto = await prisma.memory.findMany({
+    where: { orgId, source: 'auto' },
+    orderBy: { updatedAt: 'asc' },
+    take: excess,
+    select: { id: true },
+  });
+
+  if (oldestAuto.length > 0) {
+    await prisma.memory.deleteMany({
+      where: { id: { in: oldestAuto.map((m) => m.id) } },
+    });
+  }
 }

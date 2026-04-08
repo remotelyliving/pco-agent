@@ -4,12 +4,13 @@ import {
   stepCountIs,
   type UIMessage,
 } from 'ai';
-import type { MCPClient } from '@ai-sdk/mcp';
+import { MessageRole } from '@prisma/client';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { createModel } from '@/lib/ai/providers';
 import { getMCPClient } from '@/lib/mcp-pool';
 import { getDefaultModel } from '@/lib/ai/models';
@@ -38,6 +39,15 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  // 1b. Rate limit (20 requests/minute per user)
+  const rateLimit = checkRateLimit(session.user.agentUserId, 20);
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: 'You\'re sending messages too quickly. Please wait a few seconds and try again.' },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
+    );
+  }
+
   // 2. Parse request
   const body = await req.json();
   const { messages, conversationId: existingConvId } = body as {
@@ -50,8 +60,6 @@ export async function POST(req: Request) {
   }
 
   // 3–8. Pre-stream setup: user lookup, conversation, message save, rules, memory, MCP
-  let mcpClient: MCPClient | null = null;
-  // eslint-disable-next-line prefer-const
   let user!: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
   let apiKey!: string;
   let modelId!: string;
@@ -62,22 +70,24 @@ export async function POST(req: Request) {
 
   try {
     // 3. Load user with API key
-    user = await prisma.user.findUnique({
+    const foundUser = await prisma.user.findUnique({
       where: { id: session.user.agentUserId },
     });
 
-    if (!user?.apiProvider || !user?.apiKeyEnc) {
+    if (!foundUser?.apiProvider || !foundUser?.apiKeyEnc) {
       return Response.json(
         { error: 'No API key configured. Go to Settings to add one.' },
         { status: 400 },
       );
     }
 
+    user = foundUser;
+
     // 4. Decrypt API key
-    apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
+    apiKey = decrypt(user.apiKeyEnc!, getEncryptionKey());
     modelId =
       user.preferredModel ||
-      getDefaultModel(user.apiProvider)?.id ||
+      getDefaultModel(user.apiProvider!)?.id ||
       'claude-sonnet-4-5-20250514';
 
     // 5. Verify conversation ownership if reusing, or create new
@@ -100,7 +110,7 @@ export async function POST(req: Request) {
         .join('\n');
       await saveMessage({
         conversationId,
-        role: 'user',
+        role: MessageRole.user,
         content: textContent,
       });
     }
@@ -111,11 +121,28 @@ export async function POST(req: Request) {
 
     if (pcoAccessToken) {
       try {
-        mcpClient = await getMCPClient(
-          process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
-          pcoAccessToken,
+        const result = await new Promise<{ client: Awaited<ReturnType<typeof getMCPClient>>; mcpTools: Record<string, unknown> }>(
+          async (resolve, reject) => {
+            const timer = setTimeout(
+              () => reject(new Error('MCP setup timeout (30s)')),
+              30_000,
+            );
+            try {
+              const client = await getMCPClient(
+                process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
+                pcoAccessToken,
+              );
+              const mcpTools = await client.tools();
+              clearTimeout(timer);
+              resolve({ client, mcpTools });
+            } catch (err) {
+              clearTimeout(timer);
+              reject(err);
+            }
+          },
         );
-        tools = await mcpClient.tools();
+        // mcpClient lifecycle managed by connection pool — no need to track reference
+        tools = result.mcpTools;
       } catch (error) {
         log.error('MCP connection failed', {
           userId: session.user.agentUserId,
@@ -145,18 +172,19 @@ export async function POST(req: Request) {
 
   // 9. Stream the response
   const result = streamText({
-      model: createModel(user.apiProvider, modelId, apiKey),
+      model: createModel(user.apiProvider!, modelId, apiKey),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
       tools,
       stopWhen: stepCountIs(5),
-      onFinish: async ({ text, toolCalls }) => {
+      onFinish: async ({ text, toolCalls, usage }) => {
         // Save assistant message
         await saveMessage({
           conversationId,
-          role: 'assistant',
+          role: MessageRole.assistant,
           content: text || '',
           toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+          tokenCount: usage?.totalTokens ?? null,
         });
 
         // Auto-title from first exchange

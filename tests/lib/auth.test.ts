@@ -6,27 +6,29 @@ vi.mock('@prisma/client', () => {
     this.$connect = vi.fn();
     this.$disconnect = vi.fn();
   });
-  return { PrismaClient: MockPrismaClient };
+  const UserRole = { admin: 'admin', editor: 'editor', member: 'member' } as const;
+  const Prisma = { TransactionIsolationLevel: { Serializable: 'Serializable' } };
+  return { PrismaClient: MockPrismaClient, UserRole, Prisma };
 });
 
-const { authConfig } = await import('@/lib/auth');
+const { authConfig, mapPcoRole, canManageRules } = await import('@/lib/auth');
 
 describe('auth config', () => {
   it('has planning-center provider', () => {
     const providers = authConfig.providers;
     expect(providers).toHaveLength(1);
-    const pco = providers[0] as Record<string, unknown>;
+    const pco = providers[0] as unknown as Record<string, unknown>;
     expect(pco.id).toBe('planning-center');
   });
 
   it('has correct authorization URL', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const authorization = pco.authorization as { url: string };
     expect(authorization.url).toContain('planningcenteronline.com');
   });
 
   it('requests people and services scopes', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const authorization = pco.authorization as {
       url: string;
       params: { scope: string };
@@ -35,19 +37,19 @@ describe('auth config', () => {
   });
 
   it('has correct token URL', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     expect(pco.token).toBe(
       'https://api.planningcenteronline.com/oauth/token'
     );
   });
 
   it('uses state check instead of PKCE', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     expect(pco.checks).toEqual(['state']);
   });
 
   it('has userinfo configuration with custom request handler', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const userinfo = pco.userinfo as { url: string; request: Function };
     expect(userinfo.url).toContain('planningcenteronline.com');
     expect(typeof userinfo.request).toBe('function');
@@ -130,5 +132,53 @@ describe('auth config', () => {
       expect((result as any).user.orgId).toBe('');
       expect((result as any).user.role).toBe('member');
     });
+  });
+});
+
+describe('mapPcoRole', () => {
+  it('maps site_administrator to admin', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: true, pcoPeoplePermissions: null })).toBe('admin');
+  });
+
+  it('maps site_administrator even with lower people_permissions', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: true, pcoPeoplePermissions: 'Viewer' })).toBe('admin');
+  });
+
+  it('maps Manager to admin', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Manager' })).toBe('admin');
+  });
+
+  it('maps Editor to editor', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Editor' })).toBe('editor');
+  });
+
+  it('maps Viewer to member', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Viewer' })).toBe('member');
+  });
+
+  it('maps null permissions to member', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: null })).toBe('member');
+  });
+
+  it('maps undefined permissions to member', () => {
+    expect(mapPcoRole({})).toBe('member');
+  });
+});
+
+describe('canManageRules', () => {
+  it('returns true for admin', () => {
+    expect(canManageRules('admin')).toBe(true);
+  });
+
+  it('returns true for editor', () => {
+    expect(canManageRules('editor')).toBe(true);
+  });
+
+  it('returns false for member', () => {
+    expect(canManageRules('member')).toBe(false);
+  });
+
+  it('returns false for unknown role', () => {
+    expect(canManageRules('viewer')).toBe(false);
   });
 });

@@ -1,7 +1,9 @@
-import { auth } from '@/lib/auth';
+import { RuleType, RuleVisibility } from '@prisma/client';
+import { auth, canManageRules } from '@/lib/auth';
 import { listRulesForOrg, createRule, getUserRuleSettings } from '@/lib/rules/queries';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET() {
   const requestId = await getRequestId();
@@ -35,6 +37,14 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
+  const rateLimit = checkRateLimit(session.user.agentUserId, 60);
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: 'Too many requests. Please wait a moment and try again.' },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
+    );
+  }
+
   // Only admins can create org rules
   const body = await req.json();
   const { content, ruleType, category } = body as {
@@ -48,21 +58,21 @@ export async function POST(req: Request) {
   }
 
   // Non-admins can only create personal rules
-  const effectiveRuleType = session.user.role === 'admin' ? (ruleType || 'org') : 'user';
+  const effectiveRuleType = canManageRules(session.user.role) ? (ruleType || 'org') : 'user';
 
-  const ALLOWED_RULE_TYPES = ['org', 'user'] as const;
-  if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as any)) {
+  const ALLOWED_RULE_TYPES: RuleType[] = [RuleType.org, RuleType.user];
+  if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as RuleType)) {
     return Response.json({ error: 'Invalid rule type' }, { status: 400 });
   }
 
   try {
     const rule = await createRule({
       content,
-      ruleType: effectiveRuleType,
+      ruleType: effectiveRuleType as RuleType,
       orgId: session.user.orgId,
       createdById: session.user.agentUserId,
       category,
-      visibility: effectiveRuleType === 'user' ? 'private' : 'org',
+      visibility: effectiveRuleType === RuleType.user ? RuleVisibility.private : RuleVisibility.org,
     });
 
     return Response.json(rule, { status: 201 });

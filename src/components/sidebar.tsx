@@ -20,14 +20,14 @@ export async function Sidebar() {
       .slice(0, 2)
       .toUpperCase() || '?';
 
-  const conversations = await listConversations(session?.user?.agentUserId || '');
+  const { conversations } = await listConversations(session?.user?.agentUserId || '');
 
   return (
     <nav className="hidden md:flex h-full w-64 flex-col border-r bg-gray-50" aria-label="Main navigation">
       <header className="p-4">
         <h2 className="text-lg font-semibold">Planning Center Assistant</h2>
         <p className="text-sm text-gray-500">
-          {user?.role === 'admin' ? 'Admin' : 'Member'}
+          {user?.role === 'admin' ? 'Admin' : user?.role === 'editor' ? 'Editor' : 'Member'}
         </p>
       </header>
 

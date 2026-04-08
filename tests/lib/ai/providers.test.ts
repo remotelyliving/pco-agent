@@ -5,19 +5,19 @@ describe('createModel', () => {
   it('creates an anthropic model', () => {
     const model = createModel('anthropic', 'claude-sonnet-4-5-20250514', 'sk-ant-test-key');
     expect(model).toBeDefined();
-    expect(model.modelId).toContain('claude-sonnet-4-5-20250514');
+    expect((model as unknown as { modelId: string }).modelId).toContain('claude-sonnet-4-5-20250514');
   });
 
   it('creates an openai model', () => {
     const model = createModel('openai', 'gpt-4o', 'sk-test-key');
     expect(model).toBeDefined();
-    expect(model.modelId).toContain('gpt-4o');
+    expect((model as unknown as { modelId: string }).modelId).toContain('gpt-4o');
   });
 
   it('creates a google model', () => {
     const model = createModel('google', 'gemini-2.0-flash', 'test-key');
     expect(model).toBeDefined();
-    expect(model.modelId).toContain('gemini-2.0-flash');
+    expect((model as unknown as { modelId: string }).modelId).toContain('gemini-2.0-flash');
   });
 
   it('throws for unknown provider', () => {
