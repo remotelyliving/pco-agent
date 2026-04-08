@@ -47,6 +47,13 @@ export async function POST(req: Request) {
     return new Response('Content is required', { status: 400 });
   }
 
+  if (content.length > 2000) {
+    return Response.json(
+      { error: 'Rule content must be under 2,000 characters.' },
+      { status: 400 },
+    );
+  }
+
   // Non-admins can only create personal rules
   const effectiveRuleType = canManageRules(session.user.role) ? (ruleType || 'org') : 'user';
 

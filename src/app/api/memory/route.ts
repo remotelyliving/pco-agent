@@ -52,6 +52,19 @@ export async function POST(req: Request) {
       return new Response('Key and value are required', { status: 400 });
     }
 
+    if (key.length > 200) {
+      return Response.json(
+        { error: 'Fact name must be under 200 characters.' },
+        { status: 400 },
+      );
+    }
+    if (value.length > 2000) {
+      return Response.json(
+        { error: 'Fact value must be under 2,000 characters.' },
+        { status: 400 },
+      );
+    }
+
     const memory = await upsertMemory(session.user.orgId, key, value, MemorySource.manual);
     return Response.json(memory, { status: 201 });
   } catch (error) {
