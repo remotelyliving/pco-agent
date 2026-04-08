@@ -1,15 +1,16 @@
+import { RuleType, RuleVisibility } from '@prisma/client';
 import { prisma } from '@/lib/db';
 
 export async function listRulesForOrg(orgId: string, userId?: string) {
   return prisma.rule.findMany({
     where: {
       OR: [
-        { ruleType: 'system' },
-        { ruleType: 'org', orgId },
+        { ruleType: RuleType.system },
+        { ruleType: RuleType.org, orgId },
         // User's own rules (any visibility)
         ...(userId ? [{ createdById: userId, orgId }] : []),
         // Other users' public rules only
-        { ruleType: 'user', visibility: 'org', orgId },
+        { ruleType: RuleType.user, visibility: RuleVisibility.org, orgId },
       ],
     },
     orderBy: [{ ruleType: 'asc' }, { sortOrder: 'asc' }],
@@ -18,11 +19,11 @@ export async function listRulesForOrg(orgId: string, userId?: string) {
 
 export async function createRule(data: {
   content: string;
-  ruleType: string;
+  ruleType: RuleType;
   orgId: string;
   createdById: string;
   category?: string;
-  visibility?: string;
+  visibility?: RuleVisibility;
 }) {
   return prisma.rule.create({
     data: {
@@ -31,7 +32,7 @@ export async function createRule(data: {
       orgId: data.orgId,
       createdById: data.createdById,
       category: data.category || null,
-      visibility: data.visibility || 'org',
+      visibility: data.visibility ?? RuleVisibility.org,
     },
   });
 }

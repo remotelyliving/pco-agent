@@ -4,6 +4,7 @@ import {
   stepCountIs,
   type UIMessage,
 } from 'ai';
+import { MessageRole } from '@prisma/client';
 import type { MCPClient } from '@ai-sdk/mcp';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
@@ -62,22 +63,24 @@ export async function POST(req: Request) {
 
   try {
     // 3. Load user with API key
-    user = await prisma.user.findUnique({
+    const foundUser = await prisma.user.findUnique({
       where: { id: session.user.agentUserId },
     });
 
-    if (!user?.apiProvider || !user?.apiKeyEnc) {
+    if (!foundUser?.apiProvider || !foundUser?.apiKeyEnc) {
       return Response.json(
         { error: 'No API key configured. Go to Settings to add one.' },
         { status: 400 },
       );
     }
 
+    user = foundUser;
+
     // 4. Decrypt API key
-    apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
+    apiKey = decrypt(user.apiKeyEnc!, getEncryptionKey());
     modelId =
       user.preferredModel ||
-      getDefaultModel(user.apiProvider)?.id ||
+      getDefaultModel(user.apiProvider!)?.id ||
       'claude-sonnet-4-5-20250514';
 
     // 5. Verify conversation ownership if reusing, or create new
@@ -100,7 +103,7 @@ export async function POST(req: Request) {
         .join('\n');
       await saveMessage({
         conversationId,
-        role: 'user',
+        role: MessageRole.user,
         content: textContent,
       });
     }
@@ -157,7 +160,7 @@ export async function POST(req: Request) {
 
   // 9. Stream the response
   const result = streamText({
-      model: createModel(user.apiProvider, modelId, apiKey),
+      model: createModel(user.apiProvider!, modelId, apiKey),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
       tools,
@@ -166,7 +169,7 @@ export async function POST(req: Request) {
         // Save assistant message
         await saveMessage({
           conversationId,
-          role: 'assistant',
+          role: MessageRole.assistant,
           content: text || '',
           toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
         });

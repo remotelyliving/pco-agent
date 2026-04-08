@@ -29,7 +29,7 @@ export async function POST() {
     const { text } = await generateText({
       model,
       prompt: 'Say "connected" and nothing else.',
-      maxTokens: 10,
+      providerOptions: { anthropic: { maxTokens: 10 }, openai: { maxTokens: 10 }, google: { maxOutputTokens: 10 } },
     });
 
     return Response.json({ success: true, provider: user.apiProvider, response: text.trim() });

@@ -15,18 +15,18 @@ describe('auth config', () => {
   it('has planning-center provider', () => {
     const providers = authConfig.providers;
     expect(providers).toHaveLength(1);
-    const pco = providers[0] as Record<string, unknown>;
+    const pco = providers[0] as unknown as Record<string, unknown>;
     expect(pco.id).toBe('planning-center');
   });
 
   it('has correct authorization URL', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const authorization = pco.authorization as { url: string };
     expect(authorization.url).toContain('planningcenteronline.com');
   });
 
   it('requests people and services scopes', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const authorization = pco.authorization as {
       url: string;
       params: { scope: string };
@@ -35,19 +35,19 @@ describe('auth config', () => {
   });
 
   it('has correct token URL', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     expect(pco.token).toBe(
       'https://api.planningcenteronline.com/oauth/token'
     );
   });
 
   it('uses state check instead of PKCE', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     expect(pco.checks).toEqual(['state']);
   });
 
   it('has userinfo configuration with custom request handler', () => {
-    const pco = authConfig.providers[0] as Record<string, unknown>;
+    const pco = authConfig.providers[0] as unknown as Record<string, unknown>;
     const userinfo = pco.userinfo as { url: string; request: Function };
     expect(userinfo.url).toContain('planningcenteronline.com');
     expect(typeof userinfo.request).toBe('function');

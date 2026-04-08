@@ -1,3 +1,4 @@
+import { MemorySource } from '@prisma/client';
 import { prisma } from '@/lib/db';
 
 export async function getOrgMemories(orgId: string) {
@@ -28,7 +29,7 @@ export async function upsertMemory(
   orgId: string,
   key: string,
   value: string,
-  source: string = 'auto',
+  source: MemorySource = MemorySource.auto,
   userId?: string,
 ) {
   if (userId) {
@@ -71,7 +72,7 @@ export async function upsertMemory(
 export async function updateMemory(
   id: string,
   orgId: string,
-  data: { key?: string; value?: string; source?: string },
+  data: { key?: string; value?: string; source?: MemorySource },
 ) {
   return prisma.memory.update({ where: { id, orgId }, data });
 }

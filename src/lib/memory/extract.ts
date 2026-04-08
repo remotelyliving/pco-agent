@@ -1,5 +1,6 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { MemorySource } from '@prisma/client';
 import { createModel } from '@/lib/ai/providers';
 import { upsertMemory } from '@/lib/memory/queries';
 
@@ -51,7 +52,7 @@ export async function extractAndSaveMemories(
     });
 
     for (const fact of object.facts) {
-      await upsertMemory(orgId, fact.key, fact.value, 'auto', undefined);
+      await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, undefined);
     }
   } catch {
     // best-effort: never throw

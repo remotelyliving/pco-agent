@@ -8,6 +8,45 @@ generator client {
   previewFeatures = ["multiSchema"]
 }
 
+enum UserRole {
+  admin
+  editor
+  member
+
+  @@schema("agent")
+}
+
+enum RuleType {
+  system
+  org
+  user
+
+  @@schema("agent")
+}
+
+enum RuleVisibility {
+  private
+  org
+
+  @@schema("agent")
+}
+
+enum MemorySource {
+  auto
+  manual
+
+  @@schema("agent")
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+  tool
+
+  @@schema("agent")
+}
+
 model Organization {
   id        String   @id @default(uuid())
   pcoOrgId  String   @unique @map("pco_org_id")
@@ -28,7 +67,7 @@ model User {
   pcoPersonId    BigInt   @map("pco_person_id")
   name           String?
   email          String?
-  role           String   @default("member")
+  role           UserRole @default(member)
   apiProvider    String?  @map("api_provider")
   apiKeyEnc      String?  @map("api_key_enc")
   preferredModel String?  @map("preferred_model")
@@ -61,12 +100,13 @@ model Conversation {
 }
 
 model Message {
-  id             String   @id @default(uuid())
-  conversationId String   @map("conversation_id")
-  role           String
+  id             String      @id @default(uuid())
+  conversationId String      @map("conversation_id")
+  role           MessageRole
   content        String
-  toolCalls      Json?    @map("tool_calls")
-  createdAt      DateTime @default(now()) @map("created_at")
+  toolCalls      Json?       @map("tool_calls")
+  tokenCount     Int?        @map("token_count")
+  createdAt      DateTime    @default(now()) @map("created_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
@@ -76,15 +116,15 @@ model Message {
 }
 
 model Rule {
-  id          String   @id @default(uuid())
-  orgId       String?  @map("org_id")
-  createdById String?  @map("created_by")
+  id          String         @id @default(uuid())
+  orgId       String?        @map("org_id")
+  createdById String?        @map("created_by")
   content     String
   category    String?
-  ruleType    String   @map("rule_type")
-  visibility  String   @default("private")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
+  ruleType    RuleType       @map("rule_type")
+  visibility  RuleVisibility @default(private)
+  sortOrder   Int            @default(0) @map("sort_order")
+  createdAt   DateTime       @default(now()) @map("created_at")
 
   org       Organization?     @relation(fields: [orgId], references: [id])
   createdBy User?             @relation("CreatedBy", fields: [createdById], references: [id])
@@ -111,14 +151,14 @@ model UserRuleSetting {
 }
 
 model Memory {
-  id        String   @id @default(uuid())
-  orgId     String   @map("org_id")
-  userId    String?  @map("user_id")
+  id        String       @id @default(uuid())
+  orgId     String       @map("org_id")
+  userId    String?      @map("user_id")
   key       String
   value     String
-  source    String   @default("auto")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  source    MemorySource @default(auto)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   org  Organization @relation(fields: [orgId], references: [id])
   user User?        @relation(fields: [userId], references: [id], onDelete: SetNull)

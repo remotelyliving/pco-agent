@@ -1,3 +1,4 @@
+import { MessageRole } from '@prisma/client';
 import { prisma } from '@/lib/db';
 
 export async function createConversation(userId: string) {
@@ -30,7 +31,7 @@ export async function listConversations(userId: string) {
 
 export async function saveMessage(data: {
   conversationId: string;
-  role: string;
+  role: MessageRole;
   content: string;
   toolCalls?: unknown;
 }) {

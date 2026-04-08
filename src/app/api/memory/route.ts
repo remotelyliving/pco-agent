@@ -1,3 +1,4 @@
+import { MemorySource } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { getOrgMemories, getUserMemories, upsertMemory } from '@/lib/memory/queries';
 import { logger } from '@/lib/logger';
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const memory = await upsertMemory(session.user.orgId, key, value, 'manual');
+    const memory = await upsertMemory(session.user.orgId, key, value, MemorySource.manual);
     return Response.json(memory, { status: 201 });
   } catch (error) {
     log.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
