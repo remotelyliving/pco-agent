@@ -21,7 +21,7 @@ function startCleanup() {
     const now = Date.now();
     for (const [key, entry] of pool.entries()) {
       if (now - entry.lastUsed > CLIENT_TTL_MS) {
-        entry.client.close().catch(() => {});
+        entry.client.close().catch((e) => logger.warn('[mcp-pool] Client close failed', { error: e instanceof Error ? e.message : String(e) }));
         pool.delete(key);
         logger.info('[mcp-pool] Evicted idle client', { poolSize: pool.size });
       }
@@ -52,7 +52,7 @@ export async function getMCPClient(
 
   // Close expired client if it exists
   if (existing) {
-    existing.client.close().catch(() => {});
+    existing.client.close().catch((e) => logger.warn('[mcp-pool] Client close failed', { error: e instanceof Error ? e.message : String(e) }));
     pool.delete(key);
   }
 
@@ -68,7 +68,7 @@ export async function getMCPClient(
     }
     if (oldestKey) {
       const evicted = pool.get(oldestKey);
-      evicted?.client.close().catch(() => {});
+      evicted?.client.close().catch((e) => logger.warn('[mcp-pool] Client close failed', { error: e instanceof Error ? e.message : String(e) }));
       pool.delete(oldestKey);
       logger.info('[mcp-pool] Evicted LRU client (pool at capacity)', { poolSize: pool.size });
     }
@@ -110,7 +110,7 @@ export function getPoolSize(): number {
 // Exported for testing only
 export function _resetPool(): void {
   for (const entry of pool.values()) {
-    entry.client.close().catch(() => {});
+    entry.client.close().catch((e) => logger.warn('[mcp-pool] Client close failed', { error: e instanceof Error ? e.message : String(e) }));
   }
   pool.clear();
   if (cleanupTimer) {

@@ -38,18 +38,7 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // 2. Parse request
-  const body = await req.json();
-  const { messages, conversationId: existingConvId } = body as {
-    messages: UIMessage[];
-    conversationId?: string;
-  };
-
-  if (!messages || messages.length === 0) {
-    return new Response('No messages provided', { status: 400 });
-  }
-
-  // 3–8. Pre-stream setup: user lookup, conversation, message save, rules, memory, MCP
+  // 2–8. Parse request + pre-stream setup
   let user!: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
   let apiKey!: string;
   let modelId!: string;
@@ -59,6 +48,17 @@ export async function POST(req: Request) {
   let tools = {};
 
   try {
+    // 2. Parse request
+    const body = await req.json();
+    const { messages, conversationId: existingConvId } = body as {
+      messages: UIMessage[];
+      conversationId?: string;
+    };
+
+    if (!messages || messages.length === 0) {
+      return new Response('No messages provided', { status: 400 });
+    }
+
     // 3. Load user with API key
     const foundUser = await prisma.user.findUnique({
       where: { id: session.user.agentUserId },
@@ -161,6 +161,9 @@ export async function POST(req: Request) {
       memoryPrompt,
     );
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[chat] Pre-stream error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'Something went wrong. Please try again.' },

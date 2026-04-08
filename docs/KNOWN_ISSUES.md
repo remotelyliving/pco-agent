@@ -30,7 +30,7 @@
 ### Memory Cap Eviction Not Visible to Admins
 **Status:** Deferred
 **Impact:** When `enforceMemoryCap` evicts old auto-extracted memories, there is no user-facing signal. Admins may notice facts disappearing without understanding why.
-**Fix:** Add a note on the `/memory` page explaining the 200-fact cap for auto-extracted memories. Optionally log which memories were evicted.
+**Fix:** Add a note on the `/memory` page explaining the memory caps (200 org-level and 100 per-user for auto-extracted memories). Optionally log which memories were evicted.
 
 ---
 

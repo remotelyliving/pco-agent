@@ -105,12 +105,12 @@ export function ApiKeyForm() {
           {provider && (
             <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <Select value={model} onValueChange={setModel}>
+              <Select value={model || '__default__'} onValueChange={(v) => setModel(v === '__default__' ? '' : v)}>
                 <SelectTrigger id="model">
                   <SelectValue placeholder="Use default" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Use default</SelectItem>
+                  <SelectItem value="__default__">Use default</SelectItem>
                   {modelsForProvider.map((m) => (
                     <SelectItem key={m.id} value={m.id}>
                       {m.name} — {m.description}

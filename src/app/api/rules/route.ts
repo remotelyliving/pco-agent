@@ -35,34 +35,34 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  // Only admins can create org rules
-  const body = await req.json();
-  const { content, ruleType, category } = body as {
-    content: string;
-    ruleType: string;
-    category?: string;
-  };
-
-  if (!content) {
-    return new Response('Content is required', { status: 400 });
-  }
-
-  if (content.length > 2000) {
-    return Response.json(
-      { error: 'Rule content must be under 2,000 characters.' },
-      { status: 400 },
-    );
-  }
-
-  // Non-admins can only create personal rules
-  const effectiveRuleType = canManageRules(session.user.role) ? (ruleType || 'org') : 'user';
-
-  const ALLOWED_RULE_TYPES: RuleType[] = [RuleType.org, RuleType.user];
-  if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as RuleType)) {
-    return Response.json({ error: 'Invalid rule type' }, { status: 400 });
-  }
-
   try {
+    // Only admins can create org rules
+    const body = await req.json();
+    const { content, ruleType, category } = body as {
+      content: string;
+      ruleType: string;
+      category?: string;
+    };
+
+    if (!content) {
+      return new Response('Content is required', { status: 400 });
+    }
+
+    if (content.length > 2000) {
+      return Response.json(
+        { error: 'Rule content must be under 2,000 characters.' },
+        { status: 400 },
+      );
+    }
+
+    // Non-admins can only create personal rules
+    const effectiveRuleType = canManageRules(session.user.role) ? (ruleType || 'org') : 'user';
+
+    const ALLOWED_RULE_TYPES: RuleType[] = [RuleType.org, RuleType.user];
+    if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as RuleType)) {
+      return Response.json({ error: 'Invalid rule type' }, { status: 400 });
+    }
+
     const rule = await createRule({
       content,
       ruleType: effectiveRuleType as RuleType,
@@ -74,6 +74,9 @@ export async function POST(req: Request) {
 
     return Response.json(rule, { status: 201 });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[rules] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },

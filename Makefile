@@ -1,4 +1,4 @@
-.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean test-mutation
+.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean test-mutation test-e2e
 
 # Development
 install:

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export function MobileNav({ userName, userRole }: { userName?: string | null; userRole?: string }) {
+export function MobileNav({ userName, userRole, onSignOut }: { userName?: string | null; userRole?: string; onSignOut?: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
 
   const roleLabel = userRole === 'admin' ? 'Admin' : userRole === 'editor' ? 'Editor' : 'Member';
@@ -18,12 +18,9 @@ export function MobileNav({ userName, userRole }: { userName?: string | null; us
         </Button>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-black/50 transition-opacity duration-200"
-            onClick={() => setOpen(false)}
-          />
+      <div className={`fixed inset-0 z-50 flex transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+        {open && (
           <nav className="relative z-10 w-64 bg-white h-full flex flex-col border-r shadow-lg" aria-label="Mobile navigation">
             <div className="p-4 border-b">
               <p className="font-semibold">Planning Center Assistant</p>
@@ -45,15 +42,17 @@ export function MobileNav({ userName, userRole }: { userName?: string | null; us
             </div>
             <div className="p-4 border-t">
               <p className="text-sm font-medium">{userName || 'User'}</p>
-              <form action="/api/auth/signout" method="POST" className="mt-2">
-                <Button variant="ghost" size="sm" type="submit" className="w-full justify-start">
-                  Sign out
-                </Button>
-              </form>
+              {onSignOut && (
+                <form action={onSignOut} className="mt-2">
+                  <Button variant="ghost" size="sm" type="submit" className="w-full justify-start">
+                    Sign out
+                  </Button>
+                </form>
+              )}
             </div>
           </nav>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

@@ -68,12 +68,12 @@ export function RuleEditor({
 
           <div className="space-y-2">
             <Label htmlFor="category">Category (optional)</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category || '__none__'} onValueChange={(v) => setCategory(v === '__none__' ? '' : v)}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="None" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="__none__">None</SelectItem>
                 <SelectItem value="general">General</SelectItem>
                 <SelectItem value="scheduling">Scheduling</SelectItem>
                 <SelectItem value="people">People</SelectItem>

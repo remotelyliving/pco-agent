@@ -1,14 +1,20 @@
-// src/instrumentation.ts
 export async function register() {
-  // Only validate in server runtime (not during build or edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { validateEnv } = await import('@/lib/env');
+    const { logger } = await import('@/lib/logger');
     try {
       validateEnv();
     } catch (error) {
       console.error('[startup] Environment validation failed:', error);
-      // Don't process.exit — let Next.js handle the error
-      // But log it clearly so operators know what's wrong
     }
+
+    const shutdown = async () => {
+      logger.info('[shutdown] Signal received, cleaning up');
+      const { prisma } = await import('@/lib/db');
+      await prisma.$disconnect();
+      process.exit(0);
+    };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   }
 }

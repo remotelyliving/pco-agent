@@ -14,7 +14,7 @@ sidebar layout, and Docker deployment configuration.
 - `src/lib/env.ts` — Environment variable validation (lazy, fail-fast)
 - `prisma/schema.prisma` — Full agent schema (orgs, users, conversations, messages, rules, memory)
 - `prisma/seed.ts` — System default rules seeder with production guard
-- `src/middleware.ts` — Route protection (redirect to /login if unauthenticated)
+- `src/proxy.ts` — Centralized auth + rate limiting + CSP nonce + security headers (Node.js runtime)
 - `src/app/(auth)/login/page.tsx` — PCO sign-in page with error display
 - `src/app/(app)/layout.tsx` — Authenticated layout with sidebar
 - `src/components/sidebar.tsx` — Responsive sidebar with nav, user info, sign out
@@ -24,7 +24,7 @@ sidebar layout, and Docker deployment configuration.
 ## Design Decisions
 - Shared PostgreSQL with pco-mcp, separate `agent` schema (reduces ops)
 - PCO is source of truth for identity (synced on every login)
-- First-user-is-admin heuristic for role assignment (PCO role mapping planned for future)
+- PCO role mapping for role assignment (site_administrator + people Manager -> admin, Editor -> editor, others -> member)
 - Fernet encryption for API keys at rest (same approach as pco-mcp)
 - NextAuth JWT sessions (no server-side session store)
 - PCO access token kept in JWT only, not exposed to client session
