@@ -79,7 +79,8 @@ All code must pass these before merging:
 | Unit test coverage | 90%+ | Vitest + c8 |
 | Lint | 0 errors | ESLint |
 | Type check | 0 errors | TypeScript strict mode |
-| Mutation testing | 80%+ on business logic | Stryker |
+| Mutation testing | 80%+ on business logic | Stryker + Vitest |
+| E2E tests | Key flows pass | Playwright + MSW |
 | All 5 reviewers approve | No open critical/important issues | Subagent reviews |
 
 ---

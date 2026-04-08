@@ -9,6 +9,23 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import type { UIMessage } from 'ai';
 
+function friendlyErrorMessage(error: Error): string {
+  const msg = error.message?.toLowerCase() || '';
+  if (msg.includes('401') || (msg.includes('invalid') && msg.includes('key')) || msg.includes('authentication')) {
+    return 'Your API key appears to be invalid. Check your key in Settings.';
+  }
+  if (msg.includes('429') || msg.includes('rate') || msg.includes('too many')) {
+    return 'The AI service is busy — try again in a moment.';
+  }
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('econnrefused')) {
+    return "Couldn't reach the AI service. Check your connection.";
+  }
+  if (msg.includes('expired') || msg.includes('sign out')) {
+    return error.message;
+  }
+  return 'Something went wrong. Please try again.';
+}
+
 export function ChatInterface({
   conversationId,
   initialMessages,
@@ -132,6 +149,9 @@ export function ChatInterface({
                 </button>
               ))}
             </div>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              Available actions depend on your Planning Center modules.
+            </p>
           </div>
         )}
         {messages.map((message) => (
@@ -139,8 +159,13 @@ export function ChatInterface({
         ))}
         {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="mb-4 flex justify-start">
-            <div className="rounded-lg bg-gray-100 px-4 py-3 text-gray-500">
-              Thinking...
+            <div className="rounded-lg bg-gray-100 px-4 py-3 text-gray-500 flex items-center gap-1">
+              Thinking
+              <span className="flex gap-0.5">
+                <span className="animate-bounce [animation-delay:0ms] h-1 w-1 rounded-full bg-gray-400" />
+                <span className="animate-bounce [animation-delay:150ms] h-1 w-1 rounded-full bg-gray-400" />
+                <span className="animate-bounce [animation-delay:300ms] h-1 w-1 rounded-full bg-gray-400" />
+              </span>
             </div>
           </div>
         )}
@@ -151,7 +176,7 @@ export function ChatInterface({
           className="mx-4 mb-2 rounded-lg bg-red-50 p-3 text-sm text-red-700"
           role="alert"
         >
-          {error.message || 'Something went wrong. Please try again.'}
+          {friendlyErrorMessage(error)}
         </div>
       )}
 

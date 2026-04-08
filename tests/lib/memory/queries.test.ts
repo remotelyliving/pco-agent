@@ -179,7 +179,7 @@ describe('memory queries', () => {
       await enforceMemoryCap('org-1', 200);
 
       expect(mockPrisma.memory.findMany).toHaveBeenCalledWith({
-        where: { orgId: 'org-1', source: 'auto' },
+        where: { orgId: 'org-1', userId: null, source: 'auto' },
         orderBy: { updatedAt: 'asc' },
         take: 10,
         select: { id: true },
@@ -199,7 +199,7 @@ describe('memory queries', () => {
     it('uses default cap of 200', async () => {
       mockPrisma.memory.count.mockResolvedValue(150);
       await enforceMemoryCap('org-1');
-      expect(mockPrisma.memory.count).toHaveBeenCalledWith({ where: { orgId: 'org-1' } });
+      expect(mockPrisma.memory.count).toHaveBeenCalledWith({ where: { orgId: 'org-1', userId: null, source: 'auto' } });
     });
   });
 });

@@ -1,6 +1,8 @@
 'use client';
 
 import type { UIMessage } from 'ai';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const TOOL_LABELS: Record<string, string> = {
   'list-people': 'Looking up people...',
@@ -33,13 +35,21 @@ export function MessageBubble({ message }: { message: UIMessage }) {
       >
         {message.parts.map((part, i) => {
           if (part.type === 'text') {
+            if (isUser) {
+              return (
+                <div key={i} className="whitespace-pre-wrap">
+                  {part.text}
+                </div>
+              );
+            }
             return (
-              <div key={i} className="whitespace-pre-wrap">
-                {part.text}
+              <div key={i} className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {part.text}
+                </ReactMarkdown>
               </div>
             );
           }
-          // Dynamic tool calls (e.g. from MCP tools)
           if (part.type === 'dynamic-tool') {
             const isDone = part.state === 'output-available';
             return (
@@ -51,7 +61,6 @@ export function MessageBubble({ message }: { message: UIMessage }) {
               </div>
             );
           }
-          // Static tool calls — type is `tool-${toolName}`
           if (part.type.startsWith('tool-')) {
             const toolName = part.type.slice(5);
             const p = part as { type: string; state: string };

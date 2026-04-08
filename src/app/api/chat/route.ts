@@ -10,7 +10,6 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
-import { checkRateLimit } from '@/lib/rate-limit';
 import { createModel } from '@/lib/ai/providers';
 import { getMCPClient } from '@/lib/mcp-pool';
 import { getDefaultModel } from '@/lib/ai/models';
@@ -37,15 +36,6 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.agentUserId) {
     return new Response('Unauthorized', { status: 401 });
-  }
-
-  // 1b. Rate limit (20 requests/minute per user)
-  const rateLimit = checkRateLimit(session.user.agentUserId, 20);
-  if (!rateLimit.allowed) {
-    return Response.json(
-      { error: 'You\'re sending messages too quickly. Please wait a few seconds and try again.' },
-      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
-    );
   }
 
   // 2. Parse request
@@ -119,6 +109,14 @@ export async function POST(req: Request) {
     const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
 
+    if (!pcoAccessToken && jwtToken?.pcoRefreshToken) {
+      // Token existed but refresh failed — user needs to re-login
+      return Response.json(
+        { error: 'Your Planning Center session has expired. Please sign out and sign back in.' },
+        { status: 401 },
+      );
+    }
+
     if (pcoAccessToken) {
       try {
         const result = await new Promise<{ client: Awaited<ReturnType<typeof getMCPClient>>; mcpTools: Record<string, unknown> }>(
@@ -178,41 +176,49 @@ export async function POST(req: Request) {
       tools,
       stopWhen: stepCountIs(5),
       onFinish: async ({ text, toolCalls, usage }) => {
-        // Save assistant message
-        await saveMessage({
-          conversationId,
-          role: MessageRole.assistant,
-          content: text || '',
-          toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
-          tokenCount: usage?.totalTokens ?? null,
-        });
-
-        // Auto-title from first exchange
-        if (!existingConvId && text) {
-          const title = generateTitle(text);
-          await updateConversationTitle(conversationId, title);
-        }
-
-        // Fire-and-forget memory extraction
-        if (text && lastUserMessage?.role === 'user') {
-          const userText = lastUserMessage.parts
-            .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-            .map((p) => p.text)
-            .join('\n');
-          extractAndSaveMemories(
-            session.user.orgId,
-            session.user.agentUserId,
-            userText,
-            text,
-            user.apiProvider!,
-            apiKey,
-          ).catch((err) => log.error('[chat] Memory extraction failed', {
+        try {
+          // Save assistant message
+          await saveMessage({
             conversationId,
-            error: err instanceof Error ? err.message : String(err),
-          }));
-        }
+            role: MessageRole.assistant,
+            content: text || '',
+            toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+            tokenCount: usage?.totalTokens ?? null,
+          });
 
-        // MCP client lifecycle managed by connection pool
+          // Auto-title from first exchange
+          if (!existingConvId && text) {
+            const title = generateTitle(text);
+            await updateConversationTitle(conversationId, title);
+          }
+
+          // Fire-and-forget memory extraction
+          if (text && lastUserMessage?.role === 'user') {
+            const userText = lastUserMessage.parts
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join('\n');
+            extractAndSaveMemories(
+              session.user.orgId,
+              session.user.agentUserId,
+              userText,
+              text,
+              user.apiProvider!,
+              apiKey,
+            ).catch((err) => log.error('[chat] Memory extraction failed', {
+              conversationId,
+              error: err instanceof Error ? err.message : String(err),
+            }));
+          }
+
+          // MCP client lifecycle managed by connection pool
+        } catch (error) {
+          log.error('[chat] onFinish failed — message may not be persisted', {
+            conversationId,
+            userId: session.user.agentUserId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       },
       onError: async ({ error }) => {
         log.error('[chat] Stream error', {

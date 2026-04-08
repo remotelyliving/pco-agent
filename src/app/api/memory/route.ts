@@ -3,8 +3,6 @@ import { auth } from '@/lib/auth';
 import { getOrgMemories, getUserMemories, upsertMemory } from '@/lib/memory/queries';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
-import { checkRateLimit } from '@/lib/rate-limit';
-
 const MEMORY_LIMIT = 100;
 
 export async function GET() {
@@ -42,29 +40,37 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const rateLimit = checkRateLimit(session.user.agentUserId, 60);
-  if (!rateLimit.allowed) {
-    return Response.json(
-      { error: 'Too many requests. Please wait a moment and try again.' },
-      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
-    );
-  }
-
   if (session.user.role !== 'admin') {
     return new Response('Forbidden', { status: 403 });
   }
 
-  const body = await req.json();
-  const { key, value } = body as { key: string; value: string };
-
-  if (!key || !value) {
-    return new Response('Key and value are required', { status: 400 });
-  }
-
   try {
+    const body = await req.json();
+    const { key, value } = body as { key: string; value: string };
+
+    if (!key || !value) {
+      return new Response('Key and value are required', { status: 400 });
+    }
+
+    if (key.length > 200) {
+      return Response.json(
+        { error: 'Fact name must be under 200 characters.' },
+        { status: 400 },
+      );
+    }
+    if (value.length > 2000) {
+      return Response.json(
+        { error: 'Fact value must be under 2,000 characters.' },
+        { status: 400 },
+      );
+    }
+
     const memory = await upsertMemory(session.user.orgId, key, value, MemorySource.manual);
     return Response.json(memory, { status: 201 });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[memory] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },

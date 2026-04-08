@@ -67,6 +67,15 @@
 
 ---
 
+## Testing
+
+### Playwright E2E Tests Use Mocked Backends
+**Status:** Accepted — by design
+**Impact:** E2E tests run against MSW-mocked API responses, not a real database or PCO OAuth. UI regressions are caught, but integration issues between frontend and real backend are not.
+**Fix:** Set up a test database + test OAuth app for full integration testing. Low priority for homelab deployment.
+
+---
+
 ## Resolved in This Hardening Pass
 
 The following items were resolved and removed from this file on 2026-04-07:

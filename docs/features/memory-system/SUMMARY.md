@@ -4,9 +4,10 @@
 **Last Updated:** 2026-04-07
 
 ## What It Does
-Persistent key-value fact store scoped to org and/or user. Facts are auto-extracted after each
-AI response using the cheapest available model, then injected into every subsequent conversation's
-system prompt. Admins can also manually add, view, and delete org-level facts at `/memory`.
+Persistent key-value fact store with dual-scope extraction: org-level facts (shared across all users)
+and user-level facts (personal to each user). Both scopes are auto-extracted after each AI response
+using the cheapest available model, then injected into every subsequent conversation's system prompt.
+Admins can also manually add, view, and delete org-level facts at `/memory`.
 
 ## Key Files
 - `src/lib/memory/queries.ts` — `getOrgMemories`, `getUserMemories`, `getAllMemoriesForUser`, `upsertMemory`, `updateMemory`, `deleteMemory`
@@ -39,5 +40,4 @@ Fixed during comprehensive review + polish on branch `fix/buff-and-polish`:
 - Auto-extraction only covers the most recent user/assistant message pair, not the full conversation history
 - No deduplication or merging of semantically similar facts — keys must match exactly to upsert
 - No extraction for tool call content (MCP tool results are not included in the extraction prompt)
-- No memory TTL or expiry — facts persist indefinitely until manually deleted
 - No pagination on the memory list — could be slow for orgs with many extracted facts

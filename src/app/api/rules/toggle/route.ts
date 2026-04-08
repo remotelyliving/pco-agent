@@ -13,14 +13,14 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const body = await req.json();
-  const { ruleId, enabled } = body as { ruleId: string; enabled: boolean };
-
-  if (!ruleId || typeof enabled !== 'boolean') {
-    return new Response('ruleId and enabled are required', { status: 400 });
-  }
-
   try {
+    const body = await req.json();
+    const { ruleId, enabled } = body as { ruleId: string; enabled: boolean };
+
+    if (!ruleId || typeof enabled !== 'boolean') {
+      return new Response('ruleId and enabled are required', { status: 400 });
+    }
+
     // Verify the rule belongs to the user's org
     const rule = await prisma.rule.findUnique({ where: { id: ruleId } });
     if (!rule) {
@@ -30,9 +30,20 @@ export async function POST(req: Request) {
       return new Response('Forbidden', { status: 403 });
     }
 
+    // System rules can only be toggled by admins
+    if (rule.ruleType === 'system' && session.user.role !== 'admin') {
+      return Response.json(
+        { error: 'Only administrators can modify system rules.' },
+        { status: 403 },
+      );
+    }
+
     const setting = await toggleRule(session.user.agentUserId, ruleId, enabled);
     return Response.json(setting);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[rules/toggle] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },

@@ -17,6 +17,10 @@ export function getDatabaseUrl(): string {
   return getRequired('DATABASE_URL');
 }
 
+export function getLogLevel(): string {
+  return process.env.LOG_LEVEL || 'info';
+}
+
 export function validateEnv(): void {
   const required = [
     'DATABASE_URL',

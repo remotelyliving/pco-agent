@@ -45,52 +45,52 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const body = await req.json();
-  const { apiProvider, apiKey, preferredModel } = body as {
-    apiProvider: string;
-    apiKey?: string;
-    preferredModel?: string;
-  };
-
-  if (!apiProvider) {
-    return new Response('Provider is required', { status: 400 });
-  }
-
-  if (!SUPPORTED_PROVIDERS.includes(apiProvider as (typeof SUPPORTED_PROVIDERS)[number])) {
-    return Response.json({ error: `Unsupported provider: ${apiProvider}` }, { status: 400 });
-  }
-
-  if (preferredModel) {
-    const validModels = MODEL_OPTIONS.filter((m) => m.provider === apiProvider).map((m) => m.id);
-    if (!validModels.includes(preferredModel)) {
-      return Response.json(
-        { error: `Invalid model for ${apiProvider}: ${preferredModel}` },
-        { status: 400 },
-      );
-    }
-  }
-
-  const updateData: Record<string, unknown> = {
-    apiProvider,
-    preferredModel: preferredModel || null,
-  };
-
-  // Check if provider is changing
-  const currentUser = await prisma.user.findUnique({
-    where: { id: session.user.agentUserId },
-    select: { apiProvider: true },
-  });
-
-  if (currentUser?.apiProvider && currentUser.apiProvider !== apiProvider && !apiKey) {
-    // Provider changed but no new key — clear the old one
-    updateData.apiKeyEnc = null;
-  }
-
-  if (apiKey) {
-    updateData.apiKeyEnc = encrypt(apiKey, getEncryptionKey());
-  }
-
   try {
+    const body = await req.json();
+    const { apiProvider, apiKey, preferredModel } = body as {
+      apiProvider: string;
+      apiKey?: string;
+      preferredModel?: string;
+    };
+
+    if (!apiProvider) {
+      return new Response('Provider is required', { status: 400 });
+    }
+
+    if (!SUPPORTED_PROVIDERS.includes(apiProvider as (typeof SUPPORTED_PROVIDERS)[number])) {
+      return Response.json({ error: `Unsupported provider: ${apiProvider}` }, { status: 400 });
+    }
+
+    if (preferredModel) {
+      const validModels = MODEL_OPTIONS.filter((m) => m.provider === apiProvider).map((m) => m.id);
+      if (!validModels.includes(preferredModel)) {
+        return Response.json(
+          { error: `Invalid model for ${apiProvider}: ${preferredModel}` },
+          { status: 400 },
+        );
+      }
+    }
+
+    const updateData: Record<string, unknown> = {
+      apiProvider,
+      preferredModel: preferredModel || null,
+    };
+
+    // Check if provider is changing
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.agentUserId },
+      select: { apiProvider: true },
+    });
+
+    if (currentUser?.apiProvider && currentUser.apiProvider !== apiProvider && !apiKey) {
+      // Provider changed but no new key — clear the old one
+      updateData.apiKeyEnc = null;
+    }
+
+    if (apiKey) {
+      updateData.apiKeyEnc = encrypt(apiKey, getEncryptionKey());
+    }
+
     await prisma.user.update({
       where: { id: session.user.agentUserId },
       data: updateData,
@@ -98,6 +98,9 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[settings] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },

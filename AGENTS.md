@@ -39,8 +39,8 @@ src/lib/env.ts        → Environment variable validation (lazy, fail-fast)
 src/lib/logger.ts     → Structured logger — use instead of console.log in server code
 src/lib/ai/           → AI provider factory and model metadata
 src/lib/chat/         → Conversation and message persistence
-src/middleware.ts     → Route protection middleware (NextAuth) + CSP nonce + security headers
-src/lib/rate-limit.ts → In-memory token bucket rate limiter (20/min chat, 60/min mutations)
+src/proxy.ts          → Centralized auth + rate limiting + CSP nonce + security headers (Node.js runtime)
+src/lib/rate-limit.ts → In-memory token bucket rate limiter (used by proxy.ts middleware)
 src/instrumentation.ts → Next.js instrumentation hook — registers logger at startup
 prisma/               → Schema + seed (at project root)
 prisma/seed.ts        → System default rules seeder
@@ -63,9 +63,9 @@ Rules are assembled into the system prompt per-user per-chat via `assembleRules(
 
 | ruleType | Default | Can opt out? | Can opt in? |
 |----------|---------|-------------|-------------|
-| `system` | ON | Yes | N/A |
+| `system` | ON | Admins only | N/A |
 | `org` | ON | Yes | N/A |
-| `user` (own) | ON | No | N/A |
+| `user` (own) | ON | Yes | N/A |
 | `user` (other user's, `visibility='org'`) | OFF | N/A | Yes |
 
 **Assembly logic (pseudocode):**
@@ -74,7 +74,7 @@ effective_rules = allRules.filter(rule =>
   if rule.ruleType in ['system', 'org']:
     userRuleSettings[rule.id] !== false   // on unless explicitly opted out
   elif rule.createdById === userId:
-    true                                  // user's own rules always active
+    return userRuleSettings[rule.id] !== false  // user's own rules on unless opted out
   elif rule.ruleType === 'user' and rule.visibility === 'org':
     userRuleSettings[rule.id] === true    // off unless explicitly opted in
 )
@@ -99,9 +99,10 @@ effective_rules = allRules.filter(rule =>
 **Auto-extraction (fire-and-forget):**
 1. After each assistant response, the chat route calls `extractAndSaveMemories()` without `await`
 2. Extraction uses the cheapest available model for the user's configured provider (`claude-haiku-4-5`, `gpt-4o-mini`, or `gemini-2.0-flash`)
-3. The model returns structured `{ key, value }` facts about the church or org
+3. The model returns structured facts in two scopes: org facts (`userId=null`, shared across all users) and user facts (`userId` set, personal to that user)
 4. Each fact is upserted via `@@unique([orgId, userId, key])` — same key updates in place
-5. Failures are silently caught and never surface to the user
+5. Separate caps are enforced: 200 org-level facts and 100 per-user facts. When a cap is exceeded, the oldest auto-extracted facts are evicted.
+6. Failures are silently caught and never surface to the user
 
 **Memory prompt injection:**
 1. `getMemoryPrompt(orgId, userId)` fetches both org memories (`userId=null`) and personal memories for that user
@@ -152,7 +153,7 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 1. User saves api_provider + API key via Settings page (/settings) or Setup wizard (/setup)
 2. Key is Fernet-encrypted, stored in User.apiKeyEnc
 3. On chat request: decrypt key, create provider via createModel() in src/lib/ai/providers.ts
-4. Connect to pco-mcp via @ai-sdk/mcp with user's PCO access token from JWT
+4. Connect to pco-mcp via MCP pool (src/lib/mcp-pool.ts) with user's PCO access token from JWT
 5. Stream response via streamText() in src/app/api/chat/route.ts
 6. Persist conversation and messages via src/lib/chat/persist.ts
 
@@ -179,7 +180,7 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 1. Install the AI SDK provider package: `@ai-sdk/providername`
 2. Add to the provider map in `src/lib/ai/providers.ts`
 3. Add model options in `src/lib/ai/models.ts`
-4. Add to the provider selection UI in `src/components/settings/provider-select.tsx`
+4. Add to the provider selection UI in `src/components/settings/api-key-form.tsx` and `src/components/setup/setup-wizard.tsx`
 
 ### Modifying the database schema
 1. Edit `prisma/schema.prisma`
@@ -196,5 +197,6 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 | PCO_CLIENT_SECRET | Yes | Planning Center OAuth app client secret |
 | NEXTAUTH_SECRET | Yes | NextAuth session encryption key |
 | NEXTAUTH_URL | Yes | Public URL of pco-agent (e.g., https://agent.pco-mcp.com) |
-| PCO_MCP_URL | Yes | URL of the pco-mcp MCP server |
+| PCO_MCP_URL | Yes (default: pco-mcp.com/mcp) | URL of the pco-mcp MCP server |
 | ENCRYPTION_KEY | Yes | Fernet key for API key encryption at rest |
+| LOG_LEVEL | No | Log level for pino (default: info) |

@@ -1,4 +1,4 @@
-.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean
+.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean test-mutation
 
 # Development
 install:
@@ -25,6 +25,9 @@ test-e2e:
 
 test-coverage:
 	npm run test -- --coverage
+
+test-mutation:
+	npx stryker run
 
 # Linting
 lint:

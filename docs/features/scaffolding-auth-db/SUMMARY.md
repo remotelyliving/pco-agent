@@ -47,4 +47,4 @@ Fixed during comprehensive review + polish on branch `fix/buff-and-polish`:
 
 ## Known Limitations
 - Auth callback tests verify structure only, not behavior
-- First-user-is-admin heuristic (PCO role mapping planned for future)
+- PCO role mapping implemented (site_administrator, people_permissions → admin; Editor → editor; Viewer → member)

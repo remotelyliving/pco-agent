@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function RuleEditor({
   isAdmin,
@@ -67,31 +68,31 @@ export function RuleEditor({
 
           <div className="space-y-2">
             <Label htmlFor="category">Category (optional)</Label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full rounded-md border p-2"
-            >
-              <option value="">None</option>
-              <option value="general">General</option>
-              <option value="scheduling">Scheduling</option>
-              <option value="people">People</option>
-            </select>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                <SelectItem value="general">General</SelectItem>
+                <SelectItem value="scheduling">Scheduling</SelectItem>
+                <SelectItem value="people">People</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {isAdmin && (
             <div className="space-y-2">
               <Label htmlFor="ruleType">Scope</Label>
-              <select
-                id="ruleType"
-                value={ruleType}
-                onChange={(e) => setRuleType(e.target.value)}
-                className="w-full rounded-md border p-2"
-              >
-                <option value="org">Organization (visible to all)</option>
-                <option value="user">Personal (just me)</option>
-              </select>
+              <Select value={ruleType} onValueChange={setRuleType}>
+                <SelectTrigger id="ruleType">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="org">Organization (visible to all)</SelectItem>
+                  <SelectItem value="user">Personal (just me)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RuleEditor } from '@/components/rules/rule-editor';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Rule {
   id: string;
@@ -17,7 +18,7 @@ interface Rule {
 }
 
 export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string }) {
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<Rule[] | null>(null);
   const [settings, setSettings] = useState<Record<string, boolean>>({});
   const [showEditor, setShowEditor] = useState(false);
 
@@ -42,7 +43,6 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
   }
 
   async function handleDelete(ruleId: string) {
-    if (!confirm('Are you sure you want to delete this rule?')) return;
     await fetch(`/api/rules/${ruleId}`, { method: 'DELETE' });
     loadRules();
   }
@@ -53,15 +53,15 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
     if (rule.ruleType === 'system' || rule.ruleType === 'org') {
       return override !== false;
     }
-    // User's own rules: always enabled
-    if (rule.createdById === userId) return true;
+    // User's own rules: enabled unless explicitly opted out
+    if (rule.createdById === userId) return override !== false;
     // Other users' public rules: disabled unless opted in
     return override === true;
   }
 
-  const systemRules = rules.filter((r) => r.ruleType === 'system');
-  const orgRules = rules.filter((r) => r.ruleType === 'org');
-  const userRules = rules.filter((r) => r.ruleType === 'user');
+  const systemRules = (rules ?? []).filter((r) => r.ruleType === 'system');
+  const orgRules = (rules ?? []).filter((r) => r.ruleType === 'org');
+  const userRules = (rules ?? []).filter((r) => r.ruleType === 'user');
 
   return (
     <div className="space-y-6">
@@ -87,37 +87,50 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         />
       )}
 
-      <RuleSection
-        title="System Defaults"
-        rules={systemRules}
-        isEnabled={isEnabled}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
-        onReload={loadRules}
-        canDelete={false}
-        userId={userId}
-      />
-      <RuleSection
-        title="Organization Rules"
-        rules={orgRules}
-        isEnabled={isEnabled}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
-        onReload={loadRules}
-        canDelete={isAdmin}
-        userId={userId}
-      />
-      {userRules.length > 0 && (
-        <RuleSection
-          title="Personal Rules"
-          rules={userRules}
-          isEnabled={isEnabled}
-          onToggle={handleToggle}
-          onDelete={handleDelete}
-          onReload={loadRules}
-          canDelete={true}
-          userId={userId}
-        />
+      {rules === null && (
+        <div className="flex justify-center py-8">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+        </div>
+      )}
+
+      {rules !== null && (
+        <>
+          <RuleSection
+            title="System Defaults"
+            rules={systemRules}
+            isEnabled={isEnabled}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={loadRules}
+            canDelete={false}
+            userId={userId}
+            isAdmin={isAdmin}
+          />
+          <RuleSection
+            title="Organization Rules"
+            rules={orgRules}
+            isEnabled={isEnabled}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={loadRules}
+            canDelete={isAdmin}
+            userId={userId}
+            isAdmin={isAdmin}
+          />
+          {userRules.length > 0 && (
+            <RuleSection
+              title="Personal Rules"
+              rules={userRules}
+              isEnabled={isEnabled}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onReload={loadRules}
+              canDelete={true}
+              userId={userId}
+              isAdmin={isAdmin}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -132,6 +145,7 @@ function RuleSection({
   onReload,
   canDelete,
   userId,
+  isAdmin,
 }: {
   title: string;
   rules: Rule[];
@@ -141,6 +155,7 @@ function RuleSection({
   onReload: () => void;
   canDelete: boolean;
   userId: string;
+  isAdmin: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
@@ -170,8 +185,12 @@ function RuleSection({
             <Switch
               checked={isEnabled(rule)}
               onCheckedChange={(checked) => onToggle(rule.id, checked)}
+              disabled={rule.ruleType === 'system' && !isAdmin}
               aria-label={`Toggle rule: ${rule.content.slice(0, 50)}`}
             />
+            {rule.ruleType === 'system' && !isAdmin && (
+              <span className="text-xs text-gray-400 ml-1">Admin only</span>
+            )}
             <div className="flex-1">
               {editingId === rule.id ? (
                 <div className="space-y-2">
@@ -213,14 +232,20 @@ function RuleSection({
                 >
                   Edit
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(rule.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Delete
-                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </Button>
+                  }
+                  title="Delete rule?"
+                  description="This will permanently delete this rule."
+                  onConfirm={() => onDelete(rule.id)}
+                />
               </div>
             )}
           </div>
