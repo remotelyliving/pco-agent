@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RuleEditor } from '@/components/rules/rule-editor';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Rule {
   id: string;
@@ -42,7 +43,6 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
   }
 
   async function handleDelete(ruleId: string) {
-    if (!confirm('Are you sure you want to delete this rule?')) return;
     await fetch(`/api/rules/${ruleId}`, { method: 'DELETE' });
     loadRules();
   }
@@ -232,14 +232,20 @@ function RuleSection({
                 >
                   Edit
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDelete(rule.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Delete
-                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      Delete
+                    </Button>
+                  }
+                  title="Delete rule?"
+                  description="This will permanently delete this rule."
+                  onConfirm={() => onDelete(rule.id)}
+                />
               </div>
             )}
           </div>

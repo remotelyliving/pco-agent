@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Memory {
   id: string;
@@ -55,7 +56,6 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this fact?')) return;
     await fetch(`/api/memory/${id}`, { method: 'DELETE' });
     await loadMemories();
   }
@@ -96,14 +96,20 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
                 <p className="text-sm text-gray-600 mt-0.5 truncate">{memory.value}</p>
               </div>
               {showDelete && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(memory.id)}
-                  className="text-red-500 hover:text-red-700 shrink-0"
-                >
-                  Delete
-                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 shrink-0"
+                    >
+                      Delete
+                    </Button>
+                  }
+                  title="Delete fact?"
+                  description="This will permanently delete this fact from memory."
+                  onConfirm={() => handleDelete(memory.id)}
+                />
               )}
             </div>
           ))}

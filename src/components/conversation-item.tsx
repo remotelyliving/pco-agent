@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 function timeAgo(date: string): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -20,13 +21,8 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
   const pathname = usePathname();
   const isActive = pathname === `/chat/${id}`;
 
-  async function handleDelete(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!confirm('Delete this conversation?')) return;
+  async function handleDelete() {
     await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
-
-    // If we're deleting the currently-viewed conversation, navigate away
     if (pathname === `/chat/${id}`) {
       router.push('/chat');
     } else {
@@ -44,13 +40,16 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
         <span className="block truncate text-sm text-gray-700">{title || 'Untitled conversation'}</span>
         <span className="text-xs text-gray-400">{timeAgo(updatedAt)}</span>
       </Link>
-      <button
-        onClick={handleDelete}
-        className="hidden group-hover:block px-2 text-xs text-gray-400 hover:text-red-500"
-        aria-label="Delete conversation"
-      >
-        ✕
-      </button>
+      <ConfirmDialog
+        trigger={
+          <button className="px-2 text-xs text-gray-400 hover:text-red-500 shrink-0" aria-label="Delete conversation">
+            ✕
+          </button>
+        }
+        title="Delete conversation?"
+        description="This will permanently delete this conversation and all its messages."
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
