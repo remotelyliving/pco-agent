@@ -72,7 +72,7 @@ Rules are assembled into the system prompt per-user per-chat via `assembleRules(
 ```
 effective_rules = allRules.filter(rule =>
   if rule.ruleType in ['system', 'org']:
-    userRuleSettings[rule.id] !== false   // on unless explicitly opted out
+    userRuleSettings[rule.id] !== false   // on unless explicitly opted out (system: admin-only toggle enforced at API layer in rules/toggle/route.ts)
   elif rule.createdById === userId:
     return userRuleSettings[rule.id] !== false  // user's own rules on unless opted out
   elif rule.ruleType === 'user' and rule.visibility === 'org':
