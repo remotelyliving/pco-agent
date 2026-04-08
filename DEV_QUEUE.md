@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** ALL PLANS COMPLETE + COMPREHENSIVE REVIEW DONE — pco-agent production-ready
+**Phase:** ALL PLANS COMPLETE + 4 REVIEW ROUNDS DONE — hardening pass next
 **Last Updated:** 2026-04-07
-**Last Session Summary:** Comprehensive review + polish pass on branch `fix/buff-and-polish`. Fixed 22 issues across security, correctness, UX, and code quality. All Known Limitations from previous milestones resolved. See session history entry below for full detail.
+**Last Session Summary:** Built all 5 plans (31 tasks), ran 4 rounds of reviews (comprehensive 6-reviewer audit, E2E bug hunting, final sign-off), fixed 50+ issues, added request tracing + MCP connection pooling. 15 known issues remain — see `docs/KNOWN_ISSUES.md`.
 
 ---
 
@@ -16,7 +16,7 @@ _(none)_
 
 ## Backlog
 
-_(none — all planned features complete)_
+- [ ] **Known Issues Hardening** — 15 items in `docs/KNOWN_ISSUES.md`. Work through them by category: Security first, then Auth, Data, Operations, Schema. Each item has status, impact, and fix instructions.
 
 ## Done
 
@@ -145,9 +145,13 @@ Full codebase audit and polish pass resolving all Known Limitations flagged acro
 
 ## How to Resume
 
-All planned features are complete. The app is ready for production deployment and further iterations based on real user feedback.
+**Next task: Work through the 15 known issues in `docs/KNOWN_ISSUES.md`.**
 
 1. Read this file (you're here)
 2. Read `CLAUDE.md` for architecture + session checklist
-3. Read `TEAM.md` for quality gates + review protocol
-4. Check feature summaries in `docs/features/` for implementation details
+3. Read `docs/KNOWN_ISSUES.md` — **this is your work list**. Each item has status, impact, and specific fix instructions
+4. Read `TEAM.md` for quality gates + review protocol
+5. Create a branch `fix/known-issues-hardening`
+6. Work through items by category priority: Security → Auth → Data → Operations → Schema
+7. Use `superpowers:subagent-driven-development` for execution
+8. After fixing all items, run a final team review to verify
