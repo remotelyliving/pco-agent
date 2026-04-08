@@ -23,6 +23,7 @@ import {
   updateMemory,
   deleteMemory,
   enforceMemoryCap,
+  enforceUserMemoryCap,
 } from '@/lib/memory/queries';
 
 describe('memory queries', () => {
@@ -200,6 +201,36 @@ describe('memory queries', () => {
       mockPrisma.memory.count.mockResolvedValue(150);
       await enforceMemoryCap('org-1');
       expect(mockPrisma.memory.count).toHaveBeenCalledWith({ where: { orgId: 'org-1', userId: null, source: 'auto' } });
+    });
+  });
+
+  describe('enforceUserMemoryCap', () => {
+    it('does nothing when under cap', async () => {
+      mockPrisma.memory.count.mockResolvedValue(50);
+      await enforceUserMemoryCap('org-1', 'user-1');
+      expect(mockPrisma.memory.findMany).not.toHaveBeenCalled();
+      expect(mockPrisma.memory.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('evicts oldest auto-extracted user memories when over cap', async () => {
+      mockPrisma.memory.count.mockResolvedValue(105);
+      mockPrisma.memory.findMany.mockResolvedValue([
+        { id: 'old-1' }, { id: 'old-2' }, { id: 'old-3' }, { id: 'old-4' }, { id: 'old-5' },
+      ]);
+      mockPrisma.memory.deleteMany.mockResolvedValue({ count: 5 });
+
+      await enforceUserMemoryCap('org-1', 'user-1');
+
+      expect(mockPrisma.memory.count).toHaveBeenCalledWith({
+        where: { orgId: 'org-1', userId: 'user-1', source: 'auto' },
+      });
+      expect(mockPrisma.memory.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { orgId: 'org-1', userId: 'user-1', source: 'auto' },
+        take: 5,
+      }));
+      expect(mockPrisma.memory.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['old-1', 'old-2', 'old-3', 'old-4', 'old-5'] } },
+      });
     });
   });
 });
