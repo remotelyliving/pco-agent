@@ -5,18 +5,27 @@ export async function createConversation(userId: string) {
 }
 
 export async function getConversation(conversationId: string, userId: string) {
-  return prisma.conversation.findUnique({
+  const conv = await prisma.conversation.findUnique({
     where: { id: conversationId, userId },
-    include: { messages: { orderBy: { createdAt: 'asc' } } },
+    include: { messages: { orderBy: { createdAt: 'desc' }, take: 100 } },
   });
+  if (conv) {
+    conv.messages.reverse();
+  }
+  return conv;
 }
 
 export async function listConversations(userId: string) {
-  return prisma.conversation.findMany({
+  const results = await prisma.conversation.findMany({
     where: { userId },
     orderBy: { updatedAt: 'desc' },
-    take: 50,
+    take: 51,
   });
+  const hasMore = results.length > 50;
+  return {
+    conversations: hasMore ? results.slice(0, 50) : results,
+    hasMore,
+  };
 }
 
 export async function saveMessage(data: {
@@ -43,10 +52,15 @@ export async function saveMessage(data: {
   return message;
 }
 
-export async function getMessages(conversationId: string) {
+export async function getMessages(
+  conversationId: string,
+  options?: { take?: number; cursor?: string },
+) {
   return prisma.message.findMany({
     where: { conversationId },
     orderBy: { createdAt: 'asc' },
+    ...(options?.take ? { take: options.take } : {}),
+    ...(options?.cursor ? { skip: 1, cursor: { id: options.cursor } } : {}),
   });
 }
 

@@ -20,7 +20,7 @@ export async function Sidebar() {
       .slice(0, 2)
       .toUpperCase() || '?';
 
-  const conversations = await listConversations(session?.user?.agentUserId || '');
+  const { conversations } = await listConversations(session?.user?.agentUserId || '');
 
   return (
     <nav className="hidden md:flex h-full w-64 flex-col border-r bg-gray-50" aria-label="Main navigation">
