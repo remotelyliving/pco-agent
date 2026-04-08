@@ -149,6 +149,9 @@ export function ChatInterface({
                 </button>
               ))}
             </div>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              Available actions depend on your Planning Center modules.
+            </p>
           </div>
         )}
         {messages.map((message) => (
@@ -156,8 +159,13 @@ export function ChatInterface({
         ))}
         {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="mb-4 flex justify-start">
-            <div className="rounded-lg bg-gray-100 px-4 py-3 text-gray-500">
-              Thinking...
+            <div className="rounded-lg bg-gray-100 px-4 py-3 text-gray-500 flex items-center gap-1">
+              Thinking
+              <span className="flex gap-0.5">
+                <span className="animate-bounce [animation-delay:0ms] h-1 w-1 rounded-full bg-gray-400" />
+                <span className="animate-bounce [animation-delay:150ms] h-1 w-1 rounded-full bg-gray-400" />
+                <span className="animate-bounce [animation-delay:300ms] h-1 w-1 rounded-full bg-gray-400" />
+              </span>
             </div>
           </div>
         )}
