@@ -27,7 +27,7 @@ export async function Sidebar() {
       <header className="p-4">
         <h2 className="text-lg font-semibold">Planning Center Assistant</h2>
         <p className="text-sm text-gray-500">
-          {user?.role === 'admin' ? 'Admin' : 'Member'}
+          {user?.role === 'admin' ? 'Admin' : user?.role === 'editor' ? 'Editor' : 'Member'}
         </p>
       </header>
 

@@ -11,10 +11,12 @@ export default async function RulesPage() {
   const session = await auth();
   if (!session?.user?.agentUserId) redirect('/login');
 
+  const canManage = session.user.role === 'admin' || session.user.role === 'editor';
+
   return (
     <div className="mx-auto max-w-2xl p-6">
       <RuleList
-        isAdmin={session.user.role === 'admin'}
+        isAdmin={canManage}
         userId={session.user.agentUserId}
       />
     </div>
