@@ -1,5 +1,5 @@
 import { RuleType, RuleVisibility } from '@prisma/client';
-import { auth } from '@/lib/auth';
+import { auth, canManageRules } from '@/lib/auth';
 import { listRulesForOrg, createRule, getUserRuleSettings } from '@/lib/rules/queries';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   // Non-admins can only create personal rules
-  const effectiveRuleType = session.user.role === 'admin' ? (ruleType || 'org') : 'user';
+  const effectiveRuleType = canManageRules(session.user.role) ? (ruleType || 'org') : 'user';
 
   const ALLOWED_RULE_TYPES: RuleType[] = [RuleType.org, RuleType.user];
   if (!ALLOWED_RULE_TYPES.includes(effectiveRuleType as RuleType)) {

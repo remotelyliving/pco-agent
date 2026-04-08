@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import type { NextAuthConfig } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 
 declare module 'next-auth' {
   interface Session {
@@ -28,6 +28,26 @@ declare module '@auth/core/jwt' {
     pcoAccessTokenExpires?: number;
     roleCheckedAt?: number;
   }
+}
+
+/**
+ * Map PCO permissions to pco-agent role.
+ * site_administrator → admin
+ * people_permissions "Manager" → admin
+ * people_permissions "Editor" → editor
+ * everything else → member
+ */
+function mapPcoRole(profile: Record<string, unknown>): UserRole {
+  if (profile.pcoSiteAdmin === true) return UserRole.admin;
+  const perms = profile.pcoPeoplePermissions as string | null;
+  if (perms === 'Manager') return UserRole.admin;
+  if (perms === 'Editor') return UserRole.editor;
+  return UserRole.member;
+}
+
+/** Returns true if the role can manage rules (create, edit, delete org rules). */
+export function canManageRules(role: string): boolean {
+  return role === UserRole.admin || role === UserRole.editor;
 }
 
 export const authConfig: NextAuthConfig = {
@@ -67,6 +87,8 @@ export const authConfig: NextAuthConfig = {
             pcoPersonId: person.id,
             pcoOrgId: org?.id,
             pcoOrgName: org?.attributes?.name,
+            pcoSiteAdmin: person.attributes.site_administrator === true,
+            pcoPeoplePermissions: person.attributes.people_permissions ?? null,
           };
         },
       },
@@ -105,13 +127,10 @@ export const authConfig: NextAuthConfig = {
           },
         });
 
-        // First user in org = admin, rest = member (atomic transaction to prevent race condition)
-        const agentUser = await prisma.$transaction(async (tx) => {
-          const existingUsers = await tx.user.count({
-            where: { orgId: org.id },
-          });
-          const role = existingUsers === 0 ? 'admin' : 'member';
+        // Derive role from PCO permissions (synced on every login)
+        const role = mapPcoRole(profile);
 
+        const agentUser = await prisma.$transaction(async (tx) => {
           return tx.user.upsert({
             where: {
               orgId_pcoPersonId: {
@@ -122,6 +141,7 @@ export const authConfig: NextAuthConfig = {
             update: {
               name: profile.name as string,
               email: profile.email as string | null,
+              role,
             },
             create: {
               orgId: org.id,

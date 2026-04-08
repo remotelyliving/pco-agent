@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth, canManageRules } from '@/lib/auth';
 import { updateRule, deleteRule } from '@/lib/rules/queries';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -28,7 +28,7 @@ export async function PATCH(
     }
 
     const isOwner = rule.createdById === session.user.agentUserId;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = canManageRules(session.user.role);
     const isSystemRule = rule.ruleType === 'system';
 
     if (isSystemRule || (!isOwner && !isAdmin)) {
@@ -74,7 +74,7 @@ export async function DELETE(
     }
 
     const isOwner = rule.createdById === session.user.agentUserId;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = canManageRules(session.user.role);
     const isSystemRule = rule.ruleType === 'system';
 
     if (isSystemRule || (!isOwner && !isAdmin)) {
