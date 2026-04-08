@@ -5,7 +5,6 @@ import {
   type UIMessage,
 } from 'ai';
 import { MessageRole } from '@prisma/client';
-import type { MCPClient } from '@ai-sdk/mcp';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -61,8 +60,6 @@ export async function POST(req: Request) {
   }
 
   // 3–8. Pre-stream setup: user lookup, conversation, message save, rules, memory, MCP
-  let mcpClient: MCPClient | null = null;
-  // eslint-disable-next-line prefer-const
   let user!: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
   let apiKey!: string;
   let modelId!: string;
@@ -139,7 +136,7 @@ export async function POST(req: Request) {
             setTimeout(() => reject(new Error('MCP setup timeout (30s)')), 30_000),
           ),
         ]);
-        mcpClient = result.client;
+        // mcpClient lifecycle managed by connection pool — no need to track reference
         tools = result.mcpTools;
       } catch (error) {
         log.error('MCP connection failed', {
