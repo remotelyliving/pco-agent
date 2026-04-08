@@ -4,6 +4,13 @@ import { MemorySource } from '@prisma/client';
 import { createModel } from '@/lib/ai/providers';
 import { upsertMemory, enforceMemoryCap, enforceUserMemoryCap } from '@/lib/memory/queries';
 
+const MAX_EXTRACTION_INPUT_LENGTH = 4000;
+
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '... [truncated]';
+}
+
 const CHEAP_MODELS: Record<string, string> = {
   anthropic: 'claude-haiku-4-5',
   openai: 'gpt-4o-mini',
@@ -44,8 +51,8 @@ export async function extractAndSaveMemories(
     '',
     'Only extract clear, objective facts. Return an empty facts array if nothing useful is found.',
     '',
-    `User: ${userMessage}`,
-    `Assistant: ${assistantMessage}`,
+    `User: ${truncate(userMessage, MAX_EXTRACTION_INPUT_LENGTH)}`,
+    `Assistant: ${truncate(assistantMessage, MAX_EXTRACTION_INPUT_LENGTH)}`,
   ].join('\n');
 
   const { object } = await generateObject({

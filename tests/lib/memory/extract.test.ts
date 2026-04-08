@@ -111,6 +111,28 @@ describe('extractAndSaveMemories', () => {
     expect(mockUpsertMemory).not.toHaveBeenCalled();
   });
 
+  it('truncates long messages to prevent context overflow', async () => {
+    mockGenerateObject.mockResolvedValue({
+      object: { facts: [] },
+    });
+
+    const longMessage = 'x'.repeat(5000);
+
+    await extractAndSaveMemories(
+      'org-1',
+      'user-1',
+      longMessage,
+      longMessage,
+      'anthropic',
+      'test-api-key',
+    );
+
+    const call = mockGenerateObject.mock.calls[0][0];
+    // 4000 chars + "User: " prefix + "... [truncated]" suffix
+    expect(call.prompt).not.toContain('x'.repeat(5000));
+    expect(call.prompt).toContain('... [truncated]');
+  });
+
   it('throws when generateObject errors (outer caller handles)', async () => {
     mockGenerateObject.mockRejectedValue(new Error('API error'));
 
