@@ -19,8 +19,14 @@ const RATE_LIMITS: Record<string, number> = {
 };
 const DEFAULT_RATE_LIMIT = 60;
 
-// Routes that skip auth and rate limiting
-const PUBLIC_API_ROUTES = ['/api/auth', '/api/health'];
+/**
+ * Check if a route is public (skips auth and rate limiting).
+ */
+function isPublicRoute(pathname: string): boolean {
+  if (pathname === '/api/health') return true;
+  if (pathname.startsWith('/api/auth/')) return true;
+  return false;
+}
 
 /**
  * Normalize a request path to a route pattern.
@@ -67,7 +73,7 @@ export default auth((req) => {
 
   // --- Centralized auth + rate limiting for API routes ---
   if (pathname.startsWith('/api/')) {
-    const isPublic = PUBLIC_API_ROUTES.some((route) => pathname.startsWith(route));
+    const isPublic = isPublicRoute(pathname);
 
     if (!isPublic) {
       // Auth enforcement
