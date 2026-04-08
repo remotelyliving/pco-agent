@@ -3,6 +3,7 @@ import { auth, canManageRules } from '@/lib/auth';
 import { listRulesForOrg, createRule, getUserRuleSettings } from '@/lib/rules/queries';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function GET() {
   const requestId = await getRequestId();
@@ -34,6 +35,14 @@ export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.agentUserId || !session?.user?.orgId) {
     return new Response('Unauthorized', { status: 401 });
+  }
+
+  const rateLimit = checkRateLimit(session.user.agentUserId, 60);
+  if (!rateLimit.allowed) {
+    return Response.json(
+      { error: 'Too many requests. Please wait a moment and try again.' },
+      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } },
+    );
   }
 
   // Only admins can create org rules
