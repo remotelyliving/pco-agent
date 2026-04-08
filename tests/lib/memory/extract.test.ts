@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGenerateObject = vi.hoisted(() => vi.fn());
 const mockUpsertMemory = vi.hoisted(() => vi.fn());
+const mockEnforceMemoryCap = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('ai', () => ({
   generateObject: mockGenerateObject,
@@ -9,6 +10,7 @@ vi.mock('ai', () => ({
 
 vi.mock('@/lib/memory/queries', () => ({
   upsertMemory: mockUpsertMemory,
+  enforceMemoryCap: mockEnforceMemoryCap,
 }));
 
 import { extractAndSaveMemories } from '@/lib/memory/extract';
@@ -97,5 +99,23 @@ describe('extractAndSaveMemories', () => {
     ).resolves.toBeUndefined();
 
     expect(mockUpsertMemory).not.toHaveBeenCalled();
+  });
+
+  it('calls enforceMemoryCap after extracting facts', async () => {
+    mockGenerateObject.mockResolvedValue({
+      object: { facts: [{ key: 'pastor_name', value: 'John Smith' }] },
+    });
+    mockUpsertMemory.mockResolvedValue({});
+
+    await extractAndSaveMemories(
+      'org-1',
+      'user-1',
+      'What is the pastor name?',
+      'The pastor is John Smith.',
+      'anthropic',
+      'test-api-key',
+    );
+
+    expect(mockEnforceMemoryCap).toHaveBeenCalledWith('org-1');
   });
 });

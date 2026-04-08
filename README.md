@@ -87,7 +87,7 @@ Edit `.env` and fill in every value:
 **Generating a Fernet encryption key:**
 
 ```bash
-node -e "const crypto = require('crypto'); console.log(crypto.randomBytes(32).toString('base64url'))"
+node -e "const {Fernet}=require('fernet-nodejs');console.log(Fernet.generateKey())"
 ```
 
 ### 4. Create the Docker Network and Volume
