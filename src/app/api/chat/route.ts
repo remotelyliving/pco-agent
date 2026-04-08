@@ -175,13 +175,14 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(messages),
       tools,
       stopWhen: stepCountIs(5),
-      onFinish: async ({ text, toolCalls }) => {
+      onFinish: async ({ text, toolCalls, usage }) => {
         // Save assistant message
         await saveMessage({
           conversationId,
           role: MessageRole.assistant,
           content: text || '',
           toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
+          tokenCount: usage?.totalTokens ?? null,
         });
 
         // Auto-title from first exchange

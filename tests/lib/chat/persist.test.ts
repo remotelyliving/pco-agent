@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    child: vi.fn().mockReturnThis(),
+  },
+}));
+
 const mockPrisma = vi.hoisted(() => ({
   conversation: {
     create: vi.fn(),
@@ -129,5 +138,43 @@ describe('chat persistence', () => {
       where: { id: 'conv-1' },
       data: { title: 'New Title' },
     });
+  });
+
+  it('truncates message content at 64KB', async () => {
+    const longContent = 'x'.repeat(70000);
+    mockPrisma.message.create.mockResolvedValue({ id: 'msg-t', conversationId: 'conv-1', role: 'user', content: 'x'.repeat(65536) });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
+
+    await saveMessage({ conversationId: 'conv-1', role: 'user', content: longContent });
+    const createCall = mockPrisma.message.create.mock.calls[0][0];
+    expect(createCall.data.content.length).toBe(65536);
+  });
+
+  it('does not truncate content under 64KB', async () => {
+    const shortContent = 'hello world';
+    mockPrisma.message.create.mockResolvedValue({ id: 'msg-s', conversationId: 'conv-1', role: 'user', content: shortContent });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
+
+    await saveMessage({ conversationId: 'conv-1', role: 'user', content: shortContent });
+    const createCall = mockPrisma.message.create.mock.calls[0][0];
+    expect(createCall.data.content).toBe(shortContent);
+  });
+
+  it('saves tokenCount when provided', async () => {
+    mockPrisma.message.create.mockResolvedValue({ id: 'msg-tc', tokenCount: 150 });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
+
+    await saveMessage({ conversationId: 'conv-1', role: 'assistant', content: 'response', tokenCount: 150 });
+    const createCall = mockPrisma.message.create.mock.calls[0][0];
+    expect(createCall.data.tokenCount).toBe(150);
+  });
+
+  it('saves without tokenCount when not provided', async () => {
+    mockPrisma.message.create.mockResolvedValue({ id: 'msg-nt' });
+    mockPrisma.conversation.update.mockResolvedValue({ id: 'conv-1' });
+
+    await saveMessage({ conversationId: 'conv-1', role: 'user', content: 'hello' });
+    const createCall = mockPrisma.message.create.mock.calls[0][0];
+    expect(createCall.data.tokenCount).toBeUndefined();
   });
 });

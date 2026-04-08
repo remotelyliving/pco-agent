@@ -1,5 +1,8 @@
 import { MessageRole } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
+
+const MAX_CONTENT_LENGTH = 65536; // 64KB
 
 export async function createConversation(userId: string) {
   return prisma.conversation.create({ data: { userId } });
@@ -34,13 +37,25 @@ export async function saveMessage(data: {
   role: MessageRole;
   content: string;
   toolCalls?: unknown;
+  tokenCount?: number | null;
 }) {
+  let content = data.content;
+  if (content.length > MAX_CONTENT_LENGTH) {
+    logger.warn('[persist] Message content truncated', {
+      conversationId: data.conversationId,
+      originalLength: content.length,
+      truncatedTo: MAX_CONTENT_LENGTH,
+    });
+    content = content.slice(0, MAX_CONTENT_LENGTH);
+  }
+
   const message = await prisma.message.create({
     data: {
       conversationId: data.conversationId,
       role: data.role,
-      content: data.content,
+      content,
       toolCalls: data.toolCalls ?? undefined,
+      tokenCount: data.tokenCount ?? undefined,
     },
   });
 
