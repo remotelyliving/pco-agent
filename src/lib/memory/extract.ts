@@ -2,7 +2,7 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { MemorySource } from '@prisma/client';
 import { createModel } from '@/lib/ai/providers';
-import { upsertMemory } from '@/lib/memory/queries';
+import { upsertMemory, enforceMemoryCap } from '@/lib/memory/queries';
 
 const CHEAP_MODELS: Record<string, string> = {
   anthropic: 'claude-haiku-4-5',
@@ -54,6 +54,9 @@ export async function extractAndSaveMemories(
     for (const fact of object.facts) {
       await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, undefined);
     }
+
+    // Enforce per-org memory cap (evict oldest auto-extracted if over 200)
+    await enforceMemoryCap(orgId);
   } catch {
     // best-effort: never throw
   }

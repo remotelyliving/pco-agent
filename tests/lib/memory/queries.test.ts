@@ -8,6 +8,8 @@ const mockPrisma = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    count: vi.fn(),
+    deleteMany: vi.fn(),
   },
 }));
 
@@ -20,6 +22,7 @@ import {
   upsertMemory,
   updateMemory,
   deleteMemory,
+  enforceMemoryCap,
 } from '@/lib/memory/queries';
 
 describe('memory queries', () => {
@@ -154,6 +157,49 @@ describe('memory queries', () => {
 
       await deleteMemory('m1', 'org-1');
       expect(mockPrisma.memory.delete).toHaveBeenCalledWith({ where: { id: 'm1', orgId: 'org-1' } });
+    });
+  });
+
+  describe('enforceMemoryCap', () => {
+    it('does nothing when under the cap', async () => {
+      mockPrisma.memory.count.mockResolvedValue(150);
+      await enforceMemoryCap('org-1', 200);
+      expect(mockPrisma.memory.findMany).not.toHaveBeenCalled();
+      expect(mockPrisma.memory.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('deletes oldest auto-sourced memories when over the cap', async () => {
+      mockPrisma.memory.count.mockResolvedValue(210);
+      mockPrisma.memory.findMany.mockResolvedValue([
+        { id: 'old-1' }, { id: 'old-2' }, { id: 'old-3' }, { id: 'old-4' }, { id: 'old-5' },
+        { id: 'old-6' }, { id: 'old-7' }, { id: 'old-8' }, { id: 'old-9' }, { id: 'old-10' },
+      ]);
+      mockPrisma.memory.deleteMany.mockResolvedValue({ count: 10 });
+
+      await enforceMemoryCap('org-1', 200);
+
+      expect(mockPrisma.memory.findMany).toHaveBeenCalledWith({
+        where: { orgId: 'org-1', source: 'auto' },
+        orderBy: { updatedAt: 'asc' },
+        take: 10,
+        select: { id: true },
+      });
+      expect(mockPrisma.memory.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['old-1', 'old-2', 'old-3', 'old-4', 'old-5', 'old-6', 'old-7', 'old-8', 'old-9', 'old-10'] } },
+      });
+    });
+
+    it('does nothing if no auto memories to delete', async () => {
+      mockPrisma.memory.count.mockResolvedValue(205);
+      mockPrisma.memory.findMany.mockResolvedValue([]);
+      await enforceMemoryCap('org-1', 200);
+      expect(mockPrisma.memory.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('uses default cap of 200', async () => {
+      mockPrisma.memory.count.mockResolvedValue(150);
+      await enforceMemoryCap('org-1');
+      expect(mockPrisma.memory.count).toHaveBeenCalledWith({ where: { orgId: 'org-1' } });
     });
   });
 });

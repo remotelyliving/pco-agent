@@ -80,3 +80,22 @@ export async function updateMemory(
 export async function deleteMemory(id: string, orgId: string) {
   return prisma.memory.delete({ where: { id, orgId } });
 }
+
+export async function enforceMemoryCap(orgId: string, maxCount: number = 200): Promise<void> {
+  const count = await prisma.memory.count({ where: { orgId } });
+  if (count <= maxCount) return;
+
+  const excess = count - maxCount;
+  const oldestAuto = await prisma.memory.findMany({
+    where: { orgId, source: 'auto' },
+    orderBy: { updatedAt: 'asc' },
+    take: excess,
+    select: { id: true },
+  });
+
+  if (oldestAuto.length > 0) {
+    await prisma.memory.deleteMany({
+      where: { id: { in: oldestAuto.map((m) => m.id) } },
+    });
+  }
+}
