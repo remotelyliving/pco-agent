@@ -31,33 +31,29 @@ export async function extractAndSaveMemories(
   provider: string,
   apiKey: string,
 ): Promise<void> {
-  try {
-    const modelId = CHEAP_MODELS[provider] ?? CHEAP_MODELS.anthropic;
-    const model = createModel(provider, modelId, apiKey);
+  const modelId = CHEAP_MODELS[provider] ?? CHEAP_MODELS.anthropic;
+  const model = createModel(provider, modelId, apiKey);
 
-    const prompt = [
-      'Extract factual information about the church or organization from this conversation exchange.',
-      'Only extract clear, objective facts (names, times, locations, preferences).',
-      'Do not extract opinions or temporary information.',
-      'Return an empty facts array if nothing useful is found.',
-      '',
-      `User: ${userMessage}`,
-      `Assistant: ${assistantMessage}`,
-    ].join('\n');
+  const prompt = [
+    'Extract factual information about the church or organization from this conversation exchange.',
+    'Only extract clear, objective facts (names, times, locations, preferences).',
+    'Do not extract opinions or temporary information.',
+    'Return an empty facts array if nothing useful is found.',
+    '',
+    `User: ${userMessage}`,
+    `Assistant: ${assistantMessage}`,
+  ].join('\n');
 
-    const { object } = await generateObject({
-      model,
-      schema: factsSchema,
-      prompt,
-    });
+  const { object } = await generateObject({
+    model,
+    schema: factsSchema,
+    prompt,
+  });
 
-    for (const fact of object.facts) {
-      await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, undefined);
-    }
-
-    // Enforce per-org memory cap (evict oldest auto-extracted if over 200)
-    await enforceMemoryCap(orgId);
-  } catch {
-    // best-effort: never throw
+  for (const fact of object.facts) {
+    await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, undefined);
   }
+
+  // Enforce per-org memory cap (evict oldest auto-extracted if over 200)
+  await enforceMemoryCap(orgId);
 }

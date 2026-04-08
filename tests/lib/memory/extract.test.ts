@@ -84,7 +84,7 @@ describe('extractAndSaveMemories', () => {
     expect(mockUpsertMemory).not.toHaveBeenCalled();
   });
 
-  it('does not throw when generateObject errors', async () => {
+  it('throws when generateObject errors (outer caller handles)', async () => {
     mockGenerateObject.mockRejectedValue(new Error('API error'));
 
     await expect(
@@ -96,7 +96,7 @@ describe('extractAndSaveMemories', () => {
         'anthropic',
         'test-api-key',
       ),
-    ).resolves.toBeUndefined();
+    ).rejects.toThrow('API error');
 
     expect(mockUpsertMemory).not.toHaveBeenCalled();
   });
