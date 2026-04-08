@@ -34,12 +34,20 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
   }, []);
 
   async function handleToggle(ruleId: string, enabled: boolean) {
-    setSettings((prev) => ({ ...prev, [ruleId]: enabled }));
-    await fetch('/api/rules/toggle', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ruleId, enabled }),
-    });
+    const prev = settings[ruleId];
+    setSettings((s) => ({ ...s, [ruleId]: enabled }));
+    try {
+      const res = await fetch('/api/rules/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ruleId, enabled }),
+      });
+      if (!res.ok) {
+        setSettings((s) => ({ ...s, [ruleId]: prev }));
+      }
+    } catch {
+      setSettings((s) => ({ ...s, [ruleId]: prev }));
+    }
   }
 
   async function handleDelete(ruleId: string) {
@@ -159,6 +167,7 @@ function RuleSection({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [editError, setEditError] = useState('');
 
   if (rules.length === 0) return null;
 
@@ -169,8 +178,11 @@ function RuleSection({
       body: JSON.stringify({ content: editContent }),
     });
     if (res.ok) {
+      setEditError('');
       setEditingId(null);
       onReload();
+    } else {
+      setEditError('Failed to save. Please try again.');
     }
   }
 
@@ -200,11 +212,12 @@ function RuleSection({
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                   />
+                  {editError && <p className="text-xs text-red-500">{editError}</p>}
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => handleEdit(rule.id)}>
                       Save
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    <Button size="sm" variant="ghost" onClick={() => { setEditingId(null); setEditError(''); }}>
                       Cancel
                     </Button>
                   </div>
