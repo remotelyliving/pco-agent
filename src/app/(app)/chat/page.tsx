@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { auth } from '@/lib/auth';
 import { needsSetup } from '@/lib/setup';
+import { logger } from '@/lib/logger';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default async function ChatPage() {
       redirect('/setup');
     }
   } catch (error) {
-    console.error('[chat] Setup check failed:', error);
+    logger.error('[chat] Setup check failed', { error: error instanceof Error ? error.message : String(error) });
     // Continue to chat — better than breaking the page
   }
 

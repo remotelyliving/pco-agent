@@ -43,7 +43,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
               );
             }
             return (
-              <div key={i} className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2">
+              <div key={i} className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-code:bg-white prose-code:px-1 prose-code:rounded">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {part.text}
                 </ReactMarkdown>
