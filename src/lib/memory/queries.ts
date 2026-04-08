@@ -32,7 +32,13 @@ export async function upsertMemory(
   userId?: string,
 ) {
   if (userId) {
-    // User-scoped: composite unique works correctly
+    // User-scoped: check manual-vs-auto protection before upserting
+    const existing = await prisma.memory.findFirst({
+      where: { orgId, userId, key },
+    });
+    if (existing && existing.source === 'manual' && source === 'auto') {
+      return existing;
+    }
     return prisma.memory.upsert({
       where: { orgId_userId_key: { orgId, userId, key } },
       update: { value, source },
@@ -64,11 +70,12 @@ export async function upsertMemory(
 
 export async function updateMemory(
   id: string,
+  orgId: string,
   data: { key?: string; value?: string; source?: string },
 ) {
-  return prisma.memory.update({ where: { id }, data });
+  return prisma.memory.update({ where: { id, orgId }, data });
 }
 
-export async function deleteMemory(id: string) {
-  return prisma.memory.delete({ where: { id } });
+export async function deleteMemory(id: string, orgId: string) {
+  return prisma.memory.delete({ where: { id, orgId } });
 }

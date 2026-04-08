@@ -9,6 +9,7 @@ interface PoolEntry {
 
 const CLIENT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const CLEANUP_INTERVAL_MS = 60 * 1000; // 1 minute
+const MAX_POOL_SIZE = 100;
 const pool = new Map<string, PoolEntry>();
 
 let cleanupTimer: ReturnType<typeof setInterval> | null = null;
@@ -52,6 +53,24 @@ export async function getMCPClient(
   if (existing) {
     existing.client.close().catch(() => {});
     pool.delete(key);
+  }
+
+  // Evict the least-recently-used entry if at capacity
+  if (pool.size >= MAX_POOL_SIZE) {
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+    for (const [k, entry] of pool.entries()) {
+      if (entry.lastUsed < oldestTime) {
+        oldestTime = entry.lastUsed;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey) {
+      const evicted = pool.get(oldestKey);
+      evicted?.client.close().catch(() => {});
+      pool.delete(oldestKey);
+      logger.info('[mcp-pool] Evicted LRU client (pool at capacity)', { poolSize: pool.size });
+    }
   }
 
   const client = await createMCPClient({

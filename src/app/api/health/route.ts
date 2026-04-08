@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/db';
-import { getPoolSize } from '@/lib/mcp-pool';
 
 export async function GET() {
   try {
@@ -7,7 +6,6 @@ export async function GET() {
     return Response.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      mcpPoolSize: getPoolSize(),
     });
   } catch (error) {
     console.error('[health] Database check failed:', error);

@@ -111,36 +111,49 @@ describe('memory queries', () => {
 
     it('creates a user-level memory when userId is provided', async () => {
       const newMemory = { id: 'm2', orgId: 'org-1', userId: 'user-1', key: 'pref', value: 'email', source: 'manual' };
+      mockPrisma.memory.findFirst.mockResolvedValue(null);
       mockPrisma.memory.upsert.mockResolvedValue(newMemory);
 
       const result = await upsertMemory('org-1', 'pref', 'email', 'manual', 'user-1');
       expect(result).toEqual(newMemory);
+      expect(mockPrisma.memory.findFirst).toHaveBeenCalledWith({
+        where: { orgId: 'org-1', userId: 'user-1', key: 'pref' },
+      });
       expect(mockPrisma.memory.upsert).toHaveBeenCalledWith({
         where: { orgId_userId_key: { orgId: 'org-1', userId: 'user-1', key: 'pref' } },
         update: { value: 'email', source: 'manual' },
         create: { orgId: 'org-1', userId: 'user-1', key: 'pref', value: 'email', source: 'manual' },
       });
     });
+
+    it('does not overwrite a manual user-level memory with an auto-extracted one', async () => {
+      const existing = { id: 'm2', orgId: 'org-1', userId: 'user-1', key: 'pref', value: 'email', source: 'manual' };
+      mockPrisma.memory.findFirst.mockResolvedValue(existing);
+
+      const result = await upsertMemory('org-1', 'pref', 'phone', 'auto', 'user-1');
+      expect(result).toEqual(existing);
+      expect(mockPrisma.memory.upsert).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateMemory', () => {
-    it('updates the memory by id', async () => {
+    it('updates the memory by id scoped to orgId', async () => {
       mockPrisma.memory.update.mockResolvedValue({ id: 'm1', key: 'pastor_name', value: 'Jane Doe' });
 
-      await updateMemory('m1', { value: 'Jane Doe' });
+      await updateMemory('m1', 'org-1', { value: 'Jane Doe' });
       expect(mockPrisma.memory.update).toHaveBeenCalledWith({
-        where: { id: 'm1' },
+        where: { id: 'm1', orgId: 'org-1' },
         data: { value: 'Jane Doe' },
       });
     });
   });
 
   describe('deleteMemory', () => {
-    it('deletes the memory by id', async () => {
+    it('deletes the memory by id scoped to orgId', async () => {
       mockPrisma.memory.delete.mockResolvedValue({ id: 'm1' });
 
-      await deleteMemory('m1');
-      expect(mockPrisma.memory.delete).toHaveBeenCalledWith({ where: { id: 'm1' } });
+      await deleteMemory('m1', 'org-1');
+      expect(mockPrisma.memory.delete).toHaveBeenCalledWith({ where: { id: 'm1', orgId: 'org-1' } });
     });
   });
 });

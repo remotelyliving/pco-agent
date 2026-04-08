@@ -91,6 +91,7 @@ model Rule {
   settings  UserRuleSetting[]
 
   @@index([orgId, ruleType])
+  @@index([createdById, orgId])
   @@map("rules")
   @@schema("agent")
 }

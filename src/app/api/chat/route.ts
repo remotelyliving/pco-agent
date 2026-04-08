@@ -144,8 +144,7 @@ export async function POST(req: Request) {
   }
 
   // 9. Stream the response
-  try {
-    const result = streamText({
+  const result = streamText({
       model: createModel(user.apiProvider, modelId, apiKey),
       system: systemPrompt,
       messages: await convertToModelMessages(messages),
@@ -187,7 +186,7 @@ export async function POST(req: Request) {
 
         // MCP client lifecycle managed by connection pool
       },
-      onError: async (error) => {
+      onError: async ({ error }) => {
         log.error('[chat] Stream error', {
           conversationId,
           userId: session.user.agentUserId,
@@ -196,15 +195,12 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toUIMessageStreamResponse({
-      headers: {
-        'x-conversation-id': conversationId,
-        'x-request-id': requestId,
-      },
-    });
-  } catch (error) {
-    throw error;
-  }
+  return result.toUIMessageStreamResponse({
+    headers: {
+      'x-conversation-id': conversationId,
+      'x-request-id': requestId,
+    },
+  });
 }
 
 function generateTitle(text: string): string {
