@@ -1,4 +1,4 @@
-.PHONY: install dev build test lint db-push db-migrate seed docker-build docker-up docker-down clean
+.PHONY: install dev build test lint db-push db-migrate db-deploy seed docker-build docker-up docker-down clean
 
 # Development
 install:
@@ -49,6 +49,9 @@ seed:
 
 db-reset:
 	npx prisma migrate reset
+
+db-deploy:
+	npx prisma migrate deploy
 
 # Docker
 docker-build:
