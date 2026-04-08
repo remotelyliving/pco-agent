@@ -75,8 +75,8 @@ Edit `.env` and fill in every value:
 
 | Variable | Description | How to generate |
 |----------|-------------|-----------------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://pco:<password>@pco-mcp-db:5432/pco_mcp?schema=agent` |
-| `POSTGRES_PASSWORD` | Password for the PostgreSQL container | Pick a strong password |
+| `DATABASE_URL` | PostgreSQL connection string (shared with pco-mcp) | `postgresql://pco:<password>@pco-mcp-db:5432/pco_mcp?schema=agent` |
+| `POSTGRES_PASSWORD` | Password for the shared PostgreSQL (must match pco-mcp's `.env`) | Same value as pco-mcp |
 | `PCO_CLIENT_ID` | From step 2 above | Planning Center developer portal |
 | `PCO_CLIENT_SECRET` | From step 2 above | Planning Center developer portal |
 | `NEXTAUTH_SECRET` | Session encryption key | `openssl rand -base64 32` |
@@ -90,30 +90,25 @@ Edit `.env` and fill in every value:
 node -e "const {Fernet}=require('fernet-nodejs');console.log(Fernet.generateKey())"
 ```
 
-### 4. Create the Docker Network and Volume
+### 4. Prerequisites: pco-mcp Must Be Running
 
-If this is your first time, create the shared network and volume:
+pco-agent shares PostgreSQL with pco-mcp. The database is owned by the pco-mcp docker-compose — **start pco-mcp first**.
 
 ```bash
-docker network create homelab-net
-docker volume create pco-mcp_pgdata
+# In ~/projects/pco-mcp
+docker compose up -d
 ```
 
-### 5. First-Time Database Setup
+This creates the `pco-mcp-db` container, the `homelab-net` network, and the database. pco-agent connects to this existing database via the shared network.
+
+### 5. Build and Start pco-agent
 
 ```bash
-# Start PostgreSQL first
-docker compose up -d pco-mcp-db
-
-# Wait for it to be healthy
-docker compose exec pco-mcp-db pg_isready -U pco -d pco_mcp
-
-# Build and start the app (migrations run automatically on startup)
 make docker-build
 make docker-up
 ```
 
-The entrypoint script runs `prisma migrate deploy` before starting the server, so your schema will be created automatically.
+The entrypoint script waits for the database to be reachable, then runs `prisma migrate deploy` to create the `agent` schema tables before starting the server.
 
 ### 6. Seed Default Rules
 
@@ -174,7 +169,7 @@ make docker-up    # Migrations run automatically on restart
 
 | Problem | Fix |
 |---------|-----|
-| Health check returns connection error | Check `DATABASE_URL` in `.env` — host should be `pco-mcp-db` (Docker service name), not `localhost` |
+| Health check returns connection error | Check `DATABASE_URL` in `.env` — host should be `pco-mcp-db` (Docker service name). Ensure pco-mcp is running first (`docker compose up -d` in pco-mcp directory) |
 | OAuth redirect mismatch | Ensure `NEXTAUTH_URL` matches the Redirect URI in your PCO OAuth app |
 | "No API key configured" after login | Each user needs to configure their own AI provider key at `/settings` or via the setup wizard |
 | Container exits immediately | Check logs: `make docker-logs` |

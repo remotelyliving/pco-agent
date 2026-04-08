@@ -1,7 +1,27 @@
 #!/bin/sh
 set -e
 
-echo "[entrypoint] Running database migrations..."
+echo "[entrypoint] Waiting for database to be ready..."
+# Extract host and port from DATABASE_URL (format: postgresql://user:pass@host:port/db?schema=agent)
+DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
+DB_PORT=$(echo "$DATABASE_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+DB_HOST=${DB_HOST:-pco-mcp-db}
+DB_PORT=${DB_PORT:-5432}
+
+retries=0
+max_retries=30
+until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null || [ $retries -ge $max_retries ]; do
+  retries=$((retries + 1))
+  echo "[entrypoint] Waiting for $DB_HOST:$DB_PORT... ($retries/$max_retries)"
+  sleep 2
+done
+
+if [ $retries -ge $max_retries ]; then
+  echo "[entrypoint] ERROR: Database not reachable at $DB_HOST:$DB_PORT after $max_retries attempts"
+  exit 1
+fi
+
+echo "[entrypoint] Database is ready. Running migrations..."
 node ./node_modules/prisma/build/index.js migrate deploy
 echo "[entrypoint] Migrations complete. Starting server..."
 
