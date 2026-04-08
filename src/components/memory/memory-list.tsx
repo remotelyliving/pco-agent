@@ -17,8 +17,8 @@ interface Memory {
 }
 
 export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
-  const [orgMemories, setOrgMemories] = useState<Memory[]>([]);
-  const [userMemories, setUserMemories] = useState<Memory[]>([]);
+  const [orgMemories, setOrgMemories] = useState<Memory[] | null>(null);
+  const [userMemories, setUserMemories] = useState<Memory[] | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [newKey, setNewKey] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -60,8 +60,8 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
     await loadMemories();
   }
 
-  function MemoryTable({ memories, showDelete }: { memories: Memory[]; showDelete: boolean }) {
-    if (memories.length === 0) {
+  function MemoryTable({ memories, showDelete }: { memories: Memory[] | null; showDelete: boolean }) {
+    if (memories === null || memories.length === 0) {
       return (
         <p className="text-sm text-gray-400">
           No facts yet. The assistant will learn facts automatically during conversations.
@@ -161,23 +161,33 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Organization Facts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MemoryTable memories={orgMemories} showDelete={isAdmin} />
-        </CardContent>
-      </Card>
+      {orgMemories === null && (
+        <div className="flex justify-center py-8">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+        </div>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">My Facts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MemoryTable memories={userMemories} showDelete={isAdmin} />
-        </CardContent>
-      </Card>
+      {orgMemories !== null && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Organization Facts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MemoryTable memories={orgMemories} showDelete={isAdmin} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">My Facts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MemoryTable memories={userMemories} showDelete={isAdmin} />
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

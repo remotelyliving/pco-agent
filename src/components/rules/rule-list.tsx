@@ -17,7 +17,7 @@ interface Rule {
 }
 
 export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string }) {
-  const [rules, setRules] = useState<Rule[]>([]);
+  const [rules, setRules] = useState<Rule[] | null>(null);
   const [settings, setSettings] = useState<Record<string, boolean>>({});
   const [showEditor, setShowEditor] = useState(false);
 
@@ -59,9 +59,9 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
     return override === true;
   }
 
-  const systemRules = rules.filter((r) => r.ruleType === 'system');
-  const orgRules = rules.filter((r) => r.ruleType === 'org');
-  const userRules = rules.filter((r) => r.ruleType === 'user');
+  const systemRules = (rules ?? []).filter((r) => r.ruleType === 'system');
+  const orgRules = (rules ?? []).filter((r) => r.ruleType === 'org');
+  const userRules = (rules ?? []).filter((r) => r.ruleType === 'user');
 
   return (
     <div className="space-y-6">
@@ -87,40 +87,50 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         />
       )}
 
-      <RuleSection
-        title="System Defaults"
-        rules={systemRules}
-        isEnabled={isEnabled}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
-        onReload={loadRules}
-        canDelete={false}
-        userId={userId}
-        isAdmin={isAdmin}
-      />
-      <RuleSection
-        title="Organization Rules"
-        rules={orgRules}
-        isEnabled={isEnabled}
-        onToggle={handleToggle}
-        onDelete={handleDelete}
-        onReload={loadRules}
-        canDelete={isAdmin}
-        userId={userId}
-        isAdmin={isAdmin}
-      />
-      {userRules.length > 0 && (
-        <RuleSection
-          title="Personal Rules"
-          rules={userRules}
-          isEnabled={isEnabled}
-          onToggle={handleToggle}
-          onDelete={handleDelete}
-          onReload={loadRules}
-          canDelete={true}
-          userId={userId}
-          isAdmin={isAdmin}
-        />
+      {rules === null && (
+        <div className="flex justify-center py-8">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+        </div>
+      )}
+
+      {rules !== null && (
+        <>
+          <RuleSection
+            title="System Defaults"
+            rules={systemRules}
+            isEnabled={isEnabled}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={loadRules}
+            canDelete={false}
+            userId={userId}
+            isAdmin={isAdmin}
+          />
+          <RuleSection
+            title="Organization Rules"
+            rules={orgRules}
+            isEnabled={isEnabled}
+            onToggle={handleToggle}
+            onDelete={handleDelete}
+            onReload={loadRules}
+            canDelete={isAdmin}
+            userId={userId}
+            isAdmin={isAdmin}
+          />
+          {userRules.length > 0 && (
+            <RuleSection
+              title="Personal Rules"
+              rules={userRules}
+              isEnabled={isEnabled}
+              onToggle={handleToggle}
+              onDelete={handleDelete}
+              onReload={loadRules}
+              canDelete={true}
+              userId={userId}
+              isAdmin={isAdmin}
+            />
+          )}
+        </>
       )}
     </div>
   );
