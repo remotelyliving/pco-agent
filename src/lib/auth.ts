@@ -37,7 +37,7 @@ declare module '@auth/core/jwt' {
  * people_permissions "Editor" → editor
  * everything else → member
  */
-function mapPcoRole(profile: Record<string, unknown>): UserRole {
+export function mapPcoRole(profile: Record<string, unknown>): UserRole {
   if (profile.pcoSiteAdmin === true) return UserRole.admin;
   const perms = profile.pcoPeoplePermissions as string | null;
   if (perms === 'Manager') return UserRole.admin;

@@ -6,10 +6,12 @@ vi.mock('@prisma/client', () => {
     this.$connect = vi.fn();
     this.$disconnect = vi.fn();
   });
-  return { PrismaClient: MockPrismaClient };
+  const UserRole = { admin: 'admin', editor: 'editor', member: 'member' } as const;
+  const Prisma = { TransactionIsolationLevel: { Serializable: 'Serializable' } };
+  return { PrismaClient: MockPrismaClient, UserRole, Prisma };
 });
 
-const { authConfig } = await import('@/lib/auth');
+const { authConfig, mapPcoRole, canManageRules } = await import('@/lib/auth');
 
 describe('auth config', () => {
   it('has planning-center provider', () => {
@@ -130,5 +132,53 @@ describe('auth config', () => {
       expect((result as any).user.orgId).toBe('');
       expect((result as any).user.role).toBe('member');
     });
+  });
+});
+
+describe('mapPcoRole', () => {
+  it('maps site_administrator to admin', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: true, pcoPeoplePermissions: null })).toBe('admin');
+  });
+
+  it('maps site_administrator even with lower people_permissions', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: true, pcoPeoplePermissions: 'Viewer' })).toBe('admin');
+  });
+
+  it('maps Manager to admin', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Manager' })).toBe('admin');
+  });
+
+  it('maps Editor to editor', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Editor' })).toBe('editor');
+  });
+
+  it('maps Viewer to member', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: 'Viewer' })).toBe('member');
+  });
+
+  it('maps null permissions to member', () => {
+    expect(mapPcoRole({ pcoSiteAdmin: false, pcoPeoplePermissions: null })).toBe('member');
+  });
+
+  it('maps undefined permissions to member', () => {
+    expect(mapPcoRole({})).toBe('member');
+  });
+});
+
+describe('canManageRules', () => {
+  it('returns true for admin', () => {
+    expect(canManageRules('admin')).toBe(true);
+  });
+
+  it('returns true for editor', () => {
+    expect(canManageRules('editor')).toBe(true);
+  });
+
+  it('returns false for member', () => {
+    expect(canManageRules('member')).toBe(false);
+  });
+
+  it('returns false for unknown role', () => {
+    expect(canManageRules('viewer')).toBe(false);
   });
 });
