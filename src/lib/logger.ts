@@ -1,46 +1,41 @@
-type LogLevel = 'info' | 'warn' | 'error';
+import pino from 'pino';
 
-interface LogContext {
-  [key: string]: unknown;
-}
+export type LogContext = Record<string, unknown>;
 
-function log(level: LogLevel, message: string, context?: LogContext) {
-  const entry = {
-    level,
-    message,
-    timestamp: new Date().toISOString(),
-    ...context,
+const level = process.env.LOG_LEVEL || 'info';
+const isDev = process.env.NODE_ENV !== 'production';
+
+const pinoInstance = pino({
+  level,
+  ...(isDev && {
+    transport: {
+      target: 'pino-pretty',
+      options: { colorize: true },
+    },
+  }),
+});
+
+// Wraps a pino logger to preserve the existing call signature:
+//   logger.info(message, context?)
+// Pino's native API is reversed:
+//   pinoLogger.info(mergingObject, message)
+function wrapPino(p: pino.Logger): Logger {
+  return {
+    info: (message: string, context?: LogContext) =>
+      context ? p.info(context, message) : p.info(message),
+    warn: (message: string, context?: LogContext) =>
+      context ? p.warn(context, message) : p.warn(message),
+    error: (message: string, context?: LogContext) =>
+      context ? p.error(context, message) : p.error(message),
+    child: (childContext: LogContext) => wrapPino(p.child(childContext)),
   };
-
-  if (level === 'error') {
-    console.error(JSON.stringify(entry));
-  } else if (level === 'warn') {
-    console.warn(JSON.stringify(entry));
-  } else {
-    console.log(JSON.stringify(entry));
-  }
 }
 
-interface Logger {
+export interface Logger {
   info: (message: string, context?: LogContext) => void;
   warn: (message: string, context?: LogContext) => void;
   error: (message: string, context?: LogContext) => void;
   child: (childContext: LogContext) => Logger;
 }
 
-function createLogger(baseContext?: LogContext): Logger {
-  const mergeContext = (context?: LogContext) => ({
-    ...baseContext,
-    ...context,
-  });
-
-  return {
-    info: (message: string, context?: LogContext) => log('info', message, mergeContext(context)),
-    warn: (message: string, context?: LogContext) => log('warn', message, mergeContext(context)),
-    error: (message: string, context?: LogContext) => log('error', message, mergeContext(context)),
-    child: (childContext: LogContext) => createLogger({ ...baseContext, ...childContext }),
-  };
-}
-
-export const logger = createLogger();
-export type { Logger, LogContext };
+export const logger: Logger = wrapPino(pinoInstance);
