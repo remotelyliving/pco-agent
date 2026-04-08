@@ -42,7 +42,7 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
       </Link>
       <ConfirmDialog
         trigger={
-          <button className="px-2 text-xs text-gray-400 hover:text-red-500 shrink-0" aria-label="Delete conversation">
+          <button className="min-h-[44px] min-w-[44px] flex items-center justify-center text-xs text-gray-400 hover:text-red-500 shrink-0" aria-label="Delete conversation">
             ✕
           </button>
         }
