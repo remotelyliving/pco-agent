@@ -35,6 +35,16 @@ export async function PATCH(
     }
 
     const body = await req.json();
+
+    if (body.content !== undefined) {
+      if (typeof body.content !== 'string' || body.content.length === 0) {
+        return Response.json({ error: 'Content must be a non-empty string.' }, { status: 400 });
+      }
+      if (body.content.length > 2000) {
+        return Response.json({ error: 'Rule content must be under 2,000 characters.' }, { status: 400 });
+      }
+    }
+
     const updated = await updateRule(id, {
       content: body.content,
       category: body.category,
@@ -42,6 +52,9 @@ export async function PATCH(
 
     return Response.json(updated);
   } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
     log.error('[rules/id] Database error', { error: error instanceof Error ? error.message : String(error) });
     return Response.json(
       { error: 'An internal error occurred. Please try again.' },
