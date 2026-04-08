@@ -31,7 +31,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const updated = await updateMemory(id, {
+    const updated = await updateMemory(id, session.user.orgId, {
       key: body.key,
       value: body.value,
     });
@@ -72,7 +72,7 @@ export async function DELETE(
       return new Response('Forbidden', { status: 403 });
     }
 
-    await deleteMemory(id);
+    await deleteMemory(id, session.user.orgId);
     return new Response(null, { status: 204 });
   } catch (error) {
     log.error('[memory/id] Database error', { error: error instanceof Error ? error.message : String(error) });
