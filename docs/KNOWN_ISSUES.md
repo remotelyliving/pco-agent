@@ -15,6 +15,58 @@
 
 ---
 
+## UX
+
+### Message Pagination — No "Load Earlier" UI
+**Status:** Deferred — backend ready, frontend not wired up
+**Impact:** Conversations load the last 100 messages. Users with longer conversations see a truncated thread with no indication older messages exist and no way to load them.
+**Fix:** Add a banner at the top of truncated conversations ("Showing the last 100 messages") and a "Load earlier messages" button that calls `getMessages` with cursor pagination. The backend `getMessages(conversationId, { take, cursor })` already supports this.
+
+### Conversation List — `hasMore` Not Surfaced
+**Status:** Deferred — backend ready, frontend not wired up
+**Impact:** `listConversations` returns `{ conversations, hasMore }` but the sidebar ignores `hasMore`. Users with 50+ conversations see exactly 50 with no indicator.
+**Fix:** Show a "View all" or "Load more" link in the sidebar when `hasMore` is true.
+
+### Memory Cap Eviction Not Visible to Admins
+**Status:** Deferred
+**Impact:** When `enforceMemoryCap` evicts old auto-extracted memories, there is no user-facing signal. Admins may notice facts disappearing without understanding why.
+**Fix:** Add a note on the `/memory` page explaining the 200-fact cap for auto-extracted memories. Optionally log which memories were evicted.
+
+---
+
+## Security
+
+### MCP Pool Uses Raw Access Token as Map Key
+**Status:** Accepted — pre-existing, low risk
+**Impact:** The PCO access token is used directly as the pool Map key. In a heap dump or memory profiler, tokens would be visible as Map keys.
+**Fix:** Hash the token before using as key: `crypto.createHash('sha256').update(accessToken).digest('hex')`.
+
+### No CSRF Protection on Mutation Endpoints
+**Status:** Accepted — mitigated by CSP + same-origin cookies
+**Impact:** Mutation endpoints accept JSON without CSRF tokens. Mitigated by CSP `connect-src 'self'` and same-origin auth cookies, but older browsers may not fully enforce CSP on fetch.
+**Fix:** Add CSRF token validation if the app is ever exposed to untrusted origins. Low risk for a homelab behind Cloudflare.
+
+---
+
+## Operations
+
+### Docker Seed Command May Not Work Inside Container
+**Status:** Deferred
+**Impact:** README step 6 suggests `docker compose exec pco-agent node -e "require('./prisma/seed')"` but the seed file is TypeScript and may not be compiled in the runner image.
+**Fix:** Either add a compiled seed script to the Docker image, provide a dedicated seed container command, or document that seeding should be done from the host.
+
+### Prisma Migrations — Only Partial Index Migration Exists
+**Status:** Deferred — needs running DB to generate baseline
+**Impact:** The spec called for 4 migrations (init, enums, partial index, tokenCount). Only the partial unique index migration was created. Enum and tokenCount changes were applied via `db push`. A fresh deployment using `prisma migrate deploy` alone won't create the full schema.
+**Fix:** Run `npx prisma migrate dev --name init` against a running database to generate the baseline migration. Then `prisma migrate deploy` will work end-to-end. Until then, first-time deployments need `db push` followed by `migrate deploy` for the partial index.
+
+### Migration Failure Troubleshooting Not Documented
+**Status:** Deferred
+**Impact:** The Docker entrypoint runs `prisma migrate deploy` automatically. If it fails (e.g., schema already exists from `db push`), the container exits with no guidance.
+**Fix:** Add a troubleshooting row to README: "Container exits with migration error → Check logs. If migrating from `db push`, baseline with `npx prisma migrate resolve --applied init`."
+
+---
+
 ## Resolved in This Hardening Pass
 
 The following items were resolved and removed from this file on 2026-04-07:

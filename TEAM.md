@@ -90,8 +90,9 @@ All code must pass these before merging:
 2. **Dispatch all 5 reviewers in parallel** → each reads the code independently
 3. **Collect findings** → consolidate into the feature summary document
 4. **Fix all critical/important issues** → re-run affected reviewers
-5. **Architect gives final approval** → merge to main
-6. **Update DEV_QUEUE.md** → move task to Done
+5. **Memoize deferrals** → any suggestion or minor finding intentionally deferred MUST be added to `docs/KNOWN_ISSUES.md` with Status, Impact, and Fix fields. Never silently drop an issue — either fix it or write it down so future sessions can find it.
+6. **Architect gives final approval** → merge to main
+7. **Update DEV_QUEUE.md** → move task to Done
 
 ---
 
