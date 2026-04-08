@@ -17,6 +17,80 @@ interface Memory {
   updatedAt: string;
 }
 
+function MemoryTable({
+  memories,
+  showDelete,
+  onDelete,
+}: {
+  memories: Memory[] | null;
+  showDelete: boolean;
+  onDelete: (id: string) => void;
+}) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  if (memories === null || memories.length === 0) {
+    return (
+      <p className="text-sm text-gray-400">
+        No facts yet. The assistant will learn facts automatically during conversations.
+      </p>
+    );
+  }
+
+  const limitedMemories = memories.slice(0, 100);
+  const overLimit = memories.length > 100;
+
+  return (
+    <>
+      {overLimit && (
+        <p className="text-xs text-gray-400 mb-2">Showing first 100 facts</p>
+      )}
+      <div className="space-y-2">
+        {limitedMemories.map((memory) => (
+          <div
+            key={memory.id}
+            className="flex items-center gap-3 rounded-lg border p-3"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium font-mono">{memory.key}</span>
+                <Badge
+                  variant={memory.source === 'manual' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {memory.source}
+                </Badge>
+              </div>
+              <p
+                className={`text-sm text-gray-600 mt-0.5 cursor-pointer ${expandedId === memory.id ? '' : 'truncate'}`}
+                onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
+                title="Click to expand"
+              >
+                {memory.value}
+              </p>
+            </div>
+            {showDelete && (
+              <ConfirmDialog
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 shrink-0"
+                  >
+                    Delete
+                  </Button>
+                }
+                title="Delete fact?"
+                description="This will permanently delete this fact from memory."
+                onConfirm={() => onDelete(memory.id)}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
 export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
   const [orgMemories, setOrgMemories] = useState<Memory[] | null>(null);
   const [userMemories, setUserMemories] = useState<Memory[] | null>(null);
@@ -58,64 +132,6 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
   async function handleDelete(id: string) {
     await fetch(`/api/memory/${id}`, { method: 'DELETE' });
     await loadMemories();
-  }
-
-  function MemoryTable({ memories, showDelete }: { memories: Memory[] | null; showDelete: boolean }) {
-    if (memories === null || memories.length === 0) {
-      return (
-        <p className="text-sm text-gray-400">
-          No facts yet. The assistant will learn facts automatically during conversations.
-        </p>
-      );
-    }
-
-    const limitedMemories = memories.slice(0, 100);
-    const overLimit = memories.length > 100;
-
-    return (
-      <>
-        {overLimit && (
-          <p className="text-xs text-gray-400 mb-2">Showing first 100 facts</p>
-        )}
-        <div className="space-y-2">
-          {limitedMemories.map((memory) => (
-            <div
-              key={memory.id}
-              className="flex items-center gap-3 rounded-lg border p-3"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium font-mono">{memory.key}</span>
-                  <Badge
-                    variant={memory.source === 'manual' ? 'default' : 'secondary'}
-                    className="text-xs"
-                  >
-                    {memory.source}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-600 mt-0.5 truncate">{memory.value}</p>
-              </div>
-              {showDelete && (
-                <ConfirmDialog
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-500 hover:text-red-700 shrink-0"
-                    >
-                      Delete
-                    </Button>
-                  }
-                  title="Delete fact?"
-                  description="This will permanently delete this fact from memory."
-                  onConfirm={() => handleDelete(memory.id)}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-      </>
-    );
   }
 
   return (
@@ -180,7 +196,7 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
               <CardTitle className="text-lg">Organization Facts</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemoryTable memories={orgMemories} showDelete={isAdmin} />
+              <MemoryTable memories={orgMemories} showDelete={isAdmin} onDelete={handleDelete} />
             </CardContent>
           </Card>
 
@@ -189,7 +205,7 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
               <CardTitle className="text-lg">My Facts</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemoryTable memories={userMemories} showDelete={isAdmin} />
+              <MemoryTable memories={userMemories} showDelete={isAdmin} onDelete={handleDelete} />
             </CardContent>
           </Card>
         </>
