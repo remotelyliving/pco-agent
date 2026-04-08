@@ -206,11 +206,15 @@ export const authConfig: NextAuthConfig = {
                 : token.pcoAccessTokenExpires;
             } else {
               logger.error('PCO token refresh failed', { status: response.status });
+              token.pcoAccessToken = undefined;
+              token.pcoAccessTokenExpires = undefined;
             }
           } catch (error) {
             logger.error('PCO token refresh error', {
               error: error instanceof Error ? error.message : String(error),
             });
+            token.pcoAccessToken = undefined;
+            token.pcoAccessTokenExpires = undefined;
           }
         }
       }

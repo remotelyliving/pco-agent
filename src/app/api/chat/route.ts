@@ -109,6 +109,14 @@ export async function POST(req: Request) {
     const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
 
+    if (!pcoAccessToken && jwtToken?.pcoRefreshToken) {
+      // Token existed but refresh failed — user needs to re-login
+      return Response.json(
+        { error: 'Your Planning Center session has expired. Please sign out and sign back in.' },
+        { status: 401 },
+      );
+    }
+
     if (pcoAccessToken) {
       try {
         const result = await new Promise<{ client: Awaited<ReturnType<typeof getMCPClient>>; mcpTools: Record<string, unknown> }>(
