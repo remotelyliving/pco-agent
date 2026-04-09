@@ -16,6 +16,8 @@ const RATE_LIMITS: Record<string, number> = {
   '/api/memory': 60,
   '/api/memory/:id': 60,
   '/api/conversations/:id': 60,
+  '/api/files': 60,
+  '/api/files/:id': 60,
 };
 const DEFAULT_RATE_LIMIT = 60;
 
