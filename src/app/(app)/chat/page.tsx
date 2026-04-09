@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Chat — Planning Center Assistant',
+  title: 'Chat — Service Planner',
 };
 
 export default async function ChatPage() {

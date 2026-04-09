@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
 export function MobileNav({ userName, userRole, onSignOut }: { userName?: string | null; userRole?: string; onSignOut?: () => Promise<void> }) {
@@ -12,7 +13,10 @@ export function MobileNav({ userName, userRole, onSignOut }: { userName?: string
   return (
     <div className="md:hidden">
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <span className="font-semibold">Planning Center Assistant</span>
+        <span className="flex items-center gap-2 font-semibold">
+          <Image src="/robot.svg" alt="" width={24} height={24} aria-hidden="true" />
+          Service Planner
+        </span>
         <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} aria-label="Toggle navigation">
           {open ? '✕' : '☰'}
         </Button>
@@ -23,7 +27,10 @@ export function MobileNav({ userName, userRole, onSignOut }: { userName?: string
         {open && (
           <nav className="relative z-10 w-64 bg-white h-full flex flex-col border-r shadow-lg" aria-label="Mobile navigation">
             <div className="p-4 border-b">
-              <p className="font-semibold">Planning Center Assistant</p>
+              <p className="flex items-center gap-2 font-semibold">
+                <Image src="/robot.svg" alt="" width={24} height={24} aria-hidden="true" />
+                Service Planner
+              </p>
               <p className="text-sm text-gray-500">{roleLabel}</p>
             </div>
             <div className="flex-1 p-4 space-y-2">

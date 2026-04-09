@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { listConversations } from '@/lib/chat/persist';
 import { ConversationItem } from '@/components/conversation-item';
@@ -25,7 +26,10 @@ export async function Sidebar() {
   return (
     <nav className="hidden md:flex h-full w-64 flex-col border-r bg-gray-50" aria-label="Main navigation">
       <header className="p-4">
-        <h2 className="text-lg font-semibold">Planning Center Assistant</h2>
+        <div className="flex items-center gap-2">
+          <Image src="/robot.svg" alt="" width={28} height={28} aria-hidden="true" />
+          <h2 className="text-lg font-semibold">Service Planner</h2>
+        </div>
         <p className="text-sm text-gray-500">
           {user?.role === 'admin' ? 'Admin' : user?.role === 'editor' ? 'Editor' : 'Member'}
         </p>

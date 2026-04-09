@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { signIn } from '@/lib/auth';
 
 export const metadata: Metadata = {
-  title: 'Sign In — Planning Center Assistant',
+  title: 'Sign In — Service Planner',
 };
 
 export default async function LoginPage({
@@ -16,8 +17,9 @@ export default async function LoginPage({
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <main className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-lg">
         <div className="text-center">
+          <Image src="/robot.svg" alt="" width={64} height={64} className="mx-auto mb-4" aria-hidden="true" />
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Planning Center Assistant
+            Service Planner
           </h1>
           <p className="mt-2 text-gray-600">
             Chat with your church data using AI. Search people, plan services,

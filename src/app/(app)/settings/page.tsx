@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { ApiKeyForm } from '@/components/settings/api-key-form';
 
 export const metadata: Metadata = {
-  title: 'Settings — Planning Center Assistant',
+  title: 'Settings — Service Planner',
 };
 
 export default async function SettingsPage() {

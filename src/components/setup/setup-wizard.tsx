@@ -15,7 +15,7 @@ const PROVIDER_INFO: Record<string, { name: string; description: string; keyUrl:
     steps: [
       'Go to console.anthropic.com and sign in (or create an account)',
       'Click "API Keys" in the left sidebar',
-      'Click "Create Key" and give it a name like "PCO Assistant"',
+      'Click "Create Key" and give it a name like "Service Planner"',
       'Copy the key — it starts with "sk-ant-"',
     ],
   },
@@ -84,10 +84,10 @@ export function SetupWizard() {
       {step === 1 && (
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Welcome to Planning Center Assistant!</CardTitle>
+            <CardTitle className="text-2xl">Welcome to Service Planner!</CardTitle>
             <CardDescription className="text-base">
               This app lets you chat with an AI that knows your church data.
-              Ask about people, services, schedules — anything in Planning Center.
+              Ask about people, services, schedules — anything in your church data.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -198,7 +198,7 @@ export function SetupWizard() {
             <CardTitle className="text-2xl">You&apos;re All Set!</CardTitle>
             <CardDescription className="text-base">
               Your AI provider is configured. You can now start chatting with your
-              Planning Center data.
+              church data.
             </CardDescription>
           </CardHeader>
           <CardContent>
