@@ -182,7 +182,7 @@ export function ChatInterface({
       )}
 
       <form onSubmit={handleSubmit} className="border-t p-4">
-        <div className="flex gap-2">
+        <div className="flex items-end gap-2">
           <Textarea
             ref={textareaRef}
             placeholder="Ask about your church data..."
@@ -193,7 +193,12 @@ export function ChatInterface({
             disabled={isStreaming}
             aria-label="Chat message"
           />
-          <Button type="submit" disabled={isStreaming}>
+          <Button
+            type="submit"
+            disabled={isStreaming}
+            className="h-[44px] min-w-[44px] shrink-0"
+            aria-label="Send message"
+          >
             {isStreaming ? '...' : 'Send'}
           </Button>
         </div>
