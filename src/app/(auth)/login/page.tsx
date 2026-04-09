@@ -21,6 +21,9 @@ export default async function LoginPage({
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Service Planner
           </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            An AI assistant for Planning Center Online
+          </p>
           <p className="mt-2 text-gray-600">
             Chat with your church data using AI. Search people, plan services,
             schedule volunteers — all through conversation.

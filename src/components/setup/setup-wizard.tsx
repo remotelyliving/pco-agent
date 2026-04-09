@@ -88,28 +88,44 @@ export function SetupWizard() {
   const providerModels = MODEL_OPTIONS.filter((m) => m.provider === provider);
   const selectedModel = model || getDefaultModel(provider)?.id || '';
 
-  async function handleTestConnection() {
+  async function saveSettings(): Promise<boolean> {
+    const res = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiProvider: provider, apiKey, preferredModel: selectedModel }),
+    });
+    return res.ok;
+  }
+
+  async function clearSettings(): Promise<void> {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiProvider: provider, apiKey: '' }),
+    });
+  }
+
+  async function handleSaveAndTest() {
     setTesting(true);
     setTestResult(null);
     setError('');
     try {
-      // Save first (needed for test endpoint)
-      const saveRes = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiProvider: provider, apiKey, preferredModel: selectedModel }),
-      });
-      if (!saveRes.ok) throw new Error('Failed to save settings');
+      // Save first (test endpoint reads from DB)
+      if (!await saveSettings()) throw new Error('Failed to save settings');
 
       const testRes = await fetch('/api/settings/test', { method: 'POST' });
       if (testRes.ok) {
         setTestResult('success');
       } else {
+        // Test failed — clear the bad key so needsSetup still gates chat
+        await clearSettings();
         const data = await testRes.json();
         setTestResult('error');
         setError(data.error || 'Connection test failed. Check your API key.');
       }
     } catch (err) {
+      // On error, try to clear the potentially bad key
+      await clearSettings().catch(() => {});
       setTestResult('error');
       setError(err instanceof Error ? err.message : 'Connection test failed');
     } finally {
@@ -117,16 +133,11 @@ export function SetupWizard() {
     }
   }
 
-  async function handleSave() {
+  async function handleSaveWithoutTest() {
     setSaving(true);
     setError('');
     try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiProvider: provider, apiKey, preferredModel: selectedModel }),
-      });
-      if (!res.ok) throw new Error(await res.text());
+      if (!await saveSettings()) throw new Error('Failed to save settings');
       setStep(5);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
@@ -335,24 +346,35 @@ export function SetupWizard() {
               <Button variant="ghost" onClick={() => setStep(3)}>
                 Back
               </Button>
-              {!testResult && (
+              {testResult !== 'success' && (
                 <Button
                   variant="outline"
-                  onClick={handleTestConnection}
+                  onClick={handleSaveAndTest}
                   disabled={!apiKey || testing}
                   className="flex-1"
                 >
                   {testing ? 'Saving & Testing...' : 'Save & Test'}
                 </Button>
               )}
-              <Button
-                onClick={handleSave}
-                disabled={!apiKey || saving}
-                className="flex-1"
-                size="lg"
-              >
-                {saving ? 'Saving...' : testResult === 'success' ? 'Save & Start Chatting' : 'Save & Continue'}
-              </Button>
+              {testResult === 'success' ? (
+                <Button
+                  onClick={handleSaveWithoutTest}
+                  disabled={saving}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {saving ? 'Saving...' : 'Continue'}
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  onClick={handleSaveWithoutTest}
+                  disabled={!apiKey || saving}
+                  className="text-xs"
+                >
+                  {saving ? '...' : 'Skip test'}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
