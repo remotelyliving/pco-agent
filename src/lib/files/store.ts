@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile, unlink } from 'fs/promises';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import type { FileMeta } from '@/lib/files/types';
 
 export interface FileStore {
@@ -11,8 +11,18 @@ export interface FileStore {
 export class LocalFileStore implements FileStore {
   constructor(private readonly baseDir: string) {}
 
+  private resolveSafe(key: string): string {
+    const resolved = join(this.baseDir, key);
+    const normalizedBase = resolve(this.baseDir);
+    const normalizedResolved = resolve(resolved);
+    if (!normalizedResolved.startsWith(normalizedBase + '/') && normalizedResolved !== normalizedBase) {
+      throw new Error('Path traversal detected');
+    }
+    return resolved;
+  }
+
   async put(key: string, data: Buffer, meta: FileMeta): Promise<string> {
-    const filePath = join(this.baseDir, key);
+    const filePath = this.resolveSafe(key);
     const metaPath = filePath + '.meta.json';
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, data);
@@ -21,7 +31,7 @@ export class LocalFileStore implements FileStore {
   }
 
   async get(key: string): Promise<{ data: Buffer; meta: FileMeta } | null> {
-    const filePath = join(this.baseDir, key);
+    const filePath = this.resolveSafe(key);
     const metaPath = filePath + '.meta.json';
     try {
       const [data, metaRaw] = await Promise.all([
@@ -35,7 +45,7 @@ export class LocalFileStore implements FileStore {
   }
 
   async delete(key: string): Promise<void> {
-    const filePath = join(this.baseDir, key);
+    const filePath = this.resolveSafe(key);
     const metaPath = filePath + '.meta.json';
     try {
       await Promise.all([unlink(filePath), unlink(metaPath)]);

@@ -63,15 +63,22 @@ export async function POST(req: Request) {
       conversationId,
     });
 
-    const record = await createFileRecord({
-      userId: session.user.agentUserId,
-      orgId: session.user.orgId,
-      conversationId,
-      filename: cleanName,
-      mediaType,
-      sizeBytes: data.length,
-      storageKey,
-    });
+    let record;
+    try {
+      record = await createFileRecord({
+        userId: session.user.agentUserId,
+        orgId: session.user.orgId,
+        conversationId,
+        filename: cleanName,
+        mediaType,
+        sizeBytes: data.length,
+        storageKey,
+      });
+    } catch (dbError) {
+      // Compensating delete — don't leave orphaned files
+      await store.delete(storageKey).catch(() => {});
+      throw dbError;
+    }
 
     log.info('[files] Upload complete', {
       fileId: record.id,

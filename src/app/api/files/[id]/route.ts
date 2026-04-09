@@ -42,6 +42,7 @@ export async function GET(
         'Content-Type': file.mediaType,
         'Content-Disposition': `attachment; filename="${encodeURIComponent(file.filename)}"`,
         'Content-Length': String(result.data.length),
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

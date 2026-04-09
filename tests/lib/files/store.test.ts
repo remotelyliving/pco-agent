@@ -60,4 +60,9 @@ describe('LocalFileStore', () => {
     await store.put(key, data, meta);
     expect(existsSync(join(TEST_DIR, 'org-deep', 'user-deep', 'nested-file.csv'))).toBe(true);
   });
+
+  it('rejects path traversal attempts', async () => {
+    const data = Buffer.from('evil');
+    await expect(store.put('../../etc/passwd', data, meta)).rejects.toThrow('Path traversal');
+  });
 });

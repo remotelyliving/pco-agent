@@ -47,5 +47,12 @@ export function validateFile(
     return { valid: false, error: 'This file appears to be corrupted or is not a valid spreadsheet.' };
   }
 
+  if (ext === '.xls') {
+    const OLE2_MAGIC = Buffer.from([0xd0, 0xcf, 0x11, 0xe0]);
+    if (!data.subarray(0, 4).equals(OLE2_MAGIC)) {
+      return { valid: false, error: 'This file appears to be corrupted or is not a valid spreadsheet.' };
+    }
+  }
+
   return { valid: true };
 }

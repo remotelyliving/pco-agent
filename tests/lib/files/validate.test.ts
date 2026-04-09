@@ -58,4 +58,14 @@ describe('validateFile', () => {
     const result = validateFile('data.xlsx', data.length, data);
     expect(result).toEqual({ valid: true });
   });
+  it('rejects xls with wrong magic bytes', () => {
+    const result = validateFile('file.xls', 100, Buffer.from('not an xls file'));
+    expect(result).toEqual({ valid: false, error: 'This file appears to be corrupted or is not a valid spreadsheet.' });
+  });
+  it('accepts valid xls with OLE2 magic bytes', () => {
+    const ole2Header = Buffer.from([0xd0, 0xcf, 0x11, 0xe0]);
+    const data = Buffer.concat([ole2Header, Buffer.alloc(100)]);
+    const result = validateFile('data.xls', data.length, data);
+    expect(result).toEqual({ valid: true });
+  });
 });
