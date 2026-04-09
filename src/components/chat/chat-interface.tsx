@@ -144,7 +144,7 @@ export function ChatInterface({
     localStorage.setItem('file-upload-consent-dismissed', 'true');
   }
 
-  async function uploadFiles(targetConvId: string): Promise<Array<{ type: 'file'; url: string; mediaType: string; filename: string }>> {
+  const uploadFiles = useCallback(async (targetConvId: string): Promise<Array<{ type: 'file'; url: string; mediaType: string; filename: string }>> => {
     const validFiles = pendingFiles.filter((pf) => !pf.error);
     const uploaded: Array<{ type: 'file'; url: string; mediaType: string; filename: string }> = [];
     for (let i = 0; i < validFiles.length; i++) {
@@ -168,7 +168,7 @@ export function ChatInterface({
       }
     }
     return uploaded;
-  }
+  }, [pendingFiles]);
 
   const submitText = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -185,7 +185,7 @@ export function ChatInterface({
       setPendingFiles([]);
       await sendMessage({ text: text.trim() });
     }
-  }, [isStreaming, sendMessage, pendingFiles, convId]);
+  }, [isStreaming, sendMessage, pendingFiles, convId, uploadFiles]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
