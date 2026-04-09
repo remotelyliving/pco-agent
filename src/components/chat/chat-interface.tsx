@@ -38,8 +38,8 @@ export function ChatInterface({
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Build initial UIMessages from plain message objects
-  const uiInitialMessages = useMemo<UIMessage[] | undefined>(() => {
+  // Build initial UIMessages from plain message objects — only computed once from initial prop
+  const [uiInitialMessages] = useState<UIMessage[] | undefined>(() => {
     if (!initialMessages || initialMessages.length === 0) return undefined;
     return initialMessages.map((msg) => ({
       id: msg.id,
@@ -48,21 +48,22 @@ export function ChatInterface({
       parts: [{ type: 'text' as const, text: msg.content }],
       metadata: undefined,
     }));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  });
 
   // Custom fetch that captures x-conversation-id from response headers
-  const customFetch = useMemo(() => {
-    return async (input: RequestInfo | URL, init?: RequestInit) => {
+  const customFetch = useCallback(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await fetch(input, init);
       const newConvId = response.headers.get('x-conversation-id');
       if (newConvId && !convId) {
         setConvId(newConvId);
         window.history.replaceState(null, '', `/chat/${newConvId}`);
-        router.refresh(); // Refresh server components (sidebar)
+        router.refresh();
       }
       return response;
-    };
-  }, [convId]);
+    },
+    [convId, router],
+  );
 
   const transport = useMemo(
     () =>
