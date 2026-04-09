@@ -13,11 +13,6 @@ const SYSTEM_RULES = [
 ];
 
 async function main() {
-  if (process.env.NODE_ENV === 'production' && !process.env.FORCE_SEED) {
-    console.log('Skipping seed in production. Set FORCE_SEED=true to override.');
-    return;
-  }
-
   console.log('Seeding system default rules...');
 
   for (const rule of SYSTEM_RULES) {
