@@ -174,6 +174,14 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user, account }) {
       if (user && account) {
+        logger.info('[auth] OAuth account payload', {
+          hasAccessToken: !!account.access_token,
+          hasRefreshToken: !!account.refresh_token,
+          expiresAt: account.expires_at,
+          tokenType: account.token_type,
+          scope: account.scope,
+          accountKeys: Object.keys(account),
+        });
         const profile = user as Record<string, unknown>;
         token.agentUserId = profile.agentUserId as string;
         token.orgId = profile.orgId as string;
@@ -183,12 +191,14 @@ export const authConfig: NextAuthConfig = {
         token.pcoAccessTokenExpires = account.expires_at;
       }
 
-      // Refresh PCO token if it expires within 5 minutes
-      if (!user && token.pcoAccessToken && token.pcoAccessTokenExpires && token.pcoRefreshToken) {
+      // Refresh PCO token if expired, missing, or expiring within 5 minutes
+      if (!user && token.pcoRefreshToken) {
         const now = Math.floor(Date.now() / 1000);
-        const expiresIn = (token.pcoAccessTokenExpires as number) - now;
+        const needsRefresh = !token.pcoAccessToken
+          || !token.pcoAccessTokenExpires
+          || (token.pcoAccessTokenExpires as number) - now < 300;
 
-        if (expiresIn < 300) {
+        if (needsRefresh) {
           try {
             const response = await fetch('https://api.planningcenteronline.com/oauth/token', {
               method: 'POST',
