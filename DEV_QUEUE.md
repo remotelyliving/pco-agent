@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** DEPLOYED — UX enhancements queued
+**Phase:** DEPLOYED — UX enhancements complete, pending merge
 **Last Updated:** 2026-04-08
-**Last Session Summary:** First production deployment completed. Fixed Docker build (TS errors, Prisma deps, Node version, network config, DB hostname, entrypoint, HOSTNAME binding), auth flow (profile passthrough, AUTH_TRUST_HOST), and model IDs. See `docs/UX_ENHANCEMENTS.md` for next phase of work.
+**Last Session Summary:** Implemented all 7 UX enhancements from first user session. Fixed 18 lint errors, rebranded to "Service Planner", rewrote onboarding wizard with 5-step flow, added conversation rename, and addressed all critical/important review findings from 5-reviewer audit.
 
 ---
 
@@ -16,10 +16,11 @@ _(none)_
 
 ## Backlog
 
-- [ ] **UX Enhancements** — 7 items from first user session. See [`docs/UX_ENHANCEMENTS.md`](docs/UX_ENHANCEMENTS.md) for full specs. Items 1–4 are independent; 5→6 are sequential; 7 is independent.
+_(none)_
 
 ## Done
 
+- [x] **UX Enhancements** — 7 items from first user session: typography fix, rebrand to "Service Planner", logout button, send button alignment, chat gating, enhanced onboarding wizard (5-step with provider comparison + model selection + cost estimates), conversation inline rename. 5-reviewer audit completed. See `docs/UX_ENHANCEMENTS.md` (2026-04-08)
 - [x] **Audit Remediation** — 33 items across 6 sections: infrastructure (pino logger, proxy.ts rate limiting), critical fixes (onFinish error handling, Dockerfile, token refresh, markdown rendering, error boundaries, rule toggle restrictions), code quality (req.json validation, memory extraction, input length, user-scoped memory), testing (Stryker mutation testing, Playwright E2E), UX (mobile nav, loading states, error mapping, AlertDialog, shadcn selects), minor polish + documentation (2026-04-08)
 - [x] **Known Issues Hardening** — Resolved 14 of 15 known issues; 1 accepted deferral (Rule sortOrder). See `docs/KNOWN_ISSUES.md` (2026-04-07)
 - [x] **Project Setup** — Spec, README, CLAUDE.md, AGENTS.md, TEAM.md, Makefile (2026-04-06)

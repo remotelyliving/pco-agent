@@ -48,11 +48,11 @@ prisma/seed.ts        → System default rules seeder
 Key API routes added in polish pass:
 src/app/api/health/route.ts             → GET /api/health — app + DB liveness check
 src/app/api/settings/test/route.ts      → POST /api/settings/test — validate API key live
-src/app/api/conversations/[id]/route.ts → DELETE /api/conversations/[id] — owner-only delete
+src/app/api/conversations/[id]/route.ts → PATCH (rename) + DELETE /api/conversations/[id] — owner-only
 
 Key components added in polish pass:
 src/components/mobile-nav.tsx           → Hamburger drawer for mobile screens
-src/components/conversation-item.tsx    → Sidebar conversation item with delete confirm
+src/components/conversation-item.tsx    → Sidebar conversation item with inline rename + delete confirm
 ```
 
 ## How Rules Work
@@ -145,7 +145,7 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 
 **Key files:**
 - `src/lib/setup.ts` — `needsSetup(userId): Promise<boolean>`
-- `src/components/setup/setup-wizard.tsx` — client component, 4-step wizard
+- `src/components/setup/setup-wizard.tsx` — client component, 5-step wizard (welcome, provider, model, API key, success)
 - `src/app/(app)/setup/page.tsx` — page container
 
 ## How AI Provider Routing Works

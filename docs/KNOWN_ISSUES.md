@@ -60,6 +60,21 @@
 **Impact:** The Docker entrypoint runs `prisma migrate deploy` automatically. If it fails (e.g., schema already exists from `db push`), the container exits with no guidance.
 **Fix:** Add a troubleshooting row to README: "Container exits with migration error → Check logs. If migrating from `db push`, baseline with `npx prisma migrate resolve --applied init`."
 
+### Mobile Nav — No Focus Trap or Keyboard Dismiss
+**Status:** Deferred
+**Impact:** The mobile nav overlay backdrop can only be dismissed by tapping it. Keyboard users cannot press Escape to close the drawer, and focus is not trapped — tabbing can reach content behind the overlay.
+**Fix:** Add `onKeyDown` handler for Escape, trap focus within the drawer when open, use `<dialog>` semantics or `role="dialog"` with `aria-modal`.
+
+### Setup Wizard — Test Connection Saves Before Testing
+**Status:** Accepted — architectural constraint
+**Impact:** The "Save & Test" button in the setup wizard must save the API key to the database before testing, because the test endpoint reads the saved key. If the test fails, the (bad) key remains saved. Users can re-enter and overwrite. The button label "Save & Test" communicates this side effect.
+**Fix:** Create a dedicated test endpoint that accepts the API key in the request body without persisting it. Low priority — the current behavior is clearly labeled.
+
+### needsSetup Adds DB Query to Chat Page Loads
+**Status:** Deferred — low impact for homelab
+**Impact:** The `needsSetup()` check runs a Prisma query on every `/chat` and `/chat/[id]` page load to verify the user has an API key configured. This is an additional sequential DB round-trip on the hot path.
+**Fix:** Cache setup status in the JWT token (set a flag on login and when settings are saved) to avoid per-request DB hits.
+
 ---
 
 ## Testing

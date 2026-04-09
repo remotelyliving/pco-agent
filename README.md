@@ -1,10 +1,10 @@
-# pco-agent
+# pco-agent (Service Planner)
 
 AI-powered assistant for Planning Center Online. Chat with your church data using natural language.
 
 ## What It Does
 
-pco-agent gives church staff a simple chat interface to interact with Planning Center Online — search for people, plan services, schedule volunteers, and manage song libraries — all through conversation.
+Service Planner gives church staff a simple chat interface to interact with Planning Center Online — search for people, plan services, schedule volunteers, and manage song libraries — all through conversation.
 
 - **Multi-provider AI**: Choose Anthropic (Claude), OpenAI (ChatGPT), or Google (Gemini). Bring your own API key.
 - **Smart memory**: Remembers facts about your church across conversations.
