@@ -253,6 +253,11 @@ export function SetupWizard() {
                       Recommended
                     </span>
                   )}
+                  {m.supportsTools === false && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      Chat only
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-gray-600">{m.description}</p>
               </button>

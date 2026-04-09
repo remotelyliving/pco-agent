@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
 import { createModel } from '@/lib/ai/providers';
 import { getMCPClient } from '@/lib/mcp-pool';
-import { getDefaultModel } from '@/lib/ai/models';
+import { getDefaultModel, modelSupportsTools } from '@/lib/ai/models';
 import { decrypt } from '@/lib/crypto';
 import { getEncryptionKey } from '@/lib/env';
 import {
@@ -121,7 +121,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (pcoAccessToken) {
+    let mcpConnected = false;
+    const canUseTools = modelSupportsTools(modelId);
+    if (pcoAccessToken && canUseTools) {
       try {
         const result = await new Promise<{ client: Awaited<ReturnType<typeof getMCPClient>>; mcpTools: Record<string, unknown> }>(
           async (resolve, reject) => {
@@ -145,14 +147,25 @@ export async function POST(req: Request) {
         );
         // mcpClient lifecycle managed by connection pool — no need to track reference
         tools = result.mcpTools;
+        mcpConnected = Object.keys(tools).length > 0;
+        log.info('[chat] MCP tools loaded', {
+          toolCount: Object.keys(tools).length,
+          toolNames: Object.keys(tools).slice(0, 10),
+        });
       } catch (error) {
-        log.error('MCP connection failed', {
+        log.error('[chat] MCP connection failed', {
           userId: session.user.agentUserId,
           orgId: session.user.orgId,
+          mcpUrl: process.env.PCO_MCP_URL || 'https://pco-mcp.com/mcp',
           error: error instanceof Error ? error.message : String(error),
         });
         // Continue without MCP tools -- chat still works, just no PCO data access
       }
+    } else {
+      log.warn('[chat] No PCO access token — MCP tools unavailable', {
+        userId: session.user.agentUserId,
+        hasRefreshToken: !!jwtToken?.pcoRefreshToken,
+      });
     }
 
     // 8. Build system prompt with assembled rules and memory (parallelized)
@@ -163,6 +176,7 @@ export async function POST(req: Request) {
     systemPrompt = buildSystemPrompt(
       typeof assembledRules === 'string' ? assembledRules : '',
       memoryPrompt,
+      mcpConnected,
     );
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -193,10 +207,15 @@ export async function POST(req: Request) {
             tokenCount: usage?.totalTokens ?? null,
           });
 
-          // Auto-title from first exchange
-          if (!existingConvId && text) {
-            const title = generateTitle(text);
-            await updateConversationTitle(conversationId, title);
+          // Auto-title from user's first message
+          if (!existingConvId && lastUserMessage?.role === 'user') {
+            const userText = lastUserMessage.parts
+              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+              .map((p) => p.text)
+              .join(' ');
+            if (userText) {
+              await updateConversationTitle(conversationId, generateTitle(userText));
+            }
           }
 
           // Fire-and-forget memory extraction
@@ -246,17 +265,18 @@ export async function POST(req: Request) {
   });
 }
 
-function generateTitle(text: string): string {
-  // Take first sentence or first line
-  const firstSentence = text.split(/[.!?\n]/)[0]?.trim() || '';
-  if (firstSentence.length <= 60) return firstSentence;
-  return firstSentence.slice(0, 57) + '...';
+function generateTitle(userMessage: string): string {
+  const words = userMessage.trim().split(/\s+/).slice(0, 10).join(' ');
+  if (words.length <= 60) return words;
+  return words.slice(0, 60).replace(/\s+\S*$/, '') + '...';
 }
 
-function buildSystemPrompt(rules: string, memory?: string): string {
+function buildSystemPrompt(rules: string, memory?: string, mcpConnected?: boolean): string {
   let prompt = `You are Service Planner, an AI assistant for church staff who use Planning Center Online (PCO). You help with people management, service planning, volunteer scheduling, and song library management — all through natural conversation.
 
 Be friendly, use plain language, and avoid technical jargon. If you're unsure about something, say so rather than guessing. When you use a tool and get results, summarize them in a clear, readable way.
+
+**IMPORTANT: You have tools available that connect to Planning Center. When a user asks about people, services, teams, songs, or scheduling, ALWAYS use the appropriate tool — never guess or make up data. If you're unsure which tool to use, start with the most general one (like list_service_types or search_people) to explore.**
 
 ## Planning Center Data Model
 
@@ -310,6 +330,10 @@ Planning Center has two main modules you can work with:
 - Dates use YYYY-MM-DD format. Datetimes use ISO format (e.g., "2025-06-15T09:00:00-05:00").
 - When the user says "this Sunday" or "next week", calculate the actual date.
 - Confirm with the user before creating, updating, or removing any records.`;
+
+  if (!mcpConnected) {
+    prompt += `\n\n## ⚠️ Planning Center Connection Unavailable\n\nYou do NOT have access to Planning Center tools right now. If the user asks you to look up people, services, or other PCO data, let them know that the connection to Planning Center is not available and suggest they try signing out and back in. Do NOT make up or guess any data.`;
+  }
 
   if (memory) {
     prompt += `\n\n${memory}`;

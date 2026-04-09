@@ -15,6 +15,19 @@ const TOOL_LABELS: Record<string, string> = {
   'list-songs': 'Looking up songs...',
 };
 
+function stripToolMarkup(text: string): string {
+  // Strip complete XML-style tool call blocks (e.g. <function_calls>...</function_calls>)
+  let cleaned = text.replace(/<function_calls>[\s\S]*?<\/function_calls>/g, '');
+  // Strip function_response blocks
+  cleaned = cleaned.replace(/<function_response>[\s\S]*?<\/function_response>/g, '');
+  // Strip partial/unclosed tags that stream mid-sentence
+  cleaned = cleaned.replace(/<function_calls>[\s\S]*/g, '');
+  cleaned = cleaned.replace(/<function_response>[\s\S]*/g, '');
+  // Clean up leftover whitespace
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
+  return cleaned;
+}
+
 function getToolLabel(toolName: string, isDone: boolean): string {
   if (isDone) {
     const base = TOOL_LABELS[toolName]?.replace('...', '') || toolName.replace(/-/g, ' ');
@@ -42,10 +55,12 @@ export function MessageBubble({ message }: { message: UIMessage }) {
                 </div>
               );
             }
+            const cleaned = stripToolMarkup(part.text);
+            if (!cleaned) return null;
             return (
               <div key={i} className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-code:bg-white prose-code:px-1 prose-code:rounded">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {part.text}
+                  {cleaned}
                 </ReactMarkdown>
               </div>
             );

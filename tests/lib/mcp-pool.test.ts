@@ -36,7 +36,7 @@ describe('MCP connection pool', () => {
     expect(createMCPClient).toHaveBeenCalledTimes(1);
     expect(createMCPClient).toHaveBeenCalledWith({
       transport: {
-        type: 'sse',
+        type: 'http',
         url: 'https://mcp.test/mcp',
         headers: { Authorization: 'Bearer token-1' },
       },

@@ -104,20 +104,43 @@ export function ApiKeyForm() {
 
           {provider && (
             <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Select value={model || '__default__'} onValueChange={(v) => setModel(v === '__default__' || v === null ? '' : v)}>
-                <SelectTrigger id="model">
-                  <SelectValue placeholder="Use default" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__default__">Use default</SelectItem>
-                  {modelsForProvider.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name} — {m.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Model</Label>
+              <div className="space-y-2">
+                {modelsForProvider.map((m) => {
+                  const isSelected = model ? model === m.id : !!m.isDefault;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setModel(m.id)}
+                      className={`w-full rounded-lg border-2 p-3 text-left transition-colors hover:border-blue-400 ${
+                        isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`h-4 w-4 shrink-0 rounded-full border-2 ${
+                          isSelected ? 'border-blue-600 bg-blue-600 ring-2 ring-white ring-inset' : 'border-gray-300'
+                        }`} />
+                        <span className="font-medium text-sm">{m.name}</span>
+                        {m.isDefault && (
+                          <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                            Recommended
+                          </span>
+                        )}
+                        {m.supportsTools === false && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                            Chat only
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 ml-6 text-sm text-gray-600">{m.description}</p>
+                      {m.supportsTools === false && (
+                        <p className="mt-0.5 ml-6 text-xs text-amber-600">No Planning Center access — conversation only</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

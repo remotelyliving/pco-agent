@@ -82,7 +82,7 @@ export async function getMCPClient(
     try {
       const result = await createMCPClient({
         transport: {
-          type: 'sse',
+          type: 'http',
           url: mcpUrl,
           headers: { Authorization: `Bearer ${accessToken}` },
         },

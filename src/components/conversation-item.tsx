@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Pencil, X } from 'lucide-react';
 
 function timeAgo(date: string): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -17,8 +18,8 @@ function timeAgo(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
-// Visible on touch (always), hidden on desktop until hover
-const ACTION_BTN_CLASSES = 'min-h-[44px] min-w-[44px] flex items-center justify-center text-xs text-gray-400 shrink-0 transition-opacity md:opacity-0 md:group-hover:opacity-100';
+// Visible on touch (always), hidden on desktop until hover — 48px targets for accessibility
+const ACTION_BTN_CLASSES = 'min-h-[48px] min-w-[48px] flex items-center justify-center text-gray-400 shrink-0 transition-opacity md:opacity-0 md:group-hover:opacity-100';
 
 export function ConversationItem({ id, title, updatedAt }: { id: string; title: string | null; updatedAt: string }) {
   const router = useRouter();
@@ -126,12 +127,12 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
         className={`${ACTION_BTN_CLASSES} hover:text-gray-600`}
         aria-label="Rename conversation"
       >
-        ✎
+        <Pencil className="h-4 w-4" />
       </button>
       <ConfirmDialog
         trigger={
           <button className={`${ACTION_BTN_CLASSES} hover:text-red-500`} aria-label="Delete conversation">
-            ✕
+            <X className="h-4 w-4" />
           </button>
         }
         title="Delete conversation?"

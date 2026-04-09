@@ -4,6 +4,7 @@ export interface ModelOption {
   name: string;
   description: string;
   isDefault?: boolean;
+  supportsTools?: boolean; // false = cannot use MCP tools reliably
 }
 
 // Model IDs verified from official docs on 2026-04-08
@@ -47,7 +48,8 @@ export const MODEL_OPTIONS: ModelOption[] = [
     id: 'gpt-4.1-nano',
     provider: 'openai',
     name: 'GPT-4.1 Nano',
-    description: 'Cheapest, good for simple tasks',
+    description: 'Cheapest — no Planning Center access',
+    supportsTools: false,
   },
   // Google
   {
@@ -67,10 +69,16 @@ export const MODEL_OPTIONS: ModelOption[] = [
     id: 'gemini-2.5-flash-lite',
     provider: 'google',
     name: 'Gemini 2.5 Flash-Lite',
-    description: 'Cheapest Google option',
+    description: 'Cheapest — no Planning Center access',
+    supportsTools: false,
   },
 ];
 
 export function getDefaultModel(provider: string): ModelOption | undefined {
   return MODEL_OPTIONS.find((m) => m.provider === provider && m.isDefault);
+}
+
+export function modelSupportsTools(modelId: string): boolean {
+  const model = MODEL_OPTIONS.find((m) => m.id === modelId);
+  return model?.supportsTools !== false; // default true if not specified
 }

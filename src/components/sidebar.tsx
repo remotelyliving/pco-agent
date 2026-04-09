@@ -78,13 +78,12 @@ export async function Sidebar() {
 
       <Separator />
 
-      <div className="flex items-center gap-3 p-4">
-        <Avatar>
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
-        <div className="flex-1 truncate">
-          <p className="text-sm font-medium">{user?.name}</p>
-          <p className="text-xs text-gray-500">{user?.email}</p>
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <p className="text-sm font-medium truncate">{user?.name}</p>
         </div>
         <form
           action={async () => {
@@ -92,7 +91,7 @@ export async function Sidebar() {
             await signOut({ redirectTo: '/login' });
           }}
         >
-          <Button variant="outline" size="sm" type="submit" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+          <Button variant="outline" size="sm" type="submit" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
             Sign out
           </Button>
         </form>

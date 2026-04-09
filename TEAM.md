@@ -49,13 +49,14 @@ Fresh subagent per task. Given full task description + context. Self-reviews bef
 
 #### 4. UI/UX Reviewer + Product Manager
 **Focus:** Non-technical user experience, accessibility, onboarding clarity.
+**Required context:** Read [`docs/TARGET_AUDIENCE.md`](docs/TARGET_AUDIENCE.md) before every review — it defines who our users are (age 18–70, non-technical church staff), their roles, and the UX principles that guide all design decisions.
 **Checks:**
-- Is this usable by non-technical clergy?
+- Is this usable by the full audience range described in TARGET_AUDIENCE.md?
 - Are error messages plain English and actionable?
 - Is the onboarding flow clear with sufficient guidance?
 - Are technical concepts explained where they appear?
-- Mobile responsiveness
-- Accessibility (ARIA labels, keyboard nav, contrast)
+- Mobile responsiveness and touch-friendly targets (44px minimum)
+- Accessibility (ARIA labels, keyboard nav, contrast, screen readers)
 - Does the feature match the product vision?
 
 #### 5. Documentation Reviewer
