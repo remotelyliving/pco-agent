@@ -3,6 +3,7 @@
 import type { UIMessage } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { UploadCard, DownloadCard } from '@/components/chat/file-card';
 
 const TOOL_LABELS: Record<string, string> = {
   'list-people': 'Looking up people...',
@@ -65,8 +66,22 @@ export function MessageBubble({ message }: { message: UIMessage }) {
               </div>
             );
           }
+          if (part.type === 'file') {
+            const filePart = part as { type: 'file'; url: string; mediaType: string; filename?: string };
+            return (
+              <UploadCard key={i} filename={filePart.filename || 'Uploaded file'} sizeBytes={0} />
+            );
+          }
           if (part.type === 'dynamic-tool') {
             const isDone = part.state === 'output-available';
+            if (isDone && part.toolName === 'create_file' && part.output) {
+              const output = part.output as { fileId?: string; filename?: string; sizeBytes?: number };
+              if (output.fileId) {
+                return (
+                  <DownloadCard key={i} fileId={output.fileId} filename={output.filename || 'download'} sizeBytes={output.sizeBytes || 0} />
+                );
+              }
+            }
             return (
               <div
                 key={i}

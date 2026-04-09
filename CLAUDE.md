@@ -52,6 +52,10 @@ src/
       conversations/
         [id]/
           route.ts    # Conversation rename (PATCH) + delete (DELETE, owner-only)
+      files/
+        route.ts        # File upload (POST — multipart/form-data)
+        [id]/
+          route.ts      # File download (GET) + delete (DELETE, owner-only)
       health/
         route.ts      # Health check endpoint (GET — returns app + DB status)
       settings/
@@ -76,6 +80,8 @@ src/
     chat/
       chat-interface.tsx  # useChat() client component with auto-resize textarea + example prompts
       message-bubble.tsx  # Message display with tool call support
+      file-chip.tsx     # Pre-send file preview chip with progress + remove
+      file-card.tsx     # In-chat file display (upload + download cards)
     settings/
       api-key-form.tsx    # API key entry form with test connection button
     rules/
@@ -108,10 +114,17 @@ src/
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
     rate-limit.ts     # In-memory token bucket rate limiter
     request-context.ts # Request ID from headers
+    files/
+      types.ts          # File types, constants, limits
+      validate.ts       # Extension, size, magic-byte validation
+      store.ts          # FileStore interface + LocalFileStore
+      parse.ts          # CSV/XLSX parsing to text for model context
+      sanitize.ts       # Formula injection sanitization
+      persist.ts        # File DB CRUD + deleteConversationWithFiles()
   proxy.ts          # Centralized auth + rate limiting + CSP nonce + security headers (Node.js runtime)
   instrumentation.ts  # Next.js instrumentation hook — registers logger at server startup
 prisma/
-  schema.prisma       # Agent schema (7 models)
+  schema.prisma       # Agent schema (8 models)
   seed.ts             # System default rules seeder
 entrypoint.sh        # Docker entrypoint — runs migrations before server start
 ```

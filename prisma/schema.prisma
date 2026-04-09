@@ -56,6 +56,7 @@ model Organization {
   users   User[]
   rules   Rule[]
   memory  Memory[]
+  files   File[]
 
   @@map("organizations")
   @@schema("agent")
@@ -78,6 +79,7 @@ model User {
   rules          Rule[]       @relation("CreatedBy")
   ruleSettings   UserRuleSetting[]
   memories       Memory[]
+  files          File[]
 
   @@unique([orgId, pcoPersonId])
   @@map("users")
@@ -93,6 +95,7 @@ model Conversation {
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages Message[]
+  files    File[]
 
   @@index([userId, updatedAt])
   @@map("conversations")
@@ -112,6 +115,27 @@ model Message {
 
   @@index([conversationId, createdAt])
   @@map("messages")
+  @@schema("agent")
+}
+
+model File {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  orgId          String   @map("org_id")
+  conversationId String   @map("conversation_id")
+  filename       String
+  mediaType      String   @map("media_type")
+  sizeBytes      Int      @map("size_bytes")
+  storageKey     String   @unique @map("storage_key")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [orgId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@map("files")
   @@schema("agent")
 }
 

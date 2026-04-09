@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from '@/components/chat/message-bubble';
+import { Paperclip } from 'lucide-react';
+import { FileChip } from '@/components/chat/file-chip';
+import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE_BYTES, MAX_FILES_PER_MESSAGE } from '@/lib/files/types';
 import type { UIMessage } from 'ai';
 
 function friendlyErrorMessage(error: Error): string {
@@ -95,11 +98,77 @@ export function ChatInterface({
 
   const isStreaming = status === 'streaming' || status === 'submitted';
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<Array<{ file: File; error?: string; progress?: number }>>([]);
+  const [consentDismissed, setConsentDismissed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('file-upload-consent-dismissed') === 'true';
+  });
+
   function handleInput(e: React.FormEvent<HTMLTextAreaElement>) {
     const textarea = e.currentTarget;
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
   }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const newFiles: typeof pendingFiles = [];
+    for (const file of files) {
+      if (pendingFiles.length + newFiles.length >= MAX_FILES_PER_MESSAGE) {
+        newFiles.push({ file, error: 'You can attach up to 3 files at a time.' });
+        break;
+      }
+      const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+      if (!(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
+        newFiles.push({ file, error: "This file type isn't supported. Please upload a CSV or Excel file." });
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        newFiles.push({ file, error: 'This file is too large. The maximum is 10 MB.' });
+        continue;
+      }
+      newFiles.push({ file });
+    }
+    setPendingFiles((prev) => [...prev, ...newFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function removeFile(index: number) {
+    setPendingFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function dismissConsent() {
+    setConsentDismissed(true);
+    localStorage.setItem('file-upload-consent-dismissed', 'true');
+  }
+
+  const uploadFiles = useCallback(async (targetConvId: string): Promise<Array<{ type: 'file'; url: string; mediaType: string; filename: string }>> => {
+    const validFiles = pendingFiles.filter((pf) => !pf.error);
+    const uploaded: Array<{ type: 'file'; url: string; mediaType: string; filename: string }> = [];
+    for (let i = 0; i < validFiles.length; i++) {
+      const pf = validFiles[i];
+      setPendingFiles((prev) => prev.map((f) => (f.file === pf.file ? { ...f, progress: 0 } : f)));
+      const formData = new FormData();
+      formData.append('file', pf.file);
+      formData.append('conversationId', targetConvId);
+      try {
+        const res = await fetch('/api/files', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+          setPendingFiles((prev) => prev.map((f) => (f.file === pf.file ? { ...f, error: err.error, progress: undefined } : f)));
+          continue;
+        }
+        const data = await res.json();
+        setPendingFiles((prev) => prev.map((f) => (f.file === pf.file ? { ...f, progress: 100 } : f)));
+        uploaded.push({ type: 'file', url: `/api/files/${data.fileId}`, mediaType: data.mediaType, filename: data.filename });
+      } catch {
+        setPendingFiles((prev) => prev.map((f) => (f.file === pf.file ? { ...f, error: 'Upload failed. Please try again.', progress: undefined } : f)));
+      }
+    }
+    return uploaded;
+  }, [pendingFiles]);
 
   const submitText = useCallback(async (text: string) => {
     if (!text.trim() || isStreaming) return;
@@ -107,8 +176,37 @@ export function ChatInterface({
       textareaRef.current.value = '';
       textareaRef.current.style.height = 'auto';
     }
-    await sendMessage({ text: text.trim() });
-  }, [isStreaming, sendMessage]);
+
+    const validFiles = pendingFiles.filter((pf) => !pf.error);
+
+    if (validFiles.length > 0) {
+      // Ensure we have a conversation ID before uploading files
+      let targetConvId = convId;
+      if (!targetConvId) {
+        try {
+          const res = await fetch('/api/conversations', { method: 'POST' });
+          if (!res.ok) throw new Error('Failed to create conversation');
+          const data = await res.json() as { id: string };
+          targetConvId = data.id;
+          setConvId(targetConvId);
+          window.history.replaceState(null, '', `/chat/${targetConvId}`);
+          router.refresh();
+        } catch {
+          // Show error on first file chip
+          setPendingFiles((prev) =>
+            prev.map((f, i) => i === 0 ? { ...f, error: 'Could not start conversation. Please try again.' } : f)
+          );
+          return;
+        }
+      }
+      const fileRefs = await uploadFiles(targetConvId!);
+      setPendingFiles([]);
+      await sendMessage({ text: text.trim(), files: fileRefs.length > 0 ? fileRefs : undefined });
+    } else {
+      setPendingFiles([]);
+      await sendMessage({ text: text.trim() });
+    }
+  }, [isStreaming, sendMessage, pendingFiles, convId, uploadFiles, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -181,8 +279,34 @@ export function ChatInterface({
         </div>
       )}
 
+      {!consentDismissed && pendingFiles.length > 0 && (
+        <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          <p className="flex-1">
+            Files you upload are sent to your AI provider for processing. Your data is not used for training. This notice won&apos;t appear again.
+          </p>
+          <button onClick={dismissConsent} className="shrink-0 min-h-[44px] min-w-[44px] px-3 font-medium text-amber-600 hover:text-amber-800">Got it</button>
+        </div>
+      )}
+      {pendingFiles.length > 0 && (
+        <div className="mx-4 mb-2 space-y-1">
+          {pendingFiles.map((pf, i) => (
+            <FileChip key={`${pf.file.name}-${i}`} name={pf.file.name} size={pf.file.size} progress={pf.progress} error={pf.error} onRemove={() => removeFile(i)} />
+          ))}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="border-t p-4">
         <div className="flex items-end gap-2">
+          <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,.tsv" multiple className="hidden" onChange={handleFileSelect} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isStreaming}
+            className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            aria-label="Attach file"
+          >
+            <Paperclip className="h-5 w-5" />
+          </button>
           <Textarea
             ref={textareaRef}
             placeholder="Ask about your church data..."

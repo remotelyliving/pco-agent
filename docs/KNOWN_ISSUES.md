@@ -44,6 +44,7 @@
 ### No CSRF Protection on Mutation Endpoints
 **Status:** Accepted — mitigated by CSP + same-origin cookies
 **Impact:** Mutation endpoints accept JSON without CSRF tokens. Mitigated by CSP `connect-src 'self'` and same-origin auth cookies, but older browsers may not fully enforce CSP on fetch.
+  - **File upload surface:** `POST /api/files` accepts `multipart/form-data`, making it the most exposed endpoint — plain HTML forms can POST cross-origin without triggering a CORS preflight, bypassing `connect-src` CSP. Mitigated by session cookie auth (HttpOnly, SameSite=Lax) which browsers won't attach to cross-site form POSTs.
 **Fix:** Add CSRF token validation if the app is ever exposed to untrusted origins. Low risk for a homelab behind Cloudflare.
 
 ---

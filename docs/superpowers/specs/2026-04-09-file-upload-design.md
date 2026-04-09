@@ -68,7 +68,7 @@ function getFileStore(): FileStore {
 
 - Files are **conversation-scoped** — tied to a conversation via foreign key
 - Manual conversation delete, TTL expiry, and any future conversation limit enforcement all flow through a single `deleteConversationWithFiles()` function
-- This function queries files for the conversation, deletes from FileStore, then deletes the conversation (Prisma `onDelete: Cascade` handles DB rows)
+- This function uses a single `$transaction` to atomically query and delete DB file records and the conversation row, then deletes from FileStore outside the transaction (best-effort, with warn logging on failure)
 - Processing temp data (parsed text sent to model) is in-memory only, never persisted
 - No ghost files — every deletion path cleans both storage and DB
 
@@ -283,8 +283,7 @@ Add `uploads/` to prevent local dev uploads from being committed.
 src/
   lib/
     files/
-      store.ts          # FileStore interface + factory
-      local-store.ts    # LocalFileStore implementation
+      store.ts          # FileStore interface + LocalFileStore (combined; no separate local-store.ts)
       parse.ts          # CSV/XLSX pre-processing to text
       validate.ts       # Type/size/magic-byte validation
       sanitize.ts       # Formula injection sanitization for generated files

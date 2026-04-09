@@ -54,3 +54,6 @@ prisma/generated/
 
 /src/generated/prisma
 .worktrees/
+
+# file uploads
+uploads/
