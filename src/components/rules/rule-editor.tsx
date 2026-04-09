@@ -68,7 +68,7 @@ export function RuleEditor({
 
           <div className="space-y-2">
             <Label htmlFor="category">Category (optional)</Label>
-            <Select value={category || '__none__'} onValueChange={(v) => setCategory(v === '__none__' ? '' : v)}>
+            <Select value={category || '__none__'} onValueChange={(v) => setCategory(v === '__none__' || v === null ? '' : v)}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="None" />
               </SelectTrigger>
@@ -84,7 +84,7 @@ export function RuleEditor({
           {isAdmin && (
             <div className="space-y-2">
               <Label htmlFor="ruleType">Scope</Label>
-              <Select value={ruleType} onValueChange={setRuleType}>
+              <Select value={ruleType} onValueChange={(v) => { if (v) setRuleType(v); }}>
                 <SelectTrigger id="ruleType">
                   <SelectValue />
                 </SelectTrigger>

@@ -21,8 +21,8 @@ if [ $retries -ge $max_retries ]; then
   exit 1
 fi
 
-echo "[entrypoint] Database is ready. Running migrations..."
-node ./node_modules/prisma/build/index.js migrate deploy
-echo "[entrypoint] Migrations complete. Starting server..."
+echo "[entrypoint] Database is ready. Syncing schema..."
+node ./node_modules/prisma/build/index.js db push
+echo "[entrypoint] Schema synced. Starting server..."
 
 exec node server.js

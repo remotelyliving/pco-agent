@@ -6,39 +6,68 @@ export interface ModelOption {
   isDefault?: boolean;
 }
 
+// Model IDs verified from official docs on 2026-04-08
+// See docs/AI_PROVIDER_RESEARCH.md for pricing and details
 export const MODEL_OPTIONS: ModelOption[] = [
+  // Anthropic
   {
-    id: 'claude-sonnet-4-5-20250514',
+    id: 'claude-sonnet-4-6',
     provider: 'anthropic',
-    name: 'Claude Sonnet 4.5',
-    description: 'Fast and capable, great for most tasks',
+    name: 'Claude Sonnet 4.6',
+    description: 'Best balance of speed and intelligence',
     isDefault: true,
   },
   {
-    id: 'claude-opus-4-5-20250414',
+    id: 'claude-opus-4-6',
     provider: 'anthropic',
-    name: 'Claude Opus 4.5',
-    description: 'Most capable, best for complex reasoning',
+    name: 'Claude Opus 4.6',
+    description: 'Most capable, best for complex tasks',
   },
   {
-    id: 'gpt-4o',
+    id: 'claude-haiku-4-5-20251001',
+    provider: 'anthropic',
+    name: 'Claude Haiku 4.5',
+    description: 'Fastest and most affordable',
+  },
+  // OpenAI
+  {
+    id: 'gpt-4.1',
     provider: 'openai',
-    name: 'GPT-4o',
-    description: 'Fast and capable multimodal model',
+    name: 'GPT-4.1',
+    description: 'Capable with large context window',
     isDefault: true,
   },
   {
-    id: 'gpt-4o-mini',
+    id: 'gpt-4.1-mini',
     provider: 'openai',
-    name: 'GPT-4o Mini',
-    description: 'Affordable and fast for simple tasks',
+    name: 'GPT-4.1 Mini',
+    description: 'Good and affordable',
   },
   {
-    id: 'gemini-2.0-flash',
+    id: 'gpt-4.1-nano',
+    provider: 'openai',
+    name: 'GPT-4.1 Nano',
+    description: 'Cheapest, good for simple tasks',
+  },
+  // Google
+  {
+    id: 'gemini-2.5-flash',
     provider: 'google',
-    name: 'Gemini 2.0 Flash',
-    description: 'Fast and efficient, good for most tasks',
+    name: 'Gemini 2.5 Flash',
+    description: 'Fast and capable, free tier available',
     isDefault: true,
+  },
+  {
+    id: 'gemini-2.5-pro',
+    provider: 'google',
+    name: 'Gemini 2.5 Pro',
+    description: 'Most capable Google model',
+  },
+  {
+    id: 'gemini-2.5-flash-lite',
+    provider: 'google',
+    name: 'Gemini 2.5 Flash-Lite',
+    description: 'Cheapest Google option',
   },
 ];
 

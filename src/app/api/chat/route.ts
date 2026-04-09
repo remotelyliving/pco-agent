@@ -46,14 +46,18 @@ export async function POST(req: Request) {
   let lastUserMessage: UIMessage | undefined;
   let systemPrompt!: string;
   let tools = {};
+  let messages!: UIMessage[];
+  let existingConvId: string | undefined;
 
   try {
     // 2. Parse request
     const body = await req.json();
-    const { messages, conversationId: existingConvId } = body as {
+    const { messages: parsedMessages, conversationId: parsedConvId } = body as {
       messages: UIMessage[];
       conversationId?: string;
     };
+    messages = parsedMessages;
+    existingConvId = parsedConvId;
 
     if (!messages || messages.length === 0) {
       return new Response('No messages provided', { status: 400 });
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
     modelId =
       user.preferredModel ||
       getDefaultModel(user.apiProvider!)?.id ||
-      'claude-sonnet-4-5-20250514';
+      'claude-sonnet-4-6';
 
     // 5. Verify conversation ownership if reusing, or create new
     if (existingConvId) {
@@ -228,6 +232,8 @@ export async function POST(req: Request) {
           conversationId,
           userId: session.user.agentUserId,
           error: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          errorFull: JSON.stringify(error, Object.getOwnPropertyNames(error || {})),
         });
       },
     });

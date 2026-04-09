@@ -4,9 +4,9 @@
 
 ## Project Status
 
-**Phase:** AUDIT REMEDIATION COMPLETE — ready for deployment
+**Phase:** DEPLOYED — UX enhancements queued
 **Last Updated:** 2026-04-08
-**Last Session Summary:** Resolved 14 of 15 known issues (rate limiting, stale JWT, CSP, PCO role mapping, admin race condition, memory partial unique index, Prisma migrations, message content cap, memory TTL/cap, message pagination, MCP timeout, token refresh timeout, token usage tracking, enum constraints). 1 accepted deferral remains (Rule sortOrder). See `docs/KNOWN_ISSUES.md`.
+**Last Session Summary:** First production deployment completed. Fixed Docker build (TS errors, Prisma deps, Node version, network config, DB hostname, entrypoint, HOSTNAME binding), auth flow (profile passthrough, AUTH_TRUST_HOST), and model IDs. See `docs/UX_ENHANCEMENTS.md` for next phase of work.
 
 ---
 
@@ -16,7 +16,7 @@ _(none)_
 
 ## Backlog
 
-_(none)_
+- [ ] **UX Enhancements** — 7 items from first user session. See [`docs/UX_ENHANCEMENTS.md`](docs/UX_ENHANCEMENTS.md) for full specs. Items 1–4 are independent; 5→6 are sequential; 7 is independent.
 
 ## Done
 

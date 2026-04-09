@@ -86,7 +86,7 @@ export function ApiKeyForm() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="provider">AI Provider</Label>
-            <Select value={provider} onValueChange={(v) => { setProvider(v); setModel(''); }}>
+            <Select value={provider} onValueChange={(v) => { if (v) { setProvider(v); setModel(''); } }}>
               <SelectTrigger id="provider">
                 <SelectValue placeholder="Select a provider..." />
               </SelectTrigger>
@@ -105,7 +105,7 @@ export function ApiKeyForm() {
           {provider && (
             <div className="space-y-2">
               <Label htmlFor="model">Model</Label>
-              <Select value={model || '__default__'} onValueChange={(v) => setModel(v === '__default__' ? '' : v)}>
+              <Select value={model || '__default__'} onValueChange={(v) => setModel(v === '__default__' || v === null ? '' : v)}>
                 <SelectTrigger id="model">
                   <SelectValue placeholder="Use default" />
                 </SelectTrigger>

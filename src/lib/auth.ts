@@ -97,6 +97,11 @@ export const authConfig: NextAuthConfig = {
           id: profile.id as string,
           name: profile.name as string,
           email: profile.email as string | null,
+          pcoPersonId: profile.pcoPersonId,
+          pcoOrgId: profile.pcoOrgId,
+          pcoOrgName: profile.pcoOrgName,
+          pcoSiteAdmin: profile.pcoSiteAdmin,
+          pcoPeoplePermissions: profile.pcoPeoplePermissions,
         };
       },
       // PCO OAuth does not support PKCE

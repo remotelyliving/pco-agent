@@ -22,7 +22,7 @@ export async function POST() {
 
   try {
     const apiKey = decrypt(user.apiKeyEnc, getEncryptionKey());
-    const modelId = user.preferredModel || getDefaultModel(user.apiProvider)?.id || 'claude-sonnet-4-5-20250514';
+    const modelId = user.preferredModel || getDefaultModel(user.apiProvider)?.id || 'claude-sonnet-4-6';
     const model = createModel(user.apiProvider, modelId, apiKey);
 
     // Make a minimal API call
