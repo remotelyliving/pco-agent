@@ -22,6 +22,7 @@ export async function getFilesByConversation(conversationId: string) {
   return prisma.file.findMany({ where: { conversationId } });
 }
 
+/** Delete a file from storage and DB. Callers must verify ownership before calling. */
 export async function deleteFileRecord(id: string) {
   const file = await prisma.file.findUnique({ where: { id } });
   if (!file) return;

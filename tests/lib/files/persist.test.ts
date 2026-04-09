@@ -81,4 +81,32 @@ describe('deleteConversationWithFiles', () => {
     await deleteConversationWithFiles('conv-1');
     expect(prisma.$transaction).toHaveBeenCalledOnce();
   });
+
+  it('deletes files from store and DB within transaction', async () => {
+    const mockFiles = [
+      { storageKey: 'org-1/user-1/file1.csv' },
+      { storageKey: 'org-1/user-1/file2.xlsx' },
+    ];
+    const mockDelete = vi.fn();
+    const { getFileStore } = await import('@/lib/files/store');
+    vi.mocked(getFileStore).mockReturnValue({ delete: mockDelete, put: vi.fn(), get: vi.fn() });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: any) => Promise<unknown>) => {
+      return fn({
+        file: {
+          findMany: vi.fn().mockResolvedValue(mockFiles),
+          deleteMany: vi.fn(),
+        },
+        conversation: {
+          delete: vi.fn(),
+        },
+      });
+    });
+
+    await deleteConversationWithFiles('conv-1');
+    expect(mockDelete).toHaveBeenCalledTimes(2);
+    expect(mockDelete).toHaveBeenCalledWith('org-1/user-1/file1.csv');
+    expect(mockDelete).toHaveBeenCalledWith('org-1/user-1/file2.xlsx');
+  });
 });

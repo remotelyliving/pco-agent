@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile, unlink } from 'fs/promises';
 import { join, dirname, resolve } from 'path';
 import type { FileMeta } from '@/lib/files/types';
+import { logger } from '@/lib/logger';
 
 export interface FileStore {
   put(key: string, data: Buffer, meta: FileMeta): Promise<string>;
@@ -39,7 +40,11 @@ export class LocalFileStore implements FileStore {
         readFile(metaPath, 'utf-8'),
       ]);
       return { data, meta: JSON.parse(metaRaw) as FileMeta };
-    } catch {
+    } catch (err) {
+      logger.warn('[file-store] Failed to read file', {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
       return null;
     }
   }
@@ -49,8 +54,13 @@ export class LocalFileStore implements FileStore {
     const metaPath = filePath + '.meta.json';
     try {
       await Promise.all([unlink(filePath), unlink(metaPath)]);
-    } catch {
-      // File may not exist
+    } catch (err) {
+      // ENOENT is expected (file already deleted) — only warn on other errors
+      if (err instanceof Error && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOENT') return;
+      logger.warn('[file-store] Failed to delete file', {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 }
