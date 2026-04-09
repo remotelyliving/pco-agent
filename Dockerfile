@@ -30,6 +30,10 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=prod-deps /app/node_modules ./node_modules
 # Next.js standalone output overwrites with its optimized bundles
 COPY --from=builder /app/.next/standalone ./
+# Restore full @prisma/client after standalone overwrites it —
+# the standalone version strips constructor config needed by the seed script
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
