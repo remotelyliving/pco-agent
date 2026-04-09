@@ -37,9 +37,13 @@ export function ChatInterface({
   initialMessages?: Array<{ id: string; role: 'user' | 'assistant'; content: string }>;
 }) {
   const router = useRouter();
+  const convIdRef = useRef<string | undefined>(conversationId);
   const [convId, setConvId] = useState<string | undefined>(conversationId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Stable chat instance ID — set once so useChat never resets mid-stream
+  const [chatId] = useState(() => conversationId ?? crypto.randomUUID());
 
   // Build initial UIMessages from plain message objects — only computed once from initial prop
   const [uiInitialMessages] = useState<UIMessage[] | undefined>(() => {
@@ -53,37 +57,40 @@ export function ChatInterface({
     }));
   });
 
-  // Custom fetch that captures x-conversation-id from response headers
+  // Custom fetch that captures x-conversation-id from response headers.
+  // Uses a ref for convId so this callback never changes and doesn't reset useChat.
   const customFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await fetch(input, init);
       const newConvId = response.headers.get('x-conversation-id');
-      if (newConvId && !convId) {
+      if (newConvId && !convIdRef.current) {
+        convIdRef.current = newConvId;
         setConvId(newConvId);
         window.history.replaceState(null, '', `/chat/${newConvId}`);
-        router.refresh();
       }
       return response;
     },
-    [convId, router],
+    [],
   );
 
+  // Transport reads convId from ref at call time — no dependency on convId state
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/chat',
-        body: convId ? { conversationId: convId } : undefined,
+        body: () => (convIdRef.current ? { conversationId: convIdRef.current } : {}),
         fetch: customFetch,
       }),
-    [convId, customFetch],
+    [customFetch],
   );
 
   const { messages, sendMessage, status, error } = useChat({
-    id: convId,
+    id: chatId,
     messages: uiInitialMessages,
     transport,
     onFinish: () => {
-      // Conversation ID captured in customFetch above
+      // Refresh sidebar to show new conversation + auto-generated title
+      router.refresh();
     },
     onError: (err) => {
       console.error('[chat] Error:', err.message);
