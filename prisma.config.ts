@@ -1,5 +1,5 @@
 // Load dotenv only if available (not present in production Docker image)
-try { require("dotenv/config"); } catch {}
+try { await import("dotenv/config"); } catch { /* dotenv not installed in production */ }
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({

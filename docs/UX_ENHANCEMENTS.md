@@ -1,10 +1,12 @@
 # UX Enhancements Backlog
 
+> **Status:** All 7 items COMPLETE — implemented on `feature/ux-enhancements` branch (2026-04-08)
+>
 > **Purpose:** Captured from first real-user session (2026-04-08). Each item is a discrete unit of work suitable for planning and implementation. Items are ordered by dependency (later items may depend on earlier ones).
 
 ---
 
-## 1. Consistent Typography — Modern Sans-Serif Font
+## 1. ~~Consistent Typography — Modern Sans-Serif Font~~ DONE
 
 **What:** Font sizes and typefaces are inconsistent across the app. Adopt a single modern sans-serif font family (e.g., Inter, Geist, or similar) with a clear type scale applied globally.
 
@@ -16,7 +18,7 @@
 
 ---
 
-## 2. Rebrand to "Service Planner"
+## 2. ~~Rebrand to "Service Planner"~~ DONE
 
 **What:** Rename the app from "Planning Center Assistant" to "Service Planner" everywhere. Add a robot SVG icon as the app logo.
 
@@ -28,7 +30,7 @@
 
 ---
 
-## 3. Logout Button
+## 3. ~~Logout Button~~ DONE
 
 **What:** The sign-out action should be a clearly visible button, not a text link or hidden action.
 
@@ -38,7 +40,7 @@
 
 ---
 
-## 4. Send Button Alignment & Sizing
+## 4. ~~Send Button Alignment & Sizing~~ DONE
 
 **What:** The chat send button has poor alignment and sizing relative to the text input.
 
@@ -49,7 +51,7 @@
 
 ---
 
-## 5. Gate Chat Behind Model Configuration
+## 5. ~~Gate Chat Behind Model Configuration~~ DONE
 
 **What:** Chat should not be available until the user has configured an AI provider and model. Users without config should be clearly redirected to settings with an explanation of why.
 
@@ -61,7 +63,7 @@
 
 ---
 
-## 6. Enhanced Onboarding Wizard
+## 6. ~~Enhanced Onboarding Wizard~~ DONE
 
 **What:** A comprehensive, non-technical onboarding flow that guides new users through AI provider selection and model configuration. Replaces/enhances the current basic setup wizard.
 
@@ -82,7 +84,7 @@
 
 ---
 
-## 7. Conversation Auto-Naming with Inline Edit
+## 7. ~~Conversation Auto-Naming with Inline Edit~~ DONE
 
 **What:** Conversations should be auto-named from the first exchange (this partially exists) and the name should be easily editable inline by the user.
 

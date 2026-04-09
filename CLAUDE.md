@@ -51,7 +51,7 @@ src/
         route.ts      # Streaming chat endpoint (with maxDuration)
       conversations/
         [id]/
-          route.ts    # Conversation delete (DELETE, owner-only)
+          route.ts    # Conversation rename (PATCH) + delete (DELETE, owner-only)
       health/
         route.ts      # Health check endpoint (GET — returns app + DB status)
       settings/
@@ -71,7 +71,7 @@ src/
   components/
     sidebar.tsx           # Sidebar with nav, user info, sign out
     mobile-nav.tsx        # Mobile hamburger drawer for small screens
-    conversation-item.tsx # Sidebar conversation list item with inline delete confirm
+    conversation-item.tsx # Sidebar conversation list item with inline rename + delete confirm
     ui/               # shadcn/ui components
     chat/
       chat-interface.tsx  # useChat() client component with auto-resize textarea + example prompts
@@ -84,7 +84,7 @@ src/
     memory/
       memory-list.tsx # Org + user memory list with add form and delete (admin-gated)
     setup/
-      setup-wizard.tsx  # Multi-step wizard: welcome, provider pick, API key entry, success
+      setup-wizard.tsx  # 5-step wizard: welcome, provider pick, model selection, API key entry, success
   lib/
     auth.ts           # NextAuth config + PCO OAuth provider (with token refresh)
     crypto.ts         # Fernet encryption for API keys

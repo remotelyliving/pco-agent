@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Rules — Planning Center Assistant',
+  title: 'Rules — Service Planner',
 };
 
 export default async function RulesPage() {

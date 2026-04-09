@@ -1,6 +1,7 @@
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { auth } from '@/lib/auth';
 import { getConversation } from '@/lib/chat/persist';
+import { needsSetup } from '@/lib/setup';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 
@@ -11,6 +12,10 @@ export default async function ConversationPage({
 }) {
   const session = await auth();
   if (!session?.user?.agentUserId) redirect('/login');
+
+  if (await needsSetup(session.user.agentUserId)) {
+    redirect('/setup');
+  }
 
   const { id } = await params;
   const conversation = await getConversation(id, session.user.agentUserId);

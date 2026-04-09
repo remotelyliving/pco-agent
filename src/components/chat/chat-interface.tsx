@@ -38,8 +38,8 @@ export function ChatInterface({
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Build initial UIMessages from plain message objects
-  const uiInitialMessages = useMemo<UIMessage[] | undefined>(() => {
+  // Build initial UIMessages from plain message objects — only computed once from initial prop
+  const [uiInitialMessages] = useState<UIMessage[] | undefined>(() => {
     if (!initialMessages || initialMessages.length === 0) return undefined;
     return initialMessages.map((msg) => ({
       id: msg.id,
@@ -48,21 +48,22 @@ export function ChatInterface({
       parts: [{ type: 'text' as const, text: msg.content }],
       metadata: undefined,
     }));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  });
 
   // Custom fetch that captures x-conversation-id from response headers
-  const customFetch = useMemo(() => {
-    return async (input: RequestInfo | URL, init?: RequestInit) => {
+  const customFetch = useCallback(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
       const response = await fetch(input, init);
       const newConvId = response.headers.get('x-conversation-id');
       if (newConvId && !convId) {
         setConvId(newConvId);
         window.history.replaceState(null, '', `/chat/${newConvId}`);
-        router.refresh(); // Refresh server components (sidebar)
+        router.refresh();
       }
       return response;
-    };
-  }, [convId]);
+    },
+    [convId, router],
+  );
 
   const transport = useMemo(
     () =>
@@ -181,7 +182,7 @@ export function ChatInterface({
       )}
 
       <form onSubmit={handleSubmit} className="border-t p-4">
-        <div className="flex gap-2">
+        <div className="flex items-end gap-2">
           <Textarea
             ref={textareaRef}
             placeholder="Ask about your church data..."
@@ -192,7 +193,12 @@ export function ChatInterface({
             disabled={isStreaming}
             aria-label="Chat message"
           />
-          <Button type="submit" disabled={isStreaming}>
+          <Button
+            type="submit"
+            disabled={isStreaming}
+            className="h-[44px] min-w-[44px] shrink-0"
+            aria-label="Send message"
+          >
             {isStreaming ? '...' : 'Send'}
           </Button>
         </div>

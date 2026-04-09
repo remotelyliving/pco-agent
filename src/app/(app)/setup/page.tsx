@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SetupWizard } from '@/components/setup/setup-wizard';
 
 export const metadata: Metadata = {
-  title: 'Setup — Planning Center Assistant',
+  title: 'Setup — Service Planner',
 };
 
 export default function SetupPage() {

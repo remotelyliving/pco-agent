@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function GlobalError({
-  error,
+  // error prop required by Next.js error boundary API
+  error: _,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -21,12 +24,12 @@ export default function GlobalError({
           >
             Try Again
           </button>
-          <a
+          <Link
             href="/chat"
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Go to Chat
-          </a>
+          </Link>
         </div>
       </div>
     </div>

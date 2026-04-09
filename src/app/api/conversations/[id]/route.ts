@@ -1,7 +1,63 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { updateConversationTitle } from '@/lib/chat/persist';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const requestId = await getRequestId();
+  const log = logger.child({ requestId });
+
+  const session = await auth();
+  if (!session?.user?.agentUserId) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const { id } = await params;
+
+  try {
+    const body = await req.json();
+    const { title } = body as { title?: string };
+
+    if (typeof title !== 'string') {
+      return Response.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    const trimmedTitle = title.trim();
+
+    if (trimmedTitle.length === 0) {
+      return Response.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    if (trimmedTitle.length > 200) {
+      return Response.json({ error: 'Title must be 200 characters or less' }, { status: 400 });
+    }
+
+    // Verify ownership
+    const conversation = await prisma.conversation.findUnique({
+      where: { id, userId: session.user.agentUserId },
+    });
+
+    if (!conversation) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    await updateConversationTitle(id, trimmedTitle);
+    return Response.json({ success: true });
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return Response.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+    log.error('[conversations/id] Rename error', { error: error instanceof Error ? error.message : String(error) });
+    return Response.json(
+      { error: 'An internal error occurred. Please try again.' },
+      { status: 500 },
+    );
+  }
+}
 
 export async function DELETE(
   _req: Request,

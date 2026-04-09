@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Memory — Planning Center Assistant',
+  title: 'Memory — Service Planner',
 };
 
 export default async function MemoryPage() {

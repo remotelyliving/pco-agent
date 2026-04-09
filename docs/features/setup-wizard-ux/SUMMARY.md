@@ -16,24 +16,25 @@ New users who have not configured an AI provider API key are redirected to `/set
 - `src/app/(app)/chat/page.tsx` — calls `needsSetup()` and redirects to `/setup` if true
 
 ### Task 2: Setup Wizard UI
-A multi-step onboarding wizard guides first-time users through provider selection and API key entry.
+A multi-step onboarding wizard guides first-time users through provider selection, model selection, and API key entry. **Rewritten in UX Enhancements pass (2026-04-08)** with enhanced content for non-technical church staff.
 
 **Files:**
-- `src/components/setup/setup-wizard.tsx` — 4-step wizard: welcome, provider pick, API key entry, success
+- `src/components/setup/setup-wizard.tsx` — 5-step wizard: welcome, provider pick, model selection, API key entry, success
 - `src/app/(app)/setup/page.tsx` — page container for the wizard
 
 **Wizard flow:**
-1. **Welcome** — explains the app and what an API key is
-2. **Provider selection** — clickable cards for Anthropic, OpenAI, and Google with descriptions
-3. **API key entry** — provider-specific step-by-step instructions, link to provider console, encrypted key input
-4. **Success** — confirmation + redirect to `/chat`
+1. **Welcome** — explains how the app works, data safety, what an API key is
+2. **Provider selection** — comparison cards with cost estimates, free tier badges, plain-language descriptions
+3. **Model selection** — available models with "Recommended" badge, capability vs cost explanation
+4. **API key entry** — provider-specific step-by-step instructions, key prefix hints, "Save & Test" connection button
+5. **Success** — confirmation + redirect to `/chat`
 
-Saves via `POST /api/settings` (same endpoint as the settings page).
+Saves via `POST /api/settings` (same endpoint as the settings page). Test connection uses `POST /api/settings/test`.
 
 ### Task 3: Page Metadata
 All pages now export `Metadata` with descriptive titles for browser tabs and SEO.
 
-**Title format:** `Page Name — Planning Center Assistant`
+**Title format:** `Page Name — Service Planner`
 
 **Pages updated:**
 - `/login` → Sign In

@@ -22,16 +22,24 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
   const [settings, setSettings] = useState<Record<string, boolean>>({});
   const [showEditor, setShowEditor] = useState(false);
 
-  async function loadRules() {
-    const res = await fetch('/api/rules');
-    const data = await res.json();
-    setRules(data.rules);
-    setSettings(data.settings);
-  }
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    loadRules();
-  }, []);
+    let cancelled = false;
+    fetch('/api/rules')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setRules(data.rules);
+          setSettings(data.settings);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [reloadKey]);
+
+  function loadRules() {
+    setReloadKey((k) => k + 1);
+  }
 
   async function handleToggle(ruleId: string, enabled: boolean) {
     const prev = settings[ruleId];
