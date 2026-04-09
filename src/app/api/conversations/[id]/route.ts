@@ -22,11 +22,17 @@ export async function PATCH(
     const body = await req.json();
     const { title } = body as { title?: string };
 
-    if (typeof title !== 'string' || title.trim().length === 0) {
+    if (typeof title !== 'string') {
       return Response.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    if (title.length > 200) {
+    const trimmedTitle = title.trim();
+
+    if (trimmedTitle.length === 0) {
+      return Response.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    if (trimmedTitle.length > 200) {
       return Response.json({ error: 'Title must be 200 characters or less' }, { status: 400 });
     }
 
@@ -39,7 +45,7 @@ export async function PATCH(
       return new Response('Not found', { status: 404 });
     }
 
-    await updateConversationTitle(id, title.trim());
+    await updateConversationTitle(id, trimmedTitle);
     return Response.json({ success: true });
   } catch (error) {
     if (error instanceof SyntaxError) {

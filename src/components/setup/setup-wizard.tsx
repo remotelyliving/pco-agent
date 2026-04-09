@@ -140,7 +140,7 @@ export function SetupWizard() {
   return (
     <div className="mx-auto max-w-lg">
       {/* Progress */}
-      <div className="mb-8 flex justify-center gap-2">
+      <div className="mb-8 flex justify-center gap-2" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={totalSteps} aria-label={`Step ${step} of ${totalSteps}`}>
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
           <div
             key={s}
@@ -213,7 +213,7 @@ export function SetupWizard() {
                   </div>
                   <p className="mt-1 text-sm text-gray-600">{info.description}</p>
                   <p className="mt-2 text-xs text-gray-500">
-                    Estimated cost: {info.costEstimate}
+                    Estimated cost: {info.costEstimate} (as of April 2026)
                   </p>
                 </button>
               );
@@ -342,7 +342,7 @@ export function SetupWizard() {
                   disabled={!apiKey || testing}
                   className="flex-1"
                 >
-                  {testing ? 'Testing...' : 'Test Connection'}
+                  {testing ? 'Saving & Testing...' : 'Save & Test'}
                 </Button>
               )}
               <Button

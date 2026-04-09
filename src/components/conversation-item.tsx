@@ -17,6 +17,9 @@ function timeAgo(date: string): string {
   return new Date(date).toLocaleDateString();
 }
 
+// Visible on touch (always), hidden on desktop until hover
+const ACTION_BTN_CLASSES = 'min-h-[44px] min-w-[44px] flex items-center justify-center text-xs text-gray-400 shrink-0 transition-opacity md:opacity-0 md:group-hover:opacity-100';
+
 export function ConversationItem({ id, title, updatedAt }: { id: string; title: string | null; updatedAt: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +27,9 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(title || '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -34,7 +39,8 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
   }, [editing]);
 
   async function handleDelete() {
-    await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+    if (!res.ok) return;
     if (pathname === `/chat/${id}`) {
       router.push('/chat');
     } else {
@@ -43,12 +49,16 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
   }
 
   async function handleRename() {
+    if (savingRef.current) return;
     const trimmed = editValue.trim();
     if (!trimmed || trimmed === title) {
       setEditing(false);
+      setError('');
       return;
     }
+    savingRef.current = true;
     setSaving(true);
+    setError('');
     try {
       const res = await fetch(`/api/conversations/${id}`, {
         method: 'PATCH',
@@ -56,11 +66,16 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
         body: JSON.stringify({ title: trimmed }),
       });
       if (res.ok) {
+        setEditing(false);
         router.refresh();
+      } else {
+        setError('Rename failed');
       }
+    } catch {
+      setError('Rename failed');
     } finally {
       setSaving(false);
-      setEditing(false);
+      savingRef.current = false;
     }
   }
 
@@ -72,12 +87,13 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
     if (e.key === 'Escape') {
       setEditValue(title || '');
       setEditing(false);
+      setError('');
     }
   }
 
   if (editing) {
     return (
-      <div className={`flex items-center rounded-md px-2 py-1.5 ${isActive ? 'bg-gray-200' : 'bg-gray-100'}`}>
+      <div className={`flex flex-col rounded-md px-2 py-1.5 ${isActive ? 'bg-gray-200' : 'bg-gray-100'}`}>
         <input
           ref={inputRef}
           type="text"
@@ -87,9 +103,10 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
           onBlur={handleRename}
           disabled={saving}
           maxLength={200}
-          className="flex-1 bg-transparent text-sm text-gray-700 outline-none"
+          className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 outline-none focus:border-blue-500"
           aria-label="Rename conversation"
         />
+        {error && <span className="text-xs text-red-500 mt-0.5">{error}</span>}
       </div>
     );
   }
@@ -105,15 +122,15 @@ export function ConversationItem({ id, title, updatedAt }: { id: string; title: 
         <span className="text-xs text-gray-400">{timeAgo(updatedAt)}</span>
       </Link>
       <button
-        onClick={() => { setEditValue(title || ''); setEditing(true); }}
-        className="min-h-[44px] min-w-[44px] flex items-center justify-center text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-gray-600 shrink-0 transition-opacity"
+        onClick={() => { setEditValue(title || ''); setEditing(true); setError(''); }}
+        className={`${ACTION_BTN_CLASSES} hover:text-gray-600`}
         aria-label="Rename conversation"
       >
         ✎
       </button>
       <ConfirmDialog
         trigger={
-          <button className="min-h-[44px] min-w-[44px] flex items-center justify-center text-xs text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 shrink-0 transition-opacity" aria-label="Delete conversation">
+          <button className={`${ACTION_BTN_CLASSES} hover:text-red-500`} aria-label="Delete conversation">
             ✕
           </button>
         }
