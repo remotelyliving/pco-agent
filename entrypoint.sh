@@ -24,7 +24,11 @@ fi
 echo "[entrypoint] Database is ready. Syncing schema..."
 node ./node_modules/prisma/build/index.js db push
 echo "[entrypoint] Schema synced. Seeding system rules..."
-node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts
-echo "[entrypoint] Seed complete. Starting server..."
+if [ -f ./node_modules/tsx/dist/cli.mjs ]; then
+  node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts
+else
+  echo "[entrypoint] tsx not available — skipping seed (run 'make docker-seed' manually if needed)"
+fi
+echo "[entrypoint] Starting server..."
 
 exec node server.js
