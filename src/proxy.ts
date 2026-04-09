@@ -15,6 +15,7 @@ const RATE_LIMITS: Record<string, number> = {
   '/api/rules/toggle': 60,
   '/api/memory': 60,
   '/api/memory/:id': 60,
+  '/api/conversations': 20,
   '/api/conversations/:id': 60,
   '/api/files': 60,
   '/api/files/:id': 60,

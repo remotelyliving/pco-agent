@@ -176,16 +176,37 @@ export function ChatInterface({
       textareaRef.current.value = '';
       textareaRef.current.style.height = 'auto';
     }
+
     const validFiles = pendingFiles.filter((pf) => !pf.error);
-    if (validFiles.length > 0 && convId) {
-      const fileRefs = await uploadFiles(convId);
+
+    if (validFiles.length > 0) {
+      // Ensure we have a conversation ID before uploading files
+      let targetConvId = convId;
+      if (!targetConvId) {
+        try {
+          const res = await fetch('/api/conversations', { method: 'POST' });
+          if (!res.ok) throw new Error('Failed to create conversation');
+          const data = await res.json() as { id: string };
+          targetConvId = data.id;
+          setConvId(targetConvId);
+          window.history.replaceState(null, '', `/chat/${targetConvId}`);
+          router.refresh();
+        } catch {
+          // Show error on first file chip
+          setPendingFiles((prev) =>
+            prev.map((f, i) => i === 0 ? { ...f, error: 'Could not start conversation. Please try again.' } : f)
+          );
+          return;
+        }
+      }
+      const fileRefs = await uploadFiles(targetConvId!);
       setPendingFiles([]);
       await sendMessage({ text: text.trim(), files: fileRefs.length > 0 ? fileRefs : undefined });
     } else {
       setPendingFiles([]);
       await sendMessage({ text: text.trim() });
     }
-  }, [isStreaming, sendMessage, pendingFiles, convId, uploadFiles]);
+  }, [isStreaming, sendMessage, pendingFiles, convId, uploadFiles, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

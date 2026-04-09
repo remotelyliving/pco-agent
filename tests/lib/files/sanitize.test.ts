@@ -8,8 +8,12 @@ describe('sanitizeCellValue', () => {
   it('prefixes cells starting with +', () => {
     expect(sanitizeCellValue('+cmd|')).toBe("'+cmd|");
   });
-  it('prefixes cells starting with -', () => {
-    expect(sanitizeCellValue('-1+1')).toBe("'-1+1");
+  it('prefixes cells starting with - followed by non-digit', () => {
+    expect(sanitizeCellValue('-cmd|stuff')).toBe("'-cmd|stuff");
+  });
+  it('leaves negative numbers unchanged', () => {
+    expect(sanitizeCellValue('-5')).toBe('-5');
+    expect(sanitizeCellValue('-100.50')).toBe('-100.50');
   });
   it('prefixes cells starting with @', () => {
     expect(sanitizeCellValue('@SUM(A1)')).toBe("'@SUM(A1)");
