@@ -37,7 +37,7 @@ export async function GET(
       return new Response('File not found in storage', { status: 404 });
     }
 
-    return new Response(result.data, {
+    return new Response(new Uint8Array(result.data), {
       headers: {
         'Content-Type': file.mediaType,
         'Content-Disposition': `attachment; filename="${encodeURIComponent(file.filename)}"`,

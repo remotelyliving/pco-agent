@@ -2,8 +2,10 @@ import {
   streamText,
   convertToModelMessages,
   stepCountIs,
+  tool,
   type UIMessage,
 } from 'ai';
+import { z } from 'zod';
 import { MessageRole } from '@prisma/client';
 import { getToken } from 'next-auth/jwt';
 import { auth } from '@/lib/auth';
@@ -24,6 +26,14 @@ import {
 import { assembleRules } from '@/lib/rules/assemble';
 import { getMemoryPrompt } from '@/lib/memory/retrieve';
 import { extractAndSaveMemories } from '@/lib/memory/extract';
+import { parseFileToText } from '@/lib/files/parse';
+import { getFileStore } from '@/lib/files/store';
+import { getFileRecord, createFileRecord } from '@/lib/files/persist';
+import { sanitizeRows } from '@/lib/files/sanitize';
+import { EXTENSION_TO_MIME } from '@/lib/files/types';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
+import { randomUUID } from 'crypto';
 
 export const maxDuration = 120;
 
@@ -189,12 +199,104 @@ export async function POST(req: Request) {
     );
   }
 
+  // 8b. Pre-process any file attachments in the last message
+  const processedMessages = [...messages];
+  const lastMsg = processedMessages[processedMessages.length - 1];
+  if (lastMsg?.role === 'user' && lastMsg.parts) {
+    const newParts = [];
+    for (const part of lastMsg.parts) {
+      if (part.type === 'file' && 'url' in part) {
+        const fileUrl = (part as { type: 'file'; url: string }).url;
+        const fileIdMatch = fileUrl.match(/\/api\/files\/([^/?]+)/);
+        if (fileIdMatch) {
+          const fileRecord = await getFileRecord(fileIdMatch[1]);
+          if (fileRecord) {
+            const store = getFileStore();
+            const stored = await store.get(fileRecord.storageKey);
+            if (stored) {
+              const parsed = parseFileToText(stored.data, fileRecord.mediaType, fileRecord.filename);
+              newParts.push({ type: 'text' as const, text: parsed });
+              continue;
+            }
+          }
+        }
+        newParts.push(part);
+      } else {
+        newParts.push(part);
+      }
+    }
+    processedMessages[processedMessages.length - 1] = {
+      ...lastMsg,
+      parts: newParts,
+    };
+  }
+
+  // 8c. Register local create_file tool for AI-generated downloads
+  const createFileInputSchema = z.object({
+    filename: z.string().describe('Name for the file, e.g. "sunday-schedule.csv"'),
+    format: z.enum(['csv', 'xlsx']).describe('File format'),
+    headers: z.array(z.string()).describe('Column headers'),
+    rows: z.array(z.array(z.string())).describe('Row data — each row is an array of cell values'),
+  });
+  const createFileTool = tool<z.infer<typeof createFileInputSchema>, { fileId: string; downloadUrl: string; filename: string; sizeBytes: number }>({
+    description: 'Create a downloadable file for the user (CSV or Excel spreadsheet). Use this when the user asks you to export, generate, or create a file they can download.',
+    inputSchema: createFileInputSchema,
+    execute: async ({ filename, format, headers, rows }) => {
+      const sanitized = sanitizeRows(rows);
+      let data: Buffer;
+      let mediaType: string;
+
+      if (format === 'csv') {
+        const csvContent = Papa.unparse({ fields: headers, data: sanitized });
+        data = Buffer.from(csvContent, 'utf-8');
+        mediaType = 'text/csv';
+      } else {
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...sanitized]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        data = Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
+        mediaType = EXTENSION_TO_MIME['.xlsx'];
+      }
+
+      const ext = format === 'csv' ? '.csv' : '.xlsx';
+      const storageKey = `${session.user.orgId}/${session.user.agentUserId}/${randomUUID()}${ext}`;
+      const store = getFileStore();
+      await store.put(storageKey, data, {
+        filename,
+        mediaType,
+        sizeBytes: data.length,
+        userId: session.user.agentUserId,
+        orgId: session.user.orgId,
+        conversationId,
+      });
+
+      const record = await createFileRecord({
+        userId: session.user.agentUserId,
+        orgId: session.user.orgId,
+        conversationId,
+        filename,
+        mediaType,
+        sizeBytes: data.length,
+        storageKey,
+      });
+
+      return {
+        fileId: record.id,
+        downloadUrl: `/api/files/${record.id}`,
+        filename,
+        sizeBytes: data.length,
+      };
+    },
+  });
+
+  const allTools = { ...tools, create_file: createFileTool };
+
   // 9. Stream the response
   const result = streamText({
       model: createModel(user.apiProvider!, modelId, apiKey),
       system: systemPrompt,
-      messages: await convertToModelMessages(messages),
-      tools,
+      messages: await convertToModelMessages(processedMessages),
+      tools: allTools,
       stopWhen: stepCountIs(5),
       onFinish: async ({ text, toolCalls, usage }) => {
         try {
