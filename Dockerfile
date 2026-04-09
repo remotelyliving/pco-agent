@@ -38,6 +38,8 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
+RUN mkdir -p /data/uploads && chown nextjs:nodejs /data/uploads
+
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
