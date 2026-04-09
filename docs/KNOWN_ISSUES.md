@@ -65,10 +65,6 @@
 **Impact:** The mobile nav overlay backdrop can only be dismissed by tapping it. Keyboard users cannot press Escape to close the drawer, and focus is not trapped — tabbing can reach content behind the overlay.
 **Fix:** Add `onKeyDown` handler for Escape, trap focus within the drawer when open, use `<dialog>` semantics or `role="dialog"` with `aria-modal`.
 
-### Setup Wizard — Test Connection Requires Temporary DB Save
-**Status:** Accepted — mitigated with rollback
-**Impact:** The "Save & Test" button saves the API key to the database before testing (the test endpoint reads from DB). If the test fails, the key is automatically cleared so `needsSetup` continues to gate chat access. The "Skip test" option saves without testing.
-**Fix:** Create a dedicated test endpoint that accepts the API key in the request body without persisting it. Low priority — the current rollback behavior prevents broken state.
 
 ### needsSetup Adds DB Query to Chat Page Loads
 **Status:** Deferred — low impact for homelab
