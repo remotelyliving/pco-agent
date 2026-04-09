@@ -1,12 +1,7 @@
 'use client';
 
 import { FileSpreadsheet, Download } from 'lucide-react';
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { formatFileSize } from '@/lib/files/types';
 
 interface UploadCardProps {
   filename: string;
@@ -19,7 +14,7 @@ export function UploadCard({ filename, sizeBytes }: UploadCardProps) {
       <FileSpreadsheet className="h-5 w-5 shrink-0 text-green-600" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-700">{filename}</p>
-        <p className="text-xs text-gray-500">{formatSize(sizeBytes)}</p>
+        {sizeBytes > 0 && <p className="text-xs text-gray-500">{formatFileSize(sizeBytes)}</p>}
       </div>
     </div>
   );
@@ -37,12 +32,12 @@ export function DownloadCard({ fileId, filename, sizeBytes }: DownloadCardProps)
       <FileSpreadsheet className="h-5 w-5 shrink-0 text-blue-600" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-700">{filename}</p>
-        <p className="text-xs text-gray-500">{formatSize(sizeBytes)}</p>
+        <p className="text-xs text-gray-500">{formatFileSize(sizeBytes)}</p>
       </div>
       <a
         href={`/api/files/${fileId}`}
         download={filename}
-        className="flex min-h-[48px] items-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700"
+        className="flex min-h-[48px] min-w-[48px] items-center gap-1.5 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-700"
       >
         <Download className="h-4 w-4" />
         Download

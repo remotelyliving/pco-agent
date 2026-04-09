@@ -284,7 +284,7 @@ export function ChatInterface({
           <p className="flex-1">
             Files you upload are sent to your AI provider for processing. Your data is not used for training. This notice won&apos;t appear again.
           </p>
-          <button onClick={dismissConsent} className="shrink-0 font-medium text-amber-600 hover:text-amber-800">Got it</button>
+          <button onClick={dismissConsent} className="shrink-0 min-h-[44px] min-w-[44px] px-3 font-medium text-amber-600 hover:text-amber-800">Got it</button>
         </div>
       )}
       {pendingFiles.length > 0 && (

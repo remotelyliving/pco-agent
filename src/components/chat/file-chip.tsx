@@ -1,12 +1,7 @@
 'use client';
 
 import { FileSpreadsheet, X } from 'lucide-react';
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { formatFileSize } from '@/lib/files/types';
 
 function truncateName(name: string, max = 30): string {
   if (name.length <= max) return name;
@@ -32,10 +27,10 @@ export function FileChip({ name, size, progress, error, onRemove }: FileChipProp
       <FileSpreadsheet className="h-4 w-4 shrink-0 text-gray-500" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-700">{truncateName(name)}</p>
-        <p className="text-xs text-gray-500">{formatSize(size)}</p>
+        <p className="text-xs text-gray-500">{formatFileSize(size)}</p>
         {error && <p className="text-xs text-red-600">{error}</p>}
         {progress !== undefined && !error && (
-          <div className="mt-1 h-1 w-full rounded-full bg-gray-200">
+          <div className="mt-1 h-1 w-full rounded-full bg-gray-200" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
             <div className="h-1 rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}
