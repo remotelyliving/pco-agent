@@ -92,7 +92,7 @@ export async function Sidebar() {
             await signOut({ redirectTo: '/login' });
           }}
         >
-          <Button variant="ghost" size="sm" type="submit">
+          <Button variant="outline" size="sm" type="submit" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
             Sign out
           </Button>
         </form>

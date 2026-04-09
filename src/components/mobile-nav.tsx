@@ -51,7 +51,7 @@ export function MobileNav({ userName, userRole, onSignOut }: { userName?: string
               <p className="text-sm font-medium">{userName || 'User'}</p>
               {onSignOut && (
                 <form action={onSignOut} className="mt-2">
-                  <Button variant="ghost" size="sm" type="submit" className="w-full justify-start">
+                  <Button variant="outline" size="sm" type="submit" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
                     Sign out
                   </Button>
                 </form>
