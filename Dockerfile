@@ -11,6 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
 RUN npm run build
+RUN npx esbuild prisma/seed.ts --bundle --platform=node --outfile=prisma/seed.js --external:@prisma/client
 
 # Production deps only — used for prisma CLI at container startup
 FROM base AS prod-deps
@@ -33,6 +34,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma/seed.js ./prisma/seed.js
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 COPY entrypoint.sh ./
