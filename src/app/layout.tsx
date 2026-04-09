@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PCO Agent",
-  description: "AI assistant for Planning Center Online",
+  title: "Service Planner",
+  description: "AI-powered assistant for church service planning",
 };
 
 export default function RootLayout({
