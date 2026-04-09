@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { updateConversationTitle } from '@/lib/chat/persist';
+import { deleteConversationWithFiles } from '@/lib/files/persist';
 import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
 
@@ -83,8 +84,8 @@ export async function DELETE(
       return new Response('Not found', { status: 404 });
     }
 
-    // Messages cascade-delete due to onDelete: Cascade
-    await prisma.conversation.delete({ where: { id } });
+    // Delete conversation + all associated files from storage and DB
+    await deleteConversationWithFiles(id);
     return new Response(null, { status: 204 });
   } catch (error) {
     log.error('[conversations/id] Database error', { error: error instanceof Error ? error.message : String(error) });
