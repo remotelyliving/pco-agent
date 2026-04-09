@@ -24,7 +24,7 @@ fi
 echo "[entrypoint] Database is ready. Syncing schema..."
 node ./node_modules/prisma/build/index.js db push
 echo "[entrypoint] Schema synced. Seeding system rules..."
-node prisma/seed.mjs
+node ./node_modules/prisma/build/index.js db execute --file prisma/seed.sql --schema prisma/schema.prisma
 echo "[entrypoint] Seed complete. Starting server..."
 
 exec node server.js
