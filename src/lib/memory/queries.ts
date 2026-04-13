@@ -81,6 +81,16 @@ export async function deleteMemory(id: string, orgId: string) {
   return prisma.memory.delete({ where: { id, orgId } });
 }
 
+/** Delete an auto-extracted user memory by key. Returns true if a record was deleted. */
+export async function deleteAutoMemoryByKey(orgId: string, userId: string, key: string): Promise<boolean> {
+  const existing = await prisma.memory.findFirst({
+    where: { orgId, userId, key, source: 'auto' },
+  });
+  if (!existing) return false;
+  await prisma.memory.delete({ where: { id: existing.id } });
+  return true;
+}
+
 export async function enforceMemoryCap(orgId: string, maxCount: number = 200): Promise<void> {
   const count = await prisma.memory.count({ where: { orgId, userId: null, source: 'auto' } });
   if (count <= maxCount) return;
