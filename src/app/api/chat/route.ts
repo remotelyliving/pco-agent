@@ -199,37 +199,40 @@ export async function POST(req: Request) {
     );
   }
 
-  // 8b. Pre-process any file attachments in the last message
-  const processedMessages = [...messages];
-  const lastMsg = processedMessages[processedMessages.length - 1];
-  if (lastMsg?.role === 'user' && lastMsg.parts) {
-    const newParts = [];
-    for (const part of lastMsg.parts) {
-      if (part.type === 'file' && 'url' in part) {
-        const fileUrl = (part as { type: 'file'; url: string }).url;
-        const fileIdMatch = fileUrl.match(/\/api\/files\/([^/?]+)/);
-        if (fileIdMatch) {
-          const fileRecord = await getFileRecord(fileIdMatch[1]);
-          if (fileRecord) {
-            const store = getFileStore();
-            const stored = await store.get(fileRecord.storageKey);
-            if (stored) {
-              const parsed = parseFileToText(stored.data, fileRecord.mediaType, fileRecord.filename);
-              newParts.push({ type: 'text' as const, text: parsed });
-              continue;
+  // 8b. Convert file attachments to text in ALL messages (not just the last).
+  // The client replays full history, so earlier messages may contain file parts
+  // that the model provider can't handle natively (e.g., text/csv).
+  const processedMessages = await Promise.all(
+    messages.map(async (msg) => {
+      if (msg.role !== 'user' || !msg.parts) return msg;
+      const hasFiles = msg.parts.some((p) => p.type === 'file' && 'url' in p);
+      if (!hasFiles) return msg;
+      const newParts = [];
+      for (const part of msg.parts) {
+        if (part.type === 'file' && 'url' in part) {
+          const fileUrl = (part as { type: 'file'; url: string }).url;
+          const fileIdMatch = fileUrl.match(/\/api\/files\/([^/?]+)/);
+          if (fileIdMatch) {
+            const fileRecord = await getFileRecord(fileIdMatch[1]);
+            if (fileRecord) {
+              const store = getFileStore();
+              const stored = await store.get(fileRecord.storageKey);
+              if (stored) {
+                const parsed = parseFileToText(stored.data, fileRecord.mediaType, fileRecord.filename);
+                newParts.push({ type: 'text' as const, text: parsed });
+                continue;
+              }
             }
           }
+          // File couldn't be resolved — drop the part to avoid unsupported media type errors
+          newParts.push({ type: 'text' as const, text: '[File attachment could not be loaded]' });
+        } else {
+          newParts.push(part);
         }
-        newParts.push(part);
-      } else {
-        newParts.push(part);
       }
-    }
-    processedMessages[processedMessages.length - 1] = {
-      ...lastMsg,
-      parts: newParts,
-    };
-  }
+      return { ...msg, parts: newParts };
+    }),
+  );
 
   // 8c. Register local create_file tool for AI-generated downloads
   const createFileInputSchema = z.object({
