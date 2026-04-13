@@ -28,11 +28,13 @@ interface MobileConversation {
 export function MobileNav({
   userName,
   userRole,
+  orgName,
   onSignOut,
   conversations = [],
 }: {
   userName?: string | null;
   userRole?: string;
+  orgName?: string | null;
   onSignOut?: () => Promise<void>;
   conversations?: MobileConversation[];
 }) {
@@ -66,6 +68,7 @@ export function MobileNav({
                 <Image src="/robot.svg" alt="" width={24} height={24} aria-hidden="true" />
                 Service Planner
               </p>
+              {orgName && <p className="text-sm font-medium text-gray-700">{orgName}</p>}
               <p className="text-sm text-gray-500">{roleLabel}</p>
             </div>
             <div className="p-4 space-y-1">

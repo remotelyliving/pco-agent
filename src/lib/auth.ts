@@ -82,6 +82,14 @@ export const authConfig: NextAuthConfig = {
           const json = await res.json();
           const person = json.data;
           const org = json.meta?.parent;
+          const orgName = org?.attributes?.name || json.meta?.organization?.attributes?.name;
+          if (!orgName) {
+            logger.warn('[auth] PCO /me did not return org name', {
+              metaKeys: Object.keys(json.meta || {}),
+              parentKeys: org ? Object.keys(org) : [],
+              parentAttrKeys: org?.attributes ? Object.keys(org.attributes) : [],
+            });
+          }
           return {
             id: person.id,
             name: `${person.attributes.first_name} ${person.attributes.last_name}`,
@@ -89,7 +97,7 @@ export const authConfig: NextAuthConfig = {
               person.attributes.email_addresses?.[0]?.address ?? null,
             pcoPersonId: person.id,
             pcoOrgId: org?.id,
-            pcoOrgName: org?.attributes?.name,
+            pcoOrgName: orgName,
             pcoSiteAdmin: person.attributes.site_administrator === true,
             pcoPeoplePermissions: person.attributes.people_permissions ?? null,
           };

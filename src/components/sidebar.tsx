@@ -7,11 +7,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { listConversations } from '@/lib/chat/persist';
+import { prisma } from '@/lib/db';
 import { ConversationItem } from '@/components/conversation-item';
 
 export async function Sidebar() {
   const session = await auth();
   const user = session?.user;
+
+  const org = user?.orgId
+    ? await prisma.organization.findUnique({ where: { id: user.orgId }, select: { name: true } })
+    : null;
+  const orgName = org?.name && org.name !== 'Unknown' ? org.name : null;
   const initials =
     user?.name
       ?.split(' ')
@@ -30,6 +36,7 @@ export async function Sidebar() {
           <Image src="/robot.svg" alt="" width={28} height={28} aria-hidden="true" />
           <h2 className="text-lg font-semibold">Service Planner</h2>
         </div>
+        {orgName && <p className="text-sm font-medium text-gray-700">{orgName}</p>}
         <p className="text-sm text-gray-500">
           {user?.role === 'admin' ? 'Admin' : user?.role === 'editor' ? 'Editor' : 'Member'}
         </p>
