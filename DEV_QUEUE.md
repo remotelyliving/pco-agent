@@ -12,7 +12,7 @@
 
 ## In Progress
 
-_(none)_
+- [ ] **Image Upload Support** — Add PNG, JPEG, WebP upload support to chat. Images sent as native image parts to AI providers (all three support vision). Use case: screenshots of text conversations, schedules, charts for planning context. Guardrails: same 10MB limit, magic byte validation, no GIF/SVG/TIFF (attack surface, no model value). Update file type definitions, validation, chat route (image parts vs text conversion), and UI accept attributes + error messages.
 
 ## Backlog
 

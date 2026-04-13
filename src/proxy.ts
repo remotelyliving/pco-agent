@@ -17,7 +17,7 @@ const RATE_LIMITS: Record<string, number> = {
   '/api/memory/:id': 60,
   '/api/conversations': 20,
   '/api/conversations/:id': 60,
-  '/api/files': 60,
+  '/api/files': 20,
   '/api/files/:id': 60,
 };
 const DEFAULT_RATE_LIMIT = 60;
@@ -41,6 +41,7 @@ function normalizeRoute(pathname: string): string {
   if (/^\/api\/rules\/[^/]+$/.test(pathname)) return '/api/rules/:id';
   if (/^\/api\/memory\/[^/]+$/.test(pathname)) return '/api/memory/:id';
   if (/^\/api\/conversations\/[^/]+$/.test(pathname)) return '/api/conversations/:id';
+  if (/^\/api\/files\/[^/]+$/.test(pathname)) return '/api/files/:id';
   return pathname;
 }
 

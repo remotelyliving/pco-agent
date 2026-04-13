@@ -18,6 +18,15 @@ export async function getFileRecord(id: string) {
   return prisma.file.findUnique({ where: { id } });
 }
 
+/** Total storage bytes used by a user across all conversations. */
+export async function getUserStorageBytes(userId: string): Promise<number> {
+  const result = await prisma.file.aggregate({
+    where: { userId },
+    _sum: { sizeBytes: true },
+  });
+  return result._sum.sizeBytes ?? 0;
+}
+
 export async function getFilesByConversation(conversationId: string) {
   return prisma.file.findMany({ where: { conversationId } });
 }

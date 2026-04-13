@@ -69,7 +69,13 @@ export function MessageBubble({ message }: { message: UIMessage }) {
           if (part.type === 'file') {
             const filePart = part as { type: 'file'; url: string; mediaType: string; filename?: string };
             return (
-              <UploadCard key={i} filename={filePart.filename || 'Uploaded file'} sizeBytes={0} />
+              <UploadCard
+                key={i}
+                filename={filePart.filename || 'Uploaded file'}
+                sizeBytes={0}
+                mediaType={filePart.mediaType}
+                imageUrl={filePart.mediaType?.startsWith('image/') ? filePart.url : undefined}
+              />
             );
           }
           if (part.type === 'dynamic-tool') {

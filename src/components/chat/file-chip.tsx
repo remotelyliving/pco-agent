@@ -1,7 +1,7 @@
 'use client';
 
-import { FileSpreadsheet, X } from 'lucide-react';
-import { formatFileSize } from '@/lib/files/types';
+import { FileSpreadsheet, ImageIcon, X } from 'lucide-react';
+import { formatFileSize, IMAGE_EXTENSIONS } from '@/lib/files/types';
 
 function truncateName(name: string, max = 30): string {
   if (name.length <= max) return name;
@@ -21,10 +21,18 @@ interface FileChipProps {
   onRemove: () => void;
 }
 
+function isImageFile(filename: string): boolean {
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  return (IMAGE_EXTENSIONS as readonly string[]).includes(ext);
+}
+
 export function FileChip({ name, size, progress, error, onRemove }: FileChipProps) {
+  const isImage = isImageFile(name);
+  const Icon = isImage ? ImageIcon : FileSpreadsheet;
+
   return (
     <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
-      <FileSpreadsheet className="h-4 w-4 shrink-0 text-gray-500" />
+      <Icon className="h-4 w-4 shrink-0 text-gray-500" />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-700">{truncateName(name)}</p>
         <p className="text-xs text-gray-500">{formatFileSize(size)}</p>

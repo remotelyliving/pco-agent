@@ -160,6 +160,43 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 5. Stream response via streamText() in src/app/api/chat/route.ts
 6. Persist conversation and messages via src/lib/chat/persist.ts
 
+## How File Upload Works
+
+Two categories of files with different processing paths:
+
+**Data files** (CSV, TSV, XLS, XLSX):
+1. User attaches file → client validates extension + size (10 MB max)
+2. `POST /api/files` → server validates magic bytes + stores on disk + DB record
+3. In chat route, data files are parsed to text via `parseFileToText()` and injected as text parts
+4. The model sees a pipe-delimited text representation (capped at 500 rows)
+
+**Image files** (PNG, JPEG, WebP):
+1. User attaches image → client validates extension + size (5 MB max — Anthropic limit)
+2. `POST /api/files` → server validates magic bytes (PNG 8-byte signature, JPEG SOI, WebP RIFF+WEBP) + stores on disk + DB record
+3. In chat route, images are base64-encoded into data URLs and sent as `FileUIPart` (native vision support across all providers)
+4. Images from older messages (beyond last 4 user messages) are replaced with `[Image: filename]` placeholders to bound memory
+5. `MessageBubble` renders images as `<img>` tags with thumbnails
+
+**Security:**
+- MIME types derived from server-side extension lookup, never from user-supplied Content-Type
+- Magic byte validation prevents spoofed extensions
+- File resolution in chat route checks both `orgId` AND `userId` ownership
+- GIF and SVG are explicitly excluded (animation/script attack surface)
+
+**Limits:**
+- 3 files per message, 10 MB per data file, 5 MB per image
+- 500 MB per-user storage quota (enforced at upload time)
+- Upload rate: 20 requests/minute
+
+**Key files:**
+- `src/lib/files/types.ts` — extensions, MIME maps, size constants
+- `src/lib/files/validate.ts` — extension + magic byte validation
+- `src/lib/files/parse.ts` — CSV/Excel to text conversion
+- `src/lib/files/persist.ts` — DB CRUD + storage quota check
+- `src/lib/files/store.ts` — local file storage interface
+- `src/app/api/files/route.ts` — upload endpoint
+- `src/app/api/chat/route.ts` — file processing in `processedMessages` block (~line 210)
+
 ## Testing Patterns
 
 - **Unit tests** (Vitest): test `lib/` functions in isolation with mocked DB/AI

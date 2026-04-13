@@ -1,17 +1,41 @@
 'use client';
 
-import { FileSpreadsheet, Download } from 'lucide-react';
-import { formatFileSize } from '@/lib/files/types';
+import { FileSpreadsheet, ImageIcon, Download } from 'lucide-react';
+import { formatFileSize, IMAGE_MIME_TYPES } from '@/lib/files/types';
+
+function isImageMime(mediaType?: string): boolean {
+  return !!mediaType && (IMAGE_MIME_TYPES as readonly string[]).includes(mediaType);
+}
 
 interface UploadCardProps {
   filename: string;
   sizeBytes: number;
+  mediaType?: string;
+  imageUrl?: string;
 }
 
-export function UploadCard({ filename, sizeBytes }: UploadCardProps) {
+export function UploadCard({ filename, sizeBytes, mediaType, imageUrl }: UploadCardProps) {
+  const isImage = isImageMime(mediaType);
+
+  if (isImage && imageUrl) {
+    return (
+      <div className="my-2 overflow-hidden rounded-lg border border-gray-200 bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt={filename} className="max-h-64 w-auto rounded-t-lg object-contain" />
+        <div className="flex items-center gap-2 p-2 text-sm">
+          <ImageIcon className="h-4 w-4 shrink-0 text-purple-600" />
+          <p className="truncate text-xs text-gray-500">{filename}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const Icon = isImage ? ImageIcon : FileSpreadsheet;
+  const iconColor = isImage ? 'text-purple-600' : 'text-green-600';
+
   return (
     <div className="my-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-2 text-sm">
-      <FileSpreadsheet className="h-5 w-5 shrink-0 text-green-600" />
+      <Icon className={`h-5 w-5 shrink-0 ${iconColor}`} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-700">{filename}</p>
         {sizeBytes > 0 && <p className="text-xs text-gray-500">{formatFileSize(sizeBytes)}</p>}

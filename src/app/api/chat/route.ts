@@ -31,7 +31,7 @@ import { parseFileToText } from '@/lib/files/parse';
 import { getFileStore } from '@/lib/files/store';
 import { getFileRecord, createFileRecord } from '@/lib/files/persist';
 import { sanitizeRows } from '@/lib/files/sanitize';
-import { EXTENSION_TO_MIME } from '@/lib/files/types';
+import { EXTENSION_TO_MIME, IMAGE_MIME_TYPES } from '@/lib/files/types';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { randomUUID } from 'crypto';
@@ -201,11 +201,20 @@ export async function POST(req: Request) {
     );
   }
 
-  // 8b. Convert file attachments to text in ALL messages (not just the last).
+  // 8b. Convert file attachments in ALL messages (not just the last).
   // The client replays full history, so earlier messages may contain file parts
   // that the model provider can't handle natively (e.g., text/csv).
+  // Images are only included from the last 4 user messages to bound memory usage.
+  const MAX_IMAGE_REPLAY_MESSAGES = 4;
+  const userMsgIndices = messages
+    .map((m, i) => m.role === 'user' ? i : -1)
+    .filter((i) => i >= 0);
+  const imageReplayCutoff = userMsgIndices.length > MAX_IMAGE_REPLAY_MESSAGES
+    ? userMsgIndices[userMsgIndices.length - MAX_IMAGE_REPLAY_MESSAGES]
+    : 0;
+
   const processedMessages = await Promise.all(
-    messages.map(async (msg) => {
+    messages.map(async (msg, msgIndex) => {
       if (msg.role !== 'user' || !msg.parts) return msg;
       const hasFiles = msg.parts.some((p) => p.type === 'file' && 'url' in p);
       if (!hasFiles) return msg;
@@ -217,13 +226,31 @@ export async function POST(req: Request) {
           if (fileIdMatch) {
             const fileRecord = await getFileRecord(fileIdMatch[1]);
             // Verify file belongs to this user's org before injecting into context
-            if (fileRecord && fileRecord.orgId === session.user.orgId) {
+            if (fileRecord && fileRecord.orgId === session.user.orgId && fileRecord.userId === session.user.agentUserId) {
               const store = getFileStore();
               const stored = await store.get(fileRecord.storageKey);
               if (stored) {
-                const parsed = parseFileToText(stored.data, fileRecord.mediaType, fileRecord.filename);
-                newParts.push({ type: 'text' as const, text: parsed });
-                continue;
+                try {
+                  // Images: send as file parts with data URLs (all providers support vision)
+                  if ((IMAGE_MIME_TYPES as readonly string[]).includes(fileRecord.mediaType)) {
+                    // Skip base64 encoding for images in older messages to bound memory
+                    if (msgIndex < imageReplayCutoff) {
+                      newParts.push({ type: 'text' as const, text: `[Image: ${fileRecord.filename}]` });
+                      continue;
+                    }
+                    const base64 = stored.data.toString('base64');
+                    const dataUrl = `data:${fileRecord.mediaType};base64,${base64}`;
+                    newParts.push({ type: 'file' as const, url: dataUrl, mediaType: fileRecord.mediaType, filename: fileRecord.filename });
+                    continue;
+                  }
+                  // Data files: convert to text for model context
+                  const parsed = parseFileToText(stored.data, fileRecord.mediaType, fileRecord.filename);
+                  newParts.push({ type: 'text' as const, text: parsed });
+                  continue;
+                } catch {
+                  newParts.push({ type: 'text' as const, text: `[File "${fileRecord.filename}" could not be processed]` });
+                  continue;
+                }
               }
             }
           }

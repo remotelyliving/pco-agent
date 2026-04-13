@@ -72,10 +72,10 @@
 **Impact:** The `needsSetup()` check runs a Prisma query on every `/chat` and `/chat/[id]` page load to verify the user has an API key configured. This is an additional sequential DB round-trip on the hot path.
 **Fix:** Cache setup status in the JWT token (set a flag on login and when settings are saved) to avoid per-request DB hits.
 
-### File-to-Text Caching — Re-parsed Every Request
-**Status:** Deferred
-**Impact:** File attachments in conversation history are re-fetched from storage and re-parsed on every chat request. Long conversations with many file attachments cause redundant I/O.
-**Fix:** Cache parsed text on the file record (a `parsedText` column) or convert file parts to text once when a message is first processed.
+### File Caching — Re-processed Every Request
+**Status:** Deferred — mitigated by image replay cap
+**Impact:** File attachments in conversation history are re-fetched from storage and re-processed on every chat request. Data files (CSV/Excel) are re-parsed to text; images are re-read and re-encoded to base64. Images from older messages (beyond the last 4 user messages) are replaced with text placeholders to bound memory, but recent images are still re-encoded each request.
+**Fix:** For data files: cache parsed text on the file record (a `parsedText` column). For images: cache the base64 data URL string, or store as data URLs at upload time.
 
 ### Org-Scoped upsertMemory Race Condition
 **Status:** Deferred — low risk

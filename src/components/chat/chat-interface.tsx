@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MessageBubble } from '@/components/chat/message-bubble';
 import { Paperclip } from 'lucide-react';
 import { FileChip } from '@/components/chat/file-chip';
-import { ALLOWED_EXTENSIONS, MAX_FILE_SIZE_BYTES, MAX_FILES_PER_MESSAGE } from '@/lib/files/types';
+import { ALLOWED_EXTENSIONS, DATA_EXTENSIONS, IMAGE_EXTENSIONS, MAX_FILE_SIZE_BYTES, MAX_IMAGE_SIZE_BYTES, MAX_FILES_PER_MESSAGE } from '@/lib/files/types';
 import type { UIMessage } from 'ai';
 
 function friendlyErrorMessage(error: Error): string {
@@ -129,7 +129,12 @@ export function ChatInterface({
       }
       const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
       if (!(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
-        newFiles.push({ file, error: "This file type isn't supported. Please upload a CSV or Excel file." });
+        newFiles.push({ file, error: "This file type isn't supported. You can upload spreadsheets (CSV, Excel) or images (JPG, PNG)." });
+        continue;
+      }
+      const isImage = (IMAGE_EXTENSIONS as readonly string[]).includes(ext);
+      if (isImage && file.size > MAX_IMAGE_SIZE_BYTES) {
+        newFiles.push({ file, error: 'This image is too large. The maximum for images is 5 MB.' });
         continue;
       }
       if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -248,6 +253,7 @@ export function ChatInterface({
                 "Show me people added in the last month",
                 "What songs have we played most recently?",
                 "Help me plan next week's service",
+                "Upload a screenshot and I'll help you work with it",
               ].map((prompt) => (
                 <button
                   key={prompt}
@@ -292,7 +298,7 @@ export function ChatInterface({
       {!consentDismissed && pendingFiles.length > 0 && (
         <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
           <p className="flex-1">
-            Files you upload are sent to your AI provider for processing. Your data is not used for training. This notice won&apos;t appear again.
+            Files and images you upload are sent to your AI provider for processing. Avoid sharing images with sensitive personal information. Your data is not used for training. This notice won&apos;t appear again.
           </p>
           <button onClick={dismissConsent} className="shrink-0 min-h-[44px] min-w-[44px] px-3 font-medium text-amber-600 hover:text-amber-800">Got it</button>
         </div>
@@ -307,13 +313,13 @@ export function ChatInterface({
 
       <form onSubmit={handleSubmit} className="border-t p-4">
         <div className="flex items-end gap-2">
-          <input ref={fileInputRef} type="file" accept=".csv,.xlsx,.xls,.tsv" multiple className="hidden" onChange={handleFileSelect} />
+          <input ref={fileInputRef} type="file" accept={[...DATA_EXTENSIONS, 'image/png', 'image/jpeg', 'image/webp'].join(',')} multiple className="hidden" onChange={handleFileSelect} />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming}
             className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-            aria-label="Attach file"
+            aria-label="Attach file or image"
           >
             <Paperclip className="h-5 w-5" />
           </button>

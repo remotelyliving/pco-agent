@@ -7,6 +7,11 @@ export function parseFileToText(
   mediaType: string,
   filename: string,
 ): string {
+  // Images are handled as native file parts in the chat route — not parseable to text
+  if (mediaType.startsWith('image/')) {
+    return `The user uploaded an image: "${filename}". (Image content is sent separately.)`;
+  }
+
   try {
     let headers: string[];
     let rows: string[][];

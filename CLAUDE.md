@@ -115,12 +115,12 @@ src/
     rate-limit.ts     # In-memory token bucket rate limiter
     request-context.ts # Request ID from headers
     files/
-      types.ts          # File types, constants, limits
-      validate.ts       # Extension, size, magic-byte validation
+      types.ts          # File types (data + image), constants, size limits, MIME mappings
+      validate.ts       # Extension, size, magic-byte validation (CSV/Excel + PNG/JPEG/WebP)
       store.ts          # FileStore interface + LocalFileStore
-      parse.ts          # CSV/XLSX parsing to text for model context
+      parse.ts          # CSV/XLSX parsing to text for model context (images handled in chat route as FileUIPart)
       sanitize.ts       # Formula injection sanitization
-      persist.ts        # File DB CRUD + deleteConversationWithFiles()
+      persist.ts        # File DB CRUD + deleteConversationWithFiles() + getUserStorageBytes()
   proxy.ts          # Centralized auth + rate limiting + CSP nonce + security headers (Node.js runtime)
   instrumentation.ts  # Next.js instrumentation hook — registers logger at server startup
 prisma/

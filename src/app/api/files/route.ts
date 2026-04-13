@@ -4,8 +4,8 @@ import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/request-context';
 import { getFileStore } from '@/lib/files/store';
 import { validateFile, sanitizeFilename, getExtension } from '@/lib/files/validate';
-import { createFileRecord } from '@/lib/files/persist';
-import { EXTENSION_TO_MIME } from '@/lib/files/types';
+import { createFileRecord, getUserStorageBytes } from '@/lib/files/persist';
+import { EXTENSION_TO_MIME, MAX_USER_STORAGE_BYTES } from '@/lib/files/types';
 import type { AllowedExtension } from '@/lib/files/types';
 import { randomUUID } from 'crypto';
 
@@ -46,6 +46,15 @@ export async function POST(req: Request) {
       return Response.json({ error: validation.error }, { status: 400 });
     }
 
+    // Check per-user storage quota
+    const currentUsage = await getUserStorageBytes(session.user.agentUserId);
+    if (currentUsage + data.length > MAX_USER_STORAGE_BYTES) {
+      return Response.json(
+        { error: "You've reached your storage limit (500 MB). Delete some old conversations to free up space." },
+        { status: 413 },
+      );
+    }
+
     const cleanName = sanitizeFilename(file.name);
     const ext = getExtension(cleanName) as AllowedExtension;
     const mediaType = EXTENSION_TO_MIME[ext] || 'application/octet-stream';
@@ -83,6 +92,7 @@ export async function POST(req: Request) {
     log.info('[files] Upload complete', {
       fileId: record.id,
       filename: cleanName,
+      mediaType,
       sizeBytes: data.length,
       conversationId,
     });
