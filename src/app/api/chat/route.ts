@@ -121,6 +121,12 @@ export async function POST(req: Request) {
 
     // 7. Connect to MCP server (using PCO access token from JWT)
     const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    log.info('[chat] JWT decoded', {
+      hasJwt: !!jwtToken,
+      jwtKeys: jwtToken ? Object.keys(jwtToken) : [],
+      hasPcoAccessToken: !!jwtToken?.pcoAccessToken,
+      hasPcoRefreshToken: !!jwtToken?.pcoRefreshToken,
+    });
     const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
 
     if (!pcoAccessToken && jwtToken?.pcoRefreshToken) {

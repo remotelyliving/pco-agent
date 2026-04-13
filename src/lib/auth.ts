@@ -256,6 +256,15 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
+      logger.info('[auth] JWT callback returning', {
+        hasUser: !!user,
+        hasPcoAccessToken: !!token.pcoAccessToken,
+        hasPcoRefreshToken: !!token.pcoRefreshToken,
+        pcoAccessTokenExpires: token.pcoAccessTokenExpires,
+        agentUserId: token.agentUserId,
+        tokenKeys: Object.keys(token),
+      });
+
       return token;
     },
     async session({ session, token }) {
