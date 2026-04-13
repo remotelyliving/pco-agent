@@ -177,8 +177,10 @@ export function ChatInterface({
     return uploaded;
   }, [pendingFiles]);
 
+  const [uploading, setUploading] = useState(false);
+
   const submitText = useCallback(async (text: string) => {
-    if (!text.trim() || isStreaming) return;
+    if (!text.trim() || isStreaming || uploading) return;
     if (textareaRef.current) {
       textareaRef.current.value = '';
       textareaRef.current.style.height = 'auto';
@@ -187,33 +189,34 @@ export function ChatInterface({
     const validFiles = pendingFiles.filter((pf) => !pf.error);
 
     if (validFiles.length > 0) {
-      // Ensure we have a conversation ID before uploading files
-      let targetConvId = convId;
-      if (!targetConvId) {
-        try {
+      setUploading(true);
+      try {
+        // Ensure we have a conversation ID before uploading files
+        let targetConvId = convIdRef.current;
+        if (!targetConvId) {
           const res = await fetch('/api/conversations', { method: 'POST' });
           if (!res.ok) throw new Error('Failed to create conversation');
           const data = await res.json() as { id: string };
           targetConvId = data.id;
+          convIdRef.current = targetConvId;
           setConvId(targetConvId);
           window.history.replaceState(null, '', `/chat/${targetConvId}`);
-          router.refresh();
-        } catch {
-          // Show error on first file chip
-          setPendingFiles((prev) =>
-            prev.map((f, i) => i === 0 ? { ...f, error: 'Could not start conversation. Please try again.' } : f)
-          );
-          return;
         }
+        const fileRefs = await uploadFiles(targetConvId);
+        setPendingFiles([]);
+        await sendMessage({ text: text.trim(), files: fileRefs.length > 0 ? fileRefs : undefined });
+      } catch {
+        setPendingFiles((prev) =>
+          prev.map((f, i) => i === 0 ? { ...f, error: 'Could not start conversation. Please try again.' } : f)
+        );
+      } finally {
+        setUploading(false);
       }
-      const fileRefs = await uploadFiles(targetConvId!);
-      setPendingFiles([]);
-      await sendMessage({ text: text.trim(), files: fileRefs.length > 0 ? fileRefs : undefined });
     } else {
       setPendingFiles([]);
       await sendMessage({ text: text.trim() });
     }
-  }, [isStreaming, sendMessage, pendingFiles, convId, uploadFiles, router]);
+  }, [isStreaming, uploading, sendMessage, pendingFiles, uploadFiles]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -326,11 +329,11 @@ export function ChatInterface({
           />
           <Button
             type="submit"
-            disabled={isStreaming}
+            disabled={isStreaming || uploading}
             className="h-[44px] min-w-[44px] shrink-0"
             aria-label="Send message"
           >
-            {isStreaming ? '...' : 'Send'}
+            {uploading ? 'Uploading...' : isStreaming ? '...' : 'Send'}
           </Button>
         </div>
         <p className="mt-1 text-xs text-gray-400">
