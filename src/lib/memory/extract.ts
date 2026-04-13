@@ -2,7 +2,7 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { MemorySource } from '@prisma/client';
 import { createModel } from '@/lib/ai/providers';
-import { upsertMemory, enforceMemoryCap, enforceUserMemoryCap } from '@/lib/memory/queries';
+import { upsertMemory, enforceUserMemoryCap } from '@/lib/memory/queries';
 
 const MAX_EXTRACTION_INPUT_LENGTH = 4000;
 
@@ -21,11 +21,8 @@ const factsSchema = z.object({
   facts: z
     .array(
       z.object({
-        key: z.string().describe('A short snake_case key for the fact (e.g. pastor_name)'),
+        key: z.string().describe('A short snake_case key for the fact (e.g. preferred_format)'),
         value: z.string().describe('The value of the fact'),
-        scope: z.enum(['org', 'user']).describe(
-          'org = about the church (names, times, policies). user = about this specific person (preferences, role, style)',
-        ),
       }),
     )
     .describe('Facts extracted from this conversation'),
@@ -43,16 +40,14 @@ export async function extractAndSaveMemories(
   const model = createModel(provider, modelId, apiKey);
 
   const prompt = [
-    'Extract facts from this conversation.',
-    '- Org facts (scope: "org"): things about the church that any staff member would find useful',
-    '  (names, schedules, policies, team structure, event details)',
-    '- User facts (scope: "user"): things specific to THIS user\'s preferences or working style',
-    '  (communication preferences, role duties, personal workflows, how they like information presented)',
+    'Extract facts from this conversation that are specific to THIS user.',
+    '- Personal preferences, communication style, role duties, workflows, how they like information presented.',
+    '- Also include factual information they mention (names, schedules, policies) — these will be stored as personal notes.',
     '',
     'Only extract clear, objective facts. Return an empty facts array if nothing useful is found.',
     '',
-    `User: ${truncate(userMessage, MAX_EXTRACTION_INPUT_LENGTH)}`,
-    `Assistant: ${truncate(assistantMessage, MAX_EXTRACTION_INPUT_LENGTH)}`,
+    `<user_message>${truncate(userMessage, MAX_EXTRACTION_INPUT_LENGTH)}</user_message>`,
+    `<assistant_message>${truncate(assistantMessage, MAX_EXTRACTION_INPUT_LENGTH)}</assistant_message>`,
   ].join('\n');
 
   const { object } = await generateObject({
@@ -61,11 +56,12 @@ export async function extractAndSaveMemories(
     prompt,
   });
 
+  if (object.facts.length === 0) return;
+
   for (const fact of object.facts) {
-    const factUserId = fact.scope === 'user' ? userId : undefined;
-    await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, factUserId);
+    // All auto-extracted memories are user-scoped. Org-wide memories require manual admin creation.
+    await upsertMemory(orgId, fact.key, fact.value, MemorySource.auto, userId);
   }
 
-  await enforceMemoryCap(orgId);
   await enforceUserMemoryCap(orgId, userId);
 }

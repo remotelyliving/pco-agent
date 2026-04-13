@@ -52,12 +52,12 @@ function MemoryTable({
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium font-mono">{memory.key}</span>
+                <span className="text-sm font-medium">{memory.key.replace(/_/g, ' ')}</span>
                 <Badge
                   variant={memory.source === 'manual' ? 'default' : 'secondary'}
                   className="text-xs"
                 >
-                  {memory.source}
+                  {memory.source === 'manual' ? 'Added by admin' : 'Learned from chats'}
                 </Badge>
               </div>
               <p
@@ -158,19 +158,19 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
           <CardContent>
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="mem-key">Fact name</Label>
+                <Label htmlFor="mem-key">Topic</Label>
                 <Input
                   id="mem-key"
-                  placeholder="Fact name (e.g., pastor name)"
+                  placeholder="e.g., pastor name, Sunday service time"
                   value={newKey}
                   onChange={(e) => setNewKey(e.target.value)}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="mem-value">What we know</Label>
+                <Label htmlFor="mem-value">What the AI should remember</Label>
                 <Input
                   id="mem-value"
-                  placeholder="What the AI should remember"
+                  placeholder="e.g., Pastor John Smith, 10:00 AM"
                   value={newValue}
                   onChange={(e) => setNewValue(e.target.value)}
                 />

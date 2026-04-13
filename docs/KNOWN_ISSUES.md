@@ -2,7 +2,7 @@
 
 > **For agents and developers:** These are known limitations accepted for the current release. Do not flag these in reviews — they are tracked here intentionally.
 
-**Last Updated:** 2026-04-07
+**Last Updated:** 2026-04-13
 
 ---
 
@@ -28,8 +28,8 @@
 **Fix:** Show a "View all" or "Load more" link in the sidebar when `hasMore` is true.
 
 ### Memory Cap Eviction Not Visible to Admins
-**Status:** Deferred
-**Impact:** When `enforceMemoryCap` evicts old auto-extracted memories, there is no user-facing signal. Admins may notice facts disappearing without understanding why.
+**Status:** Partially mitigated — retrieval now has token budget + relevance filtering
+**Impact:** When `enforceMemoryCap` evicts old auto-extracted memories, there is no user-facing signal. Admins may notice facts disappearing without understanding why. Mitigated by the retrieval-side token budget (16K chars / ~4K tokens) and keyword relevance filtering, which ensure the system prompt stays bounded even if the DB caps are hit.
 **Fix:** Add a note on the `/memory` page explaining the memory caps (200 org-level and 100 per-user for auto-extracted memories). Optionally log which memories were evicted.
 
 ---
@@ -71,6 +71,46 @@
 **Status:** Deferred — low impact for homelab
 **Impact:** The `needsSetup()` check runs a Prisma query on every `/chat` and `/chat/[id]` page load to verify the user has an API key configured. This is an additional sequential DB round-trip on the hot path.
 **Fix:** Cache setup status in the JWT token (set a flag on login and when settings are saved) to avoid per-request DB hits.
+
+### File-to-Text Caching — Re-parsed Every Request
+**Status:** Deferred
+**Impact:** File attachments in conversation history are re-fetched from storage and re-parsed on every chat request. Long conversations with many file attachments cause redundant I/O.
+**Fix:** Cache parsed text on the file record (a `parsedText` column) or convert file parts to text once when a message is first processed.
+
+### Org-Scoped upsertMemory Race Condition
+**Status:** Deferred — low risk
+**Impact:** The org-scoped path in `upsertMemory` does `findFirst` then `create` without a transaction. A concurrent request could create a duplicate org-level memory (PostgreSQL treats NULL userId values as distinct in unique constraints). The partial unique index mitigates this for most cases.
+**Fix:** Wrap the org-scoped findFirst+create/update in a SERIALIZABLE transaction, or catch unique constraint violations and retry as an update.
+
+### Entrypoint Uses `db push` Instead of `migrate deploy`
+**Status:** Deferred — works for homelab, risky for production
+**Impact:** `prisma db push` in `entrypoint.sh` can be destructive (may drop columns/tables). Should be `prisma migrate deploy` once a full migration baseline is created.
+**Fix:** Generate baseline migration with `npx prisma migrate dev --name init`, then switch entrypoint to `prisma migrate deploy`.
+
+### PCO Tokens Exposed in Client Session
+**Status:** Deferred — low risk
+**Impact:** `pcoAccessToken` and `pcoRefreshToken` are passed through the NextAuth session callback, making them accessible to client-side code via `useSession()`. Tokens are encrypted in the JWT cookie (via NEXTAUTH_SECRET) and cannot be read from the raw cookie, but client components that call `useSession()` receive them.
+**Fix:** Keep PCO tokens only in the JWT (server-side). Refactor server-side code to read tokens from a server-only helper instead of the session object.
+
+### Chat "Thinking" Indicator Missing aria-live
+**Status:** Deferred
+**Impact:** The "Thinking..." animation in chat is visual-only. Screen reader users are not notified that the AI is processing.
+**Fix:** Add `aria-live="polite"` and `role="status"` to the thinking indicator div.
+
+### Send Button Shows "..." While Streaming
+**Status:** Deferred — cosmetic
+**Impact:** During streaming, the send button text changes to "..." which is cryptic for non-technical users.
+**Fix:** Show a small spinner icon or the text "Responding" instead.
+
+### Settings Page Has Less Guidance Than Setup Wizard
+**Status:** Deferred — UX polish
+**Impact:** The settings page lacks the step-by-step API key retrieval instructions, provider dashboard links, and explanatory text that the setup wizard provides. Returning users who need to rotate their API key get less help.
+**Fix:** Add a "Need help finding your key?" expandable section with the same `PROVIDER_INFO` content from the setup wizard.
+
+### Rules/Files Missing orgId in Query Where Clauses
+**Status:** Deferred — defense-in-depth
+**Impact:** `updateRule`, `deleteRule`, and `getFileRecord` query by primary key only, without including `orgId` in the where clause. Callers verify ownership before calling, but the queries themselves lack defense-in-depth.
+**Fix:** Add `orgId` to the where clause in `updateRule`, `deleteRule`, and `getFileRecord`.
 
 ---
 

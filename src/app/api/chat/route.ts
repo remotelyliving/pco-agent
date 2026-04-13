@@ -55,6 +55,7 @@ export async function POST(req: Request) {
   let modelId!: string;
   let conversationId!: string;
   let lastUserMessage: UIMessage | undefined;
+  let lastUserText = '';
   let systemPrompt!: string;
   let tools = {};
   let messages!: UIMessage[];
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
         .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
         .map((p) => p.text)
         .join('\n');
+      lastUserText = textContent;
       await saveMessage({
         conversationId,
         role: MessageRole.user,
@@ -181,7 +183,7 @@ export async function POST(req: Request) {
     // 8. Build system prompt with assembled rules and memory (parallelized)
     const [assembledRules, memoryPrompt] = await Promise.all([
       assembleRules(session.user.agentUserId, session.user.orgId, { formatAsPrompt: true }),
-      getMemoryPrompt(session.user.orgId, session.user.agentUserId),
+      getMemoryPrompt(session.user.orgId, session.user.agentUserId, lastUserText || undefined),
     ]);
     systemPrompt = buildSystemPrompt(
       typeof assembledRules === 'string' ? assembledRules : '',
@@ -214,7 +216,8 @@ export async function POST(req: Request) {
           const fileIdMatch = fileUrl.match(/\/api\/files\/([^/?]+)/);
           if (fileIdMatch) {
             const fileRecord = await getFileRecord(fileIdMatch[1]);
-            if (fileRecord) {
+            // Verify file belongs to this user's org before injecting into context
+            if (fileRecord && fileRecord.orgId === session.user.orgId) {
               const store = getFileStore();
               const stored = await store.get(fileRecord.storageKey);
               if (stored) {

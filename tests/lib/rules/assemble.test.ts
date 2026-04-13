@@ -75,10 +75,11 @@ describe('assembleRules', () => {
     expect(rules).not.toContain('No opt-in');
   });
 
-  it('sorts by sortOrder', async () => {
+  it('preserves Prisma orderBy sortOrder', async () => {
+    // Prisma returns rules pre-sorted by sortOrder asc
     mockPrisma.rule.findMany.mockResolvedValue([
-      { id: 'r1', content: 'Second', ruleType: 'system', visibility: 'org', orgId: null, createdById: null, sortOrder: 2 },
       { id: 'r2', content: 'First', ruleType: 'system', visibility: 'org', orgId: null, createdById: null, sortOrder: 1 },
+      { id: 'r1', content: 'Second', ruleType: 'system', visibility: 'org', orgId: null, createdById: null, sortOrder: 2 },
     ]);
     mockPrisma.userRuleSetting.findMany.mockResolvedValue([]);
     const rules = await assembleRules('user-1', 'org-1');

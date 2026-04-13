@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { createMCPClient, type MCPClient } from '@ai-sdk/mcp';
 import { logger } from '@/lib/logger';
 
@@ -41,7 +42,7 @@ export async function getMCPClient(
   mcpUrl: string,
   accessToken: string,
 ): Promise<MCPClient> {
-  const key = accessToken;
+  const key = createHash('sha256').update(accessToken).digest('hex');
   const now = Date.now();
 
   const existing = pool.get(key);
@@ -105,6 +106,21 @@ export async function getMCPClient(
 
 export function getPoolSize(): number {
   return pool.size;
+}
+
+/** Close all pooled MCP clients and stop cleanup timer. Called on graceful shutdown. */
+export async function shutdownPool(): Promise<void> {
+  const closePromises: Promise<void>[] = [];
+  for (const entry of pool.values()) {
+    closePromises.push(entry.client.close().catch((e) => logger.warn('[mcp-pool] Client close failed', { error: e instanceof Error ? e.message : String(e) })));
+  }
+  await Promise.all(closePromises);
+  pool.clear();
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
+  logger.info('[mcp-pool] Pool shut down');
 }
 
 // Exported for testing only

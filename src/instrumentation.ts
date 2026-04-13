@@ -6,10 +6,13 @@ export async function register() {
       validateEnv();
     } catch (error) {
       console.error('[startup] Environment validation failed:', error);
+      process.exit(1);
     }
 
     const shutdown = async () => {
       logger.info('[shutdown] Signal received, cleaning up');
+      const { shutdownPool } = await import('@/lib/mcp-pool');
+      await shutdownPool();
       const { prisma } = await import('@/lib/db');
       await prisma.$disconnect();
       process.exit(0);

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGenerateObject = vi.hoisted(() => vi.fn());
 const mockUpsertMemory = vi.hoisted(() => vi.fn());
-const mockEnforceMemoryCap = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const mockEnforceUserMemoryCap = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('ai', () => ({
@@ -11,7 +10,6 @@ vi.mock('ai', () => ({
 
 vi.mock('@/lib/memory/queries', () => ({
   upsertMemory: mockUpsertMemory,
-  enforceMemoryCap: mockEnforceMemoryCap,
   enforceUserMemoryCap: mockEnforceUserMemoryCap,
 }));
 
@@ -24,7 +22,7 @@ describe('extractAndSaveMemories', () => {
 
   it('calls generateObject with the conversation messages', async () => {
     mockGenerateObject.mockResolvedValue({
-      object: { facts: [{ key: 'pastor_name', value: 'John Smith', scope: 'org' }] },
+      object: { facts: [{ key: 'pastor_name', value: 'John Smith' }] },
     });
     mockUpsertMemory.mockResolvedValue({});
 
@@ -44,12 +42,12 @@ describe('extractAndSaveMemories', () => {
     expect(call.prompt).toContain('The pastor is John Smith.');
   });
 
-  it('saves extracted facts as org-level memories', async () => {
+  it('saves all extracted facts as user-scoped memories', async () => {
     mockGenerateObject.mockResolvedValue({
       object: {
         facts: [
-          { key: 'pastor_name', value: 'John Smith', scope: 'org' },
-          { key: 'sunday_service_time', value: '10:00 AM', scope: 'org' },
+          { key: 'pastor_name', value: 'John Smith' },
+          { key: 'sunday_service_time', value: '10:00 AM' },
         ],
       },
     });
@@ -65,33 +63,9 @@ describe('extractAndSaveMemories', () => {
     );
 
     expect(mockUpsertMemory).toHaveBeenCalledTimes(2);
-    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'pastor_name', 'John Smith', 'auto', undefined);
-    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'sunday_service_time', '10:00 AM', 'auto', undefined);
-  });
-
-  it('saves user-scoped facts with userId', async () => {
-    mockGenerateObject.mockResolvedValue({
-      object: {
-        facts: [
-          { key: 'pastor_name', value: 'John Smith', scope: 'org' },
-          { key: 'preferred_format', value: 'bullet points', scope: 'user' },
-        ],
-      },
-    });
-    mockUpsertMemory.mockResolvedValue({});
-
-    await extractAndSaveMemories(
-      'org-1',
-      'user-1',
-      'Can you list people in bullet points?',
-      'Sure! Here they are in bullet format...',
-      'anthropic',
-      'test-api-key',
-    );
-
-    expect(mockUpsertMemory).toHaveBeenCalledTimes(2);
-    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'pastor_name', 'John Smith', 'auto', undefined);
-    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'preferred_format', 'bullet points', 'auto', 'user-1');
+    // All auto-extracted facts are user-scoped (userId always passed)
+    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'pastor_name', 'John Smith', 'auto', 'user-1');
+    expect(mockUpsertMemory).toHaveBeenCalledWith('org-1', 'sunday_service_time', '10:00 AM', 'auto', 'user-1');
   });
 
   it('does nothing when no facts are extracted', async () => {
@@ -109,6 +83,7 @@ describe('extractAndSaveMemories', () => {
     );
 
     expect(mockUpsertMemory).not.toHaveBeenCalled();
+    expect(mockEnforceUserMemoryCap).not.toHaveBeenCalled();
   });
 
   it('truncates long messages to prevent context overflow', async () => {
@@ -128,9 +103,27 @@ describe('extractAndSaveMemories', () => {
     );
 
     const call = mockGenerateObject.mock.calls[0][0];
-    // 4000 chars + "User: " prefix + "... [truncated]" suffix
     expect(call.prompt).not.toContain('x'.repeat(5000));
     expect(call.prompt).toContain('... [truncated]');
+  });
+
+  it('wraps messages in XML tags to mitigate prompt injection', async () => {
+    mockGenerateObject.mockResolvedValue({
+      object: { facts: [] },
+    });
+
+    await extractAndSaveMemories(
+      'org-1',
+      'user-1',
+      'Hello',
+      'Hi there!',
+      'anthropic',
+      'test-api-key',
+    );
+
+    const call = mockGenerateObject.mock.calls[0][0];
+    expect(call.prompt).toContain('<user_message>Hello</user_message>');
+    expect(call.prompt).toContain('<assistant_message>Hi there!</assistant_message>');
   });
 
   it('throws when generateObject errors (outer caller handles)', async () => {
@@ -150,9 +143,9 @@ describe('extractAndSaveMemories', () => {
     expect(mockUpsertMemory).not.toHaveBeenCalled();
   });
 
-  it('calls enforceMemoryCap after extracting facts', async () => {
+  it('enforces user memory cap after extracting facts', async () => {
     mockGenerateObject.mockResolvedValue({
-      object: { facts: [{ key: 'pastor_name', value: 'John Smith', scope: 'org' }] },
+      object: { facts: [{ key: 'pastor_name', value: 'John Smith' }] },
     });
     mockUpsertMemory.mockResolvedValue({});
 
@@ -165,19 +158,16 @@ describe('extractAndSaveMemories', () => {
       'test-api-key',
     );
 
-    expect(mockEnforceMemoryCap).toHaveBeenCalledWith('org-1');
     expect(mockEnforceUserMemoryCap).toHaveBeenCalledWith('org-1', 'user-1');
   });
 
-  it('enforces both org and user memory caps', async () => {
+  it('skips cap enforcement when no facts are extracted', async () => {
     mockGenerateObject.mockResolvedValue({
-      object: { facts: [{ key: 'pref', value: 'concise', scope: 'user' }] },
+      object: { facts: [] },
     });
-    mockUpsertMemory.mockResolvedValue({});
 
     await extractAndSaveMemories('org-1', 'user-1', 'Be concise', 'Sure.', 'anthropic', 'key');
 
-    expect(mockEnforceMemoryCap).toHaveBeenCalledWith('org-1');
-    expect(mockEnforceUserMemoryCap).toHaveBeenCalledWith('org-1', 'user-1');
+    expect(mockEnforceUserMemoryCap).not.toHaveBeenCalled();
   });
 });

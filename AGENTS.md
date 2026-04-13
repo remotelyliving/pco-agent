@@ -98,17 +98,20 @@ effective_rules = allRules.filter(rule =>
 
 **Auto-extraction (fire-and-forget):**
 1. After each assistant response, the chat route calls `extractAndSaveMemories()` without `await`
-2. Extraction uses the cheapest available model for the user's configured provider (`claude-haiku-4-5`, `gpt-4o-mini`, or `gemini-2.0-flash`)
-3. The model returns structured facts in two scopes: org facts (`userId=null`, shared across all users) and user facts (`userId` set, personal to that user)
-4. Each fact is upserted via `@@unique([orgId, userId, key])` — same key updates in place
-5. Separate caps are enforced: 200 org-level facts and 100 per-user facts. When a cap is exceeded, the oldest auto-extracted facts are evicted.
-6. Failures are silently caught and never surface to the user
+2. Extraction uses the cheapest available model for the user's configured provider (`claude-haiku-4-5`, `gpt-4.1-nano`, or `gemini-2.5-flash-lite`)
+3. All auto-extracted facts are **user-scoped only** (personal to the user who sent the message). Org-wide memories require manual admin creation. This prevents prompt injection from polluting shared org memory.
+4. User and assistant messages are wrapped in XML tags (`<user_message>`, `<assistant_message>`) to mitigate prompt injection
+5. Each fact is upserted via `@@unique([orgId, userId, key])` — same key updates in place
+6. Cap enforcement: 100 per-user auto-extracted facts (oldest evicted). Only runs when facts were actually extracted.
+7. Failures are silently caught and never surface to the user
 
 **Memory prompt injection:**
-1. `getMemoryPrompt(orgId, userId)` fetches both org memories (`userId=null`) and personal memories for that user
-2. Returns two labeled sections: `## Known facts about this church` and `## Your personal notes`
-3. Returns an empty string if no memories exist (no prompt pollution)
-4. Injected after the rules block in every conversation's system prompt
+1. `getMemoryPrompt(orgId, userId, userMessage?)` fetches both org memories (`userId=null`) and personal memories for that user
+2. When `userMessage` is provided, memories are scored by keyword relevance (tokenize user message, match against memory key+value). Manual memories get a priority boost.
+3. A **token budget of 16K characters (~4K tokens)** caps the memory section. Memories are added in relevance order until the budget is reached.
+4. Returns two labeled sections: `## Known facts about this church` and `## Your personal notes`
+5. Returns an empty string if no memories exist (no prompt pollution)
+6. Injected after the rules block in every conversation's system prompt
 
 **Admin memory management:**
 - Admins can view, add, and delete org-level facts at `/memory`
@@ -117,8 +120,8 @@ effective_rules = allRules.filter(rule =>
 
 **Key files:**
 - `src/lib/memory/queries.ts` — `getOrgMemories`, `getUserMemories`, `getAllMemoriesForUser`, `upsertMemory`, `updateMemory`, `deleteMemory`
-- `src/lib/memory/extract.ts` — `extractAndSaveMemories(orgId, userId, userMsg, assistantMsg, provider, apiKey)`
-- `src/lib/memory/retrieve.ts` — `getMemoryPrompt(orgId, userId)`
+- `src/lib/memory/extract.ts` — `extractAndSaveMemories(orgId, userId, userMsg, assistantMsg, provider, apiKey)` — user-scoped only
+- `src/lib/memory/retrieve.ts` — `getMemoryPrompt(orgId, userId, userMessage?)` — token-budgeted, relevance-scored
 - `src/app/api/memory/route.ts` — `GET` (list), `POST` (admin create)
 - `src/app/api/memory/[id]/route.ts` — `PATCH` (admin update), `DELETE` (admin delete)
 
@@ -139,7 +142,7 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 2. `needsSetup` checks whether `User.apiProvider` and `User.apiKeyEnc` are both set
 3. If either is missing, the user is redirected to `/setup`
 4. `/setup` renders the `SetupWizard` component (`src/components/setup/setup-wizard.tsx`)
-5. Wizard guides user through: welcome → provider selection → API key entry → success
+5. Wizard guides user through: welcome → provider selection → model selection → API key entry → success
 6. On save, the wizard calls `POST /api/settings` (same endpoint as the settings page)
 7. After success, the wizard redirects to `/chat`
 
@@ -196,7 +199,10 @@ New users who have not configured an AI provider are redirected to `/setup` auto
 | PCO_CLIENT_ID | Yes | Planning Center OAuth app client ID |
 | PCO_CLIENT_SECRET | Yes | Planning Center OAuth app client secret |
 | NEXTAUTH_SECRET | Yes | NextAuth session encryption key |
-| NEXTAUTH_URL | Yes | Public URL of pco-agent (e.g., https://agent.pco-mcp.com) |
-| PCO_MCP_URL | Yes (default: pco-mcp.com/mcp) | URL of the pco-mcp MCP server |
+| NEXTAUTH_URL | Production only | Public URL of pco-agent (e.g., https://agent.pco-mcp.com). NextAuth infers in dev. |
+| PCO_MCP_URL | No | URL of the pco-mcp MCP server (default: https://pco-mcp.com/mcp) |
 | ENCRYPTION_KEY | Yes | Fernet key for API key encryption at rest |
 | LOG_LEVEL | No | Log level for pino (default: info) |
+| FILE_STORE | No | File storage backend (default: "local") |
+| UPLOAD_DIR | No | Directory for file uploads (default: "./uploads", set to /data/uploads in Docker) |
+| MAX_UPLOAD_SIZE_MB | No | Max upload size in MB (default: 10) |

@@ -110,7 +110,7 @@ src/
     memory/
       queries.ts      # Memory CRUD — getOrgMemories, getUserMemories, getAllMemoriesForUser, upsertMemory
       extract.ts      # extractAndSaveMemories() — fire-and-forget post-response fact extraction
-      retrieve.ts     # getMemoryPrompt() — returns formatted org+user memory string for system prompt
+      retrieve.ts     # getMemoryPrompt(orgId, userId, userMessage?) — token-budgeted, relevance-scored memory for system prompt
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
     rate-limit.ts     # In-memory token bucket rate limiter
     request-context.ts # Request ID from headers
