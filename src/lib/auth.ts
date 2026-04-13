@@ -14,7 +14,10 @@ declare module 'next-auth' {
       email?: string | null;
       image?: string | null;
     };
-    // NO pcoAccessToken here — it stays in JWT only
+    // Passed through session callback for server-side API routes.
+    // getToken() from next-auth/jwt is deprecated in v5 and returns null.
+    pcoAccessToken?: string;
+    pcoRefreshToken?: string;
   }
 }
 
@@ -174,14 +177,6 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user, account }) {
       if (user && account) {
-        logger.info('[auth] OAuth account payload', {
-          hasAccessToken: !!account.access_token,
-          hasRefreshToken: !!account.refresh_token,
-          expiresAt: account.expires_at,
-          tokenType: account.token_type,
-          scope: account.scope,
-          accountKeys: Object.keys(account),
-        });
         const profile = user as Record<string, unknown>;
         token.agentUserId = profile.agentUserId as string;
         token.orgId = profile.orgId as string;
@@ -256,15 +251,6 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
-      logger.info('[auth] JWT callback returning', {
-        hasUser: !!user,
-        hasPcoAccessToken: !!token.pcoAccessToken,
-        hasPcoRefreshToken: !!token.pcoRefreshToken,
-        pcoAccessTokenExpires: token.pcoAccessTokenExpires,
-        agentUserId: token.agentUserId,
-        tokenKeys: Object.keys(token),
-      });
-
       return token;
     },
     async session({ session, token }) {
@@ -276,7 +262,8 @@ export const authConfig: NextAuthConfig = {
           orgId: (token.orgId as string) ?? '',
           role: (token.role as string) ?? 'member',
         },
-        // pcoAccessToken removed — access via JWT in server-side code only
+        pcoAccessToken: token.pcoAccessToken as string | undefined,
+        pcoRefreshToken: token.pcoRefreshToken as string | undefined,
       };
     },
   },

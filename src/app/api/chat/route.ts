@@ -7,7 +7,8 @@ import {
 } from 'ai';
 import { z } from 'zod';
 import { MessageRole } from '@prisma/client';
-import { getToken } from 'next-auth/jwt';
+// getToken() from next-auth/jwt is deprecated in v5 and returns null.
+// PCO tokens are accessed via auth() session callback instead.
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { logger } from '@/lib/logger';
@@ -119,17 +120,10 @@ export async function POST(req: Request) {
       });
     }
 
-    // 7. Connect to MCP server (using PCO access token from JWT)
-    const jwtToken = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    log.info('[chat] JWT decoded', {
-      hasJwt: !!jwtToken,
-      jwtKeys: jwtToken ? Object.keys(jwtToken) : [],
-      hasPcoAccessToken: !!jwtToken?.pcoAccessToken,
-      hasPcoRefreshToken: !!jwtToken?.pcoRefreshToken,
-    });
-    const pcoAccessToken = jwtToken?.pcoAccessToken as string | undefined;
+    // 7. Connect to MCP server (using PCO access token from session)
+    const pcoAccessToken = session.pcoAccessToken;
 
-    if (!pcoAccessToken && jwtToken?.pcoRefreshToken) {
+    if (!pcoAccessToken && session.pcoRefreshToken) {
       // Token existed but refresh failed — user needs to re-login
       return Response.json(
         { error: 'Your Planning Center session has expired. Please sign out and sign back in.' },
@@ -180,7 +174,7 @@ export async function POST(req: Request) {
     } else {
       log.warn('[chat] No PCO access token — MCP tools unavailable', {
         userId: session.user.agentUserId,
-        hasRefreshToken: !!jwtToken?.pcoRefreshToken,
+        hasRefreshToken: !!session.pcoRefreshToken,
       });
     }
 
