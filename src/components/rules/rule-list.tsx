@@ -88,7 +88,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
         </Button>
       </div>
 
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         Rules tell the AI how to behave. Toggle rules on or off to customize your experience.
       </p>
 
@@ -105,7 +105,7 @@ export function RuleList({ isAdmin, userId }: { isAdmin: boolean; userId: string
 
       {rules === null && (
         <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
         </div>
       )}
 
@@ -209,7 +209,7 @@ function RuleSection({
               aria-label={`Toggle rule: ${rule.content.slice(0, 50)}`}
             />
             {rule.ruleType === 'system' && !isAdmin && (
-              <span className="text-xs text-gray-400 ml-1">Admin only</span>
+              <span className="text-xs text-muted-foreground ml-1">Admin only</span>
             )}
             <div className="flex-1">
               {editingId === rule.id ? (
@@ -220,7 +220,7 @@ function RuleSection({
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                   />
-                  {editError && <p className="text-xs text-red-500">{editError}</p>}
+                  {editError && <p className="text-xs text-destructive">{editError}</p>}
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => handleEdit(rule.id)}>
                       Save
@@ -258,7 +258,7 @@ function RuleSection({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-500 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                     >
                       Delete
                     </Button>
