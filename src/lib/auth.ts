@@ -82,9 +82,31 @@ export const authConfig: NextAuthConfig = {
           const json = await res.json();
           const person = json.data;
           const org = json.meta?.parent;
-          const orgName = org?.attributes?.name || json.meta?.organization?.attributes?.name;
+          let orgName = org?.attributes?.name || json.meta?.organization?.attributes?.name;
+
+          // PCO /me often returns meta.parent with only id+type (no attributes).
+          // Fetch the org name from the top-level /people/v2 endpoint which
+          // returns the organization as the response data itself.
           if (!orgName) {
-            logger.warn('[auth] PCO /me did not return org name', {
+            try {
+              const orgRes = await fetch(
+                'https://api.planningcenteronline.com/people/v2',
+                {
+                  headers: { Authorization: `Bearer ${tokens.access_token}` },
+                  signal: AbortSignal.timeout(5000),
+                }
+              );
+              if (orgRes.ok) {
+                const orgJson = await orgRes.json();
+                orgName = orgJson.data?.attributes?.name;
+              }
+            } catch {
+              // Non-fatal — we'll fall through to 'Unknown'
+            }
+          }
+
+          if (!orgName) {
+            logger.warn('[auth] Could not resolve org name from PCO', {
               metaKeys: Object.keys(json.meta || {}),
               parentKeys: org ? Object.keys(org) : [],
               parentAttrKeys: org?.attributes ? Object.keys(org.attributes) : [],
