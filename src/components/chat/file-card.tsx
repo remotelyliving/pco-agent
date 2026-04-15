@@ -23,7 +23,7 @@ export function UploadCard({ filename, sizeBytes, mediaType, imageUrl }: UploadC
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageUrl} alt={filename} className="max-h-64 w-auto rounded-t-lg object-contain" />
         <div className="flex items-center gap-2 p-2 text-sm">
-          <ImageIcon className="h-4 w-4 shrink-0 text-purple-600" />
+          <ImageIcon className="h-4 w-4 shrink-0 text-primary" />
           <p className="truncate text-xs text-muted-foreground">{filename}</p>
         </div>
       </div>
@@ -31,7 +31,7 @@ export function UploadCard({ filename, sizeBytes, mediaType, imageUrl }: UploadC
   }
 
   const Icon = isImage ? ImageIcon : FileSpreadsheet;
-  const iconColor = isImage ? 'text-purple-600' : 'text-green-600';
+  const iconColor = isImage ? 'text-primary' : 'text-accent-foreground';
 
   return (
     <div className="my-2 flex items-center gap-2 rounded-lg border border-border bg-card p-2 text-sm">

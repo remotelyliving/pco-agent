@@ -308,19 +308,19 @@ export function SetupWizard() {
             </div>
 
             {testResult === 'success' && (
-              <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700" role="status">
+              <div className="rounded-lg bg-accent p-3 text-sm text-accent-foreground" role="status">
                 Connection successful! Your API key works.
               </div>
             )}
 
             {testResult === 'error' && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive" role="alert">
                 {error || 'Connection test failed. Double-check your API key.'}
               </div>
             )}
 
             {error && !testResult && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700" role="alert">
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive" role="alert">
                 {error}
               </div>
             )}
