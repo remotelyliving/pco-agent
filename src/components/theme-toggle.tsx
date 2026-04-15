@@ -2,10 +2,10 @@
 
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -18,19 +18,16 @@ export function ThemeToggle() {
     );
   }
 
-  function cycleTheme() {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
+  function toggleTheme() {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   }
 
-  const Icon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
-  const label =
-    theme === 'dark' ? 'Dark mode' : theme === 'light' ? 'Light mode' : 'System theme';
+  const Icon = resolvedTheme === 'dark' ? Moon : Sun;
+  const label = resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 
   return (
     <button
-      onClick={cycleTheme}
+      onClick={toggleTheme}
       className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
       aria-label={label}
       title={label}

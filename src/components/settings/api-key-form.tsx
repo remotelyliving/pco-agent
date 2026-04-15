@@ -89,7 +89,9 @@ export function ApiKeyForm() {
             <Label htmlFor="provider">AI Provider</Label>
             <Select value={provider} onValueChange={(v) => { if (v) { setProvider(v); setModel(''); } }}>
               <SelectTrigger id="provider">
-                <SelectValue placeholder="Select a provider..." />
+                <SelectValue placeholder="Select a provider...">
+                  {provider ? getProviderDisplayName(provider) : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {SUPPORTED_PROVIDERS.map((p) => (
