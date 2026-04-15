@@ -15,7 +15,7 @@ export function createModel(
     case 'anthropic':
       return createAnthropic({ apiKey })(modelId);
     case 'openai':
-      return createOpenAI({ apiKey })(modelId, { structuredOutputs: false });
+      return createOpenAI({ apiKey })(modelId);
     case 'google':
       return createGoogleGenerativeAI({ apiKey })(modelId);
     default:
