@@ -31,21 +31,21 @@ export function FileChip({ name, size, progress, error, onRemove }: FileChipProp
   const Icon = isImage ? ImageIcon : FileSpreadsheet;
 
   return (
-    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'}`}>
-      <Icon className="h-4 w-4 shrink-0 text-gray-500" />
+    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${error ? 'border-destructive/50 bg-destructive/10' : 'border-border bg-muted'}`}>
+      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-gray-700">{truncateName(name)}</p>
-        <p className="text-xs text-gray-500">{formatFileSize(size)}</p>
-        {error && <p className="text-xs text-red-600">{error}</p>}
+        <p className="truncate font-medium text-foreground">{truncateName(name)}</p>
+        <p className="text-xs text-muted-foreground">{formatFileSize(size)}</p>
+        {error && <p className="text-xs text-destructive">{error}</p>}
         {progress !== undefined && !error && (
-          <div className="mt-1 h-1 w-full rounded-full bg-gray-200" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
-            <div className="h-1 rounded-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+          <div className="mt-1 h-1 w-full rounded-full bg-muted" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} aria-label="Upload progress">
+            <div className="h-1 rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}
       </div>
       <button
         onClick={onRemove}
-        className="flex min-h-[44px] min-w-[44px] items-center justify-center text-gray-400 hover:text-gray-600"
+        className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted-foreground hover:text-foreground"
         aria-label={`Remove ${name}`}
       >
         <X className="h-4 w-4" />

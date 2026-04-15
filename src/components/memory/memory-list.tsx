@@ -30,7 +30,7 @@ function MemoryTable({
 
   if (memories === null || memories.length === 0) {
     return (
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-muted-foreground">
         No facts yet. The assistant will learn facts automatically during conversations.
       </p>
     );
@@ -42,7 +42,7 @@ function MemoryTable({
   return (
     <>
       {overLimit && (
-        <p className="text-xs text-gray-400 mb-2">Showing first 100 facts</p>
+        <p className="text-xs text-muted-foreground mb-2">Showing first 100 facts</p>
       )}
       <div className="space-y-2">
         {limitedMemories.map((memory) => (
@@ -61,7 +61,7 @@ function MemoryTable({
                 </Badge>
               </div>
               <p
-                className={`text-sm text-gray-600 mt-0.5 cursor-pointer ${expandedId === memory.id ? '' : 'truncate'}`}
+                className={`text-sm text-muted-foreground mt-0.5 cursor-pointer ${expandedId === memory.id ? '' : 'truncate'}`}
                 onClick={() => setExpandedId(expandedId === memory.id ? null : memory.id)}
                 title="Click to expand"
               >
@@ -74,7 +74,7 @@ function MemoryTable({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-700 shrink-0"
+                    className="text-destructive hover:text-destructive/80 shrink-0"
                   >
                     Delete
                   </Button>
@@ -139,7 +139,7 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Memory</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Facts the assistant has learned about your church.
           </p>
         </div>
@@ -185,7 +185,7 @@ export function MemoryList({ isAdmin }: { isAdmin: boolean }) {
 
       {orgMemories === null && (
         <div className="flex justify-center py-8">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
         </div>
       )}
 
