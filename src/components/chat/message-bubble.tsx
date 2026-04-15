@@ -44,7 +44,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div
         className={`max-w-[80%] rounded-lg px-4 py-3 ${
-          isUser ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
         }`}
       >
         {message.parts.map((part, i) => {
@@ -59,7 +59,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
             const cleaned = stripToolMarkup(part.text);
             if (!cleaned) return null;
             return (
-              <div key={i} className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-code:bg-white prose-code:px-1 prose-code:rounded">
+              <div key={i} className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-table:my-2 prose-code:bg-muted prose-code:px-1 prose-code:rounded">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {cleaned}
                 </ReactMarkdown>
@@ -91,7 +91,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
             return (
               <div
                 key={i}
-                className="my-2 rounded border border-gray-200 bg-white p-2 text-sm text-gray-600"
+                className="my-2 rounded border border-border bg-card p-2 text-sm text-muted-foreground"
               >
                 <span className="font-medium">{getToolLabel(part.toolName, isDone)}</span>
               </div>
@@ -104,7 +104,7 @@ export function MessageBubble({ message }: { message: UIMessage }) {
             return (
               <div
                 key={i}
-                className="my-2 rounded border border-gray-200 bg-white p-2 text-sm text-gray-600"
+                className="my-2 rounded border border-border bg-card p-2 text-sm text-muted-foreground"
               >
                 <span className="font-medium">{getToolLabel(toolName, isDone)}</span>
               </div>

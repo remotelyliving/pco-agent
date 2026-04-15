@@ -244,8 +244,8 @@ export function ChatInterface({
         {messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-6 px-4">
             <div className="text-center">
-              <h2 className="text-lg font-semibold text-gray-700">What can I help with?</h2>
-              <p className="mt-1 text-sm text-gray-400">Try one of these, or ask your own question.</p>
+              <h2 className="text-lg font-semibold text-foreground">What can I help with?</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Try one of these, or ask your own question.</p>
             </div>
             <div className="grid gap-2 w-full max-w-md">
               {[
@@ -258,13 +258,13 @@ export function ChatInterface({
                 <button
                   key={prompt}
                   onClick={() => submitText(prompt)}
-                  className="rounded-lg border border-gray-200 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                  className="rounded-lg border border-border px-4 py-3 text-left text-sm text-foreground hover:bg-muted hover:border-border transition-colors"
                 >
                   {prompt}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 text-center mt-2">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               Available actions depend on your Planning Center modules.
             </p>
           </div>
@@ -274,12 +274,12 @@ export function ChatInterface({
         ))}
         {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
           <div className="mb-4 flex justify-start">
-            <div className="rounded-lg bg-gray-100 px-4 py-3 text-gray-500 flex items-center gap-1">
+            <div className="rounded-lg bg-muted px-4 py-3 text-muted-foreground flex items-center gap-1">
               Thinking
               <span className="flex gap-0.5">
-                <span className="animate-bounce [animation-delay:0ms] h-1 w-1 rounded-full bg-gray-400" />
-                <span className="animate-bounce [animation-delay:150ms] h-1 w-1 rounded-full bg-gray-400" />
-                <span className="animate-bounce [animation-delay:300ms] h-1 w-1 rounded-full bg-gray-400" />
+                <span className="animate-bounce [animation-delay:0ms] h-1 w-1 rounded-full bg-muted-foreground" />
+                <span className="animate-bounce [animation-delay:150ms] h-1 w-1 rounded-full bg-muted-foreground" />
+                <span className="animate-bounce [animation-delay:300ms] h-1 w-1 rounded-full bg-muted-foreground" />
               </span>
             </div>
           </div>
@@ -288,7 +288,7 @@ export function ChatInterface({
 
       {error && (
         <div
-          className="mx-4 mb-2 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          className="mx-4 mb-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive"
           role="alert"
         >
           {friendlyErrorMessage(error)}
@@ -296,11 +296,11 @@ export function ChatInterface({
       )}
 
       {!consentDismissed && pendingFiles.length > 0 && (
-        <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-sm text-warning-foreground">
           <p className="flex-1">
             Files and images you upload are sent to your AI provider for processing. Avoid sharing images with sensitive personal information. Your data is not used for training. This notice won&apos;t appear again.
           </p>
-          <button onClick={dismissConsent} className="shrink-0 min-h-[44px] min-w-[44px] px-3 font-medium text-amber-600 hover:text-amber-800">Got it</button>
+          <button onClick={dismissConsent} className="shrink-0 min-h-[44px] min-w-[44px] px-3 font-medium text-warning-foreground hover:text-foreground">Got it</button>
         </div>
       )}
       {pendingFiles.length > 0 && (
@@ -318,7 +318,7 @@ export function ChatInterface({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isStreaming}
-            className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+            className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50"
             aria-label="Attach file or image"
           >
             <Paperclip className="h-5 w-5" />
@@ -342,7 +342,7 @@ export function ChatInterface({
             {uploading ? 'Uploading...' : isStreaming ? '...' : 'Send'}
           </Button>
         </div>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs text-muted-foreground">
           Press Enter to send, Shift+Enter for a new line
         </p>
       </form>
