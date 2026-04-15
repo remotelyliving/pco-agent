@@ -6,29 +6,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MODEL_OPTIONS, getDefaultModel } from '@/lib/ai/models';
-import { SUPPORTED_PROVIDERS } from '@/lib/ai/providers';
+import { PROVIDER_INFO, SUPPORTED_PROVIDERS, type SupportedProvider } from '@/lib/ai/provider-meta';
 
-interface ProviderInfo {
-  name: string;
-  description: string;
+interface WizardProviderExtra {
   highlight: string;
   costEstimate: string;
   freeTier: string | null;
   keyPrefix: string;
-  keyUrl: string;
   signupUrl: string;
   steps: string[];
+  description: string;
 }
 
-const PROVIDER_INFO: Record<string, ProviderInfo> = {
+const WIZARD_EXTRA: Record<SupportedProvider, WizardProviderExtra> = {
   anthropic: {
-    name: 'Anthropic (Claude)',
     description: 'Claude excels at understanding context, following nuanced instructions, and explaining things clearly. A great choice for church staff who need thoughtful, detailed answers.',
     highlight: 'Best at understanding complex questions',
     costEstimate: '~500 messages for $5',
     freeTier: null,
     keyPrefix: 'sk-ant-',
-    keyUrl: 'https://console.anthropic.com/settings/keys',
     signupUrl: 'https://console.anthropic.com',
     steps: [
       'Go to console.anthropic.com and create an account (or sign in)',
@@ -39,13 +35,11 @@ const PROVIDER_INFO: Record<string, ProviderInfo> = {
     ],
   },
   openai: {
-    name: 'OpenAI (ChatGPT)',
     description: 'GPT models are versatile and widely used. If you already use ChatGPT, this is a natural fit. Great all-around performance at competitive prices.',
     highlight: 'Versatile and widely used',
     costEstimate: '~800 messages for $5',
     freeTier: null,
     keyPrefix: 'sk-',
-    keyUrl: 'https://platform.openai.com/api-keys',
     signupUrl: 'https://platform.openai.com',
     steps: [
       'Go to platform.openai.com and sign in (or create an account)',
@@ -56,13 +50,11 @@ const PROVIDER_INFO: Record<string, ProviderInfo> = {
     ],
   },
   google: {
-    name: 'Google (Gemini)',
     description: 'Gemini is fast, affordable, and uniquely offers a free tier — no credit card needed. Perfect for trying things out or keeping costs minimal.',
     highlight: 'Free tier available — no credit card needed',
     costEstimate: '~2,500 messages for $5 (or free within daily limits)',
     freeTier: 'Up to 250 requests/day free with any Google account',
     keyPrefix: '',
-    keyUrl: 'https://aistudio.google.com/apikey',
     signupUrl: 'https://aistudio.google.com',
     steps: [
       'Go to aistudio.google.com and sign in with any Google account',
@@ -140,7 +132,7 @@ export function SetupWizard() {
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
           <div
             key={s}
-            className={`h-2 w-16 rounded-full transition-colors ${s <= step ? 'bg-blue-600' : 'bg-gray-200'}`}
+            className={`h-2 w-16 rounded-full transition-colors ${s <= step ? 'bg-primary' : 'bg-muted'}`}
           />
         ))}
       </div>
@@ -155,7 +147,7 @@ export function SetupWizard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-blue-50 p-4 text-sm text-blue-800">
+            <div className="rounded-lg bg-primary/10 p-4 text-sm text-primary">
               <p className="font-medium">How does this work?</p>
               <p className="mt-1">
                 Service Planner connects to an AI service (like ChatGPT or Claude) to understand your questions,
@@ -164,7 +156,7 @@ export function SetupWizard() {
                 on your behalf.
               </p>
             </div>
-            <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
+            <div className="rounded-lg bg-muted p-4 text-sm text-foreground">
               <p className="font-medium">Is my data safe?</p>
               <p className="mt-1">
                 Your API key is encrypted before being stored. Your church data is sent to the AI provider
@@ -191,30 +183,31 @@ export function SetupWizard() {
           <CardContent className="space-y-3">
             {SUPPORTED_PROVIDERS.map((p) => {
               const info = PROVIDER_INFO[p];
+              const extra = WIZARD_EXTRA[p];
               return (
                 <button
                   key={p}
                   onClick={() => { setProvider(p); setModel(''); setStep(3); }}
-                  className={`w-full rounded-lg border-2 p-4 text-left transition-colors hover:border-blue-500 ${
-                    provider === p ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                  className={`w-full rounded-lg border-2 p-4 text-left transition-colors hover:border-primary/60 ${
+                    provider === p ? 'border-primary bg-primary/10' : 'border-border'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <p className="font-semibold">{info.name}</p>
-                    {info.freeTier && (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                    {extra.freeTier && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
                         Free tier
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 text-sm text-gray-600">{info.description}</p>
-                  <p className="mt-2 text-xs text-gray-500">
-                    Estimated cost: {info.costEstimate} (as of April 2026)
+                  <p className="mt-1 text-sm text-muted-foreground">{extra.description}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Estimated cost: {extra.costEstimate} (as of April 2026)
                   </p>
                 </button>
               );
             })}
-            <p className="text-center text-xs text-gray-400 pt-2">
+            <p className="text-center text-xs text-muted-foreground pt-2">
               You can switch providers later in Settings.
             </p>
           </CardContent>
@@ -231,7 +224,7 @@ export function SetupWizard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+            <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
               <p className="font-medium">Why does this matter?</p>
               <p className="mt-1">
                 More capable models give better answers for complex questions but cost more per message.
@@ -242,24 +235,24 @@ export function SetupWizard() {
               <button
                 key={m.id}
                 onClick={() => setModel(m.id)}
-                className={`w-full rounded-lg border-2 p-3 text-left transition-colors hover:border-blue-500 ${
-                  (model === m.id || (!model && m.isDefault)) ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                className={`w-full rounded-lg border-2 p-3 text-left transition-colors hover:border-primary/60 ${
+                  (model === m.id || (!model && m.isDefault)) ? 'border-primary bg-primary/10' : 'border-border'
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{m.name}</p>
                   {m.isDefault && (
-                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                       Recommended
                     </span>
                   )}
                   {m.supportsTools === false && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                    <span className="rounded-full bg-warning/20 px-2 py-0.5 text-xs font-medium text-warning-foreground">
                       Chat only
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600">{m.description}</p>
+                <p className="text-sm text-muted-foreground">{m.description}</p>
               </button>
             ))}
             <div className="flex gap-2 pt-2">
@@ -278,26 +271,26 @@ export function SetupWizard() {
       {step === 4 && provider && (
         <Card>
           <CardHeader>
-            <CardTitle>Enter Your {PROVIDER_INFO[provider].name} API Key</CardTitle>
+            <CardTitle>Enter Your {PROVIDER_INFO[provider as SupportedProvider].name} API Key</CardTitle>
             <CardDescription>
-              An API key is like a password that lets Service Planner talk to {PROVIDER_INFO[provider].name} on your behalf.
+              An API key is like a password that lets Service Planner talk to {PROVIDER_INFO[provider as SupportedProvider].name} on your behalf.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-gray-50 p-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">How to get your key:</p>
-              <ol className="list-decimal space-y-1.5 pl-5 text-sm text-gray-600">
-                {PROVIDER_INFO[provider].steps.map((s, i) => (
+            <div className="rounded-lg bg-muted p-4">
+              <p className="text-sm font-medium text-foreground mb-2">How to get your key:</p>
+              <ol className="list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
+                {WIZARD_EXTRA[provider as SupportedProvider].steps.map((s, i) => (
                   <li key={i}>{s}</li>
                 ))}
               </ol>
               <a
-                href={PROVIDER_INFO[provider].keyUrl}
+                href={PROVIDER_INFO[provider as SupportedProvider].keyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+                className="mt-3 inline-block text-sm font-medium text-primary hover:text-primary/80"
               >
-                Open {PROVIDER_INFO[provider].name} dashboard &rarr;
+                Open {PROVIDER_INFO[provider as SupportedProvider].name} dashboard &rarr;
               </a>
             </div>
 
@@ -306,10 +299,10 @@ export function SetupWizard() {
                 type="password"
                 value={apiKey}
                 onChange={(e) => { setApiKey(e.target.value); setTestResult(null); setError(''); }}
-                placeholder={PROVIDER_INFO[provider].keyPrefix ? `Paste your key (starts with "${PROVIDER_INFO[provider].keyPrefix}")` : 'Paste your API key here'}
+                placeholder={WIZARD_EXTRA[provider as SupportedProvider].keyPrefix ? `Paste your key (starts with "${WIZARD_EXTRA[provider as SupportedProvider].keyPrefix}")` : 'Paste your API key here'}
                 className="text-base"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Your key is encrypted before being saved. We never see it in plain text.
               </p>
             </div>
@@ -372,7 +365,7 @@ export function SetupWizard() {
             <Button onClick={() => router.push('/chat')} className="w-full" size="lg">
               Start Chatting
             </Button>
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-muted-foreground">
               You can change your provider or model anytime in Settings.
             </p>
           </CardContent>
