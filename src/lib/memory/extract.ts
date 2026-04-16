@@ -17,8 +17,8 @@ function truncate(text: string, maxLength: number): string {
 
 const CHEAP_MODELS: Record<string, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
-  openai: 'gpt-4.1-nano',
-  google: 'gemini-2.5-flash-lite',
+  openai: 'gpt-5.4-nano',
+  google: 'gemini-3.1-flash-lite',
 };
 
 const factsSchema = z.object({

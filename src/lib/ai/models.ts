@@ -7,7 +7,7 @@ export interface ModelOption {
   supportsTools?: boolean; // false = cannot use MCP tools reliably
 }
 
-// Model IDs verified from official docs on 2026-04-08
+// Model IDs verified from official docs on 2026-04-15
 // See docs/AI_PROVIDER_RESEARCH.md for pricing and details
 export const MODEL_OPTIONS: ModelOption[] = [
   // Anthropic
@@ -32,43 +32,43 @@ export const MODEL_OPTIONS: ModelOption[] = [
   },
   // OpenAI
   {
-    id: 'gpt-4.1',
+    id: 'gpt-5.4',
     provider: 'openai',
-    name: 'GPT-4.1',
-    description: 'Capable with large context window',
+    name: 'GPT-5.4',
+    description: 'Best balance of intelligence and speed',
     isDefault: true,
   },
   {
-    id: 'gpt-4.1-mini',
+    id: 'gpt-5.4-mini',
     provider: 'openai',
-    name: 'GPT-4.1 Mini',
+    name: 'GPT-5.4 Mini',
     description: 'Good and affordable',
   },
   {
-    id: 'gpt-4.1-nano',
+    id: 'gpt-5.4-nano',
     provider: 'openai',
-    name: 'GPT-4.1 Nano',
+    name: 'GPT-5.4 Nano',
     description: 'Cheapest — no Planning Center access',
     supportsTools: false,
   },
   // Google
   {
-    id: 'gemini-2.5-flash',
+    id: 'gemini-3.1-flash',
     provider: 'google',
-    name: 'Gemini 2.5 Flash',
+    name: 'Gemini 3.1 Flash',
     description: 'Fast and capable, free tier available',
     isDefault: true,
   },
   {
-    id: 'gemini-2.5-pro',
+    id: 'gemini-3.1-pro',
     provider: 'google',
-    name: 'Gemini 2.5 Pro',
+    name: 'Gemini 3.1 Pro',
     description: 'Most capable Google model',
   },
   {
-    id: 'gemini-2.5-flash-lite',
+    id: 'gemini-3.1-flash-lite',
     provider: 'google',
-    name: 'Gemini 2.5 Flash-Lite',
+    name: 'Gemini 3.1 Flash-Lite',
     description: 'Cheapest — no Planning Center access',
     supportsTools: false,
   },
