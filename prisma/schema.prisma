@@ -72,6 +72,7 @@ model User {
   apiProvider    String?  @map("api_provider")
   apiKeyEnc      String?  @map("api_key_enc")
   preferredModel String?  @map("preferred_model")
+  onboardingComplete Boolean @default(false) @map("onboarding_complete")
   createdAt      DateTime @default(now()) @map("created_at")
 
   org            Organization @relation(fields: [orgId], references: [id])
