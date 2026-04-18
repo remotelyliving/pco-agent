@@ -16,6 +16,7 @@ const RATE_LIMITS: Record<string, number> = {
   '/api/memory': 60,
   '/api/memory/:id': 60,
   '/api/conversations': 20,
+  '/api/conversations/onboarding': 5,
   '/api/conversations/:id': 60,
   '/api/files': 20,
   '/api/files/:id': 60,
@@ -38,6 +39,7 @@ function isPublicRoute(pathname: string): boolean {
 function normalizeRoute(pathname: string): string {
   if (/^\/api\/rules\/toggle$/.test(pathname)) return '/api/rules/toggle';
   if (/^\/api\/settings\/test$/.test(pathname)) return '/api/settings/test';
+  if (/^\/api\/conversations\/onboarding$/.test(pathname)) return '/api/conversations/onboarding';
   if (/^\/api\/rules\/[^/]+$/.test(pathname)) return '/api/rules/:id';
   if (/^\/api\/memory\/[^/]+$/.test(pathname)) return '/api/memory/:id';
   if (/^\/api\/conversations\/[^/]+$/.test(pathname)) return '/api/conversations/:id';
