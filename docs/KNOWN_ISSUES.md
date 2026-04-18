@@ -144,6 +144,25 @@ The following items were resolved and removed from this file on 2026-04-07:
 
 ---
 
+## Onboarding
+
+### Onboarding Conversation Sidebar Cleanup
+**Status:** Deferred — revisit post-launch
+**Impact:** The "Getting Started" conversation persists in the sidebar indefinitely alongside real work conversations. Could feel cluttered over time.
+**Fix:** Auto-rename to "Welcome to Service Planner" after completion, and/or add conversation archiving support to de-emphasize old conversations.
+
+### Returning Incomplete Onboarding Users Get No Nudge
+**Status:** Deferred — revisit post-launch
+**Impact:** If a user abandons onboarding mid-interview and returns days later, there's no visual indicator drawing them back to the "Getting Started" conversation. They may just start a new chat.
+**Fix:** Add a subtle badge or "Continue setup" label on the sidebar item, or a banner on the new-chat page.
+
+### Auto-Extracted Memory Key Collisions
+**Status:** Accepted — low risk
+**Impact:** AI-generated snake_case keys (e.g., `church_size`) could theoretically collide with admin-created manual org memories using the same key. The `upsertMemory` function would overwrite.
+**Fix:** Namespace auto-extracted keys with an `auto:` prefix to prevent collision with manual memories.
+
+---
+
 ## How to Use This File
 
 - **During reviews:** Check this file before flagging an issue. If it's listed here, it's known and accepted.
