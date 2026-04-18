@@ -183,7 +183,7 @@ export async function extractOnboardingProfile(options: ExtractOnboardingOptions
         counts.org_memory++;
       } else if (destination === 'user_rule') {
         if (!validateRuleContent(content)) {
-          logger.warn({ userId, orgId, key }, 'Skipping user_rule with invalid or injection content');
+          logger.warn('[onboarding] Skipping user_rule with invalid or injection content', { userId, orgId, key });
           counts.skipped++;
           continue;
         }
@@ -201,9 +201,8 @@ export async function extractOnboardingProfile(options: ExtractOnboardingOptions
     }
 
     const latencyMs = Date.now() - startMs;
-    logger.info(
-      { userId, orgId, conversationId, counts, latencyMs },
-      'extractOnboardingProfile complete',
-    );
+    logger.info('[onboarding] Extraction complete', {
+      userId, orgId, conversationId, counts, latencyMs,
+    });
   });
 }
