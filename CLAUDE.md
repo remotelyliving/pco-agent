@@ -55,6 +55,8 @@ src/
       conversations/
         [id]/
           route.ts    # Conversation rename (PATCH) + delete (DELETE, owner-only)
+        onboarding/
+          route.ts    # Onboarding conversation seeding (POST, idempotent)
       files/
         route.ts        # File upload (POST — multipart/form-data)
         [id]/
@@ -114,6 +116,10 @@ src/
       queries.ts      # Memory CRUD — getOrgMemories, getUserMemories, getAllMemoriesForUser, upsertMemory
       extract.ts      # extractAndSaveMemories() — fire-and-forget post-response fact extraction
       retrieve.ts     # getMemoryPrompt(orgId, userId, userMessage?) — token-budgeted, relevance-scored memory for system prompt
+    onboarding/
+      seed.ts         # Onboarding seed message builder with org-aware variants
+      prompts.ts      # System prompt onboarding instructions (first-user vs. subsequent)
+      extract.ts      # Structured onboarding extraction with categorized routing + atomicity
     setup.ts          # needsSetup(userId) — returns true if user has no API key configured
     rate-limit.ts     # In-memory token bucket rate limiter
     request-context.ts # Request ID from headers
