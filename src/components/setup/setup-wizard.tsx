@@ -358,11 +358,27 @@ export function SetupWizard() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">You&apos;re All Set!</CardTitle>
             <CardDescription className="text-base">
-              Your AI provider is configured. Start chatting with your church data.
+              Your AI provider is configured. Let&apos;s get to know each other.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button onClick={() => router.push('/chat')} className="w-full" size="lg">
+            <Button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/conversations/onboarding', { method: 'POST' });
+                  if (res.ok) {
+                    const data = await res.json();
+                    router.push(`/chat/${data.conversationId}`);
+                  } else {
+                    router.push('/chat');
+                  }
+                } catch {
+                  router.push('/chat');
+                }
+              }}
+              className="w-full"
+              size="lg"
+            >
               Start Chatting
             </Button>
             <p className="text-center text-xs text-muted-foreground">
