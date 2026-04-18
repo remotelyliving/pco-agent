@@ -32,9 +32,11 @@ function friendlyErrorMessage(error: Error): string {
 export function ChatInterface({
   conversationId,
   initialMessages,
+  onboardingComplete = true,
 }: {
   conversationId?: string;
   initialMessages?: Array<{ id: string; role: 'user' | 'assistant'; content: string }>;
+  onboardingComplete?: boolean;
 }) {
   const router = useRouter();
   const convIdRef = useRef<string | undefined>(conversationId);
@@ -325,7 +327,7 @@ export function ChatInterface({
           </button>
           <Textarea
             ref={textareaRef}
-            placeholder="Ask about your church data..."
+            placeholder={onboardingComplete ? "Ask about your church data..." : "Answer above, or just ask me anything to get started..."}
             onKeyDown={handleKeyDown}
             onInput={handleInput}
             rows={1}
