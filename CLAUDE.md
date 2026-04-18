@@ -3,6 +3,9 @@
 ## What This Is
 A web-based AI agent for church staff to interact with Planning Center Online through natural language. Built with Next.js, Vercel AI SDK v6, and connected to the pco-mcp server for PCO data access.
 
+## Mission
+Beyond the church-staff use case, pco-agent is a reference implementation for how developers can build agentic workflows that deliver highly effective results while keeping the experience transparent and intuitive for non-technical users. The system should be configurable end-to-end through natural language — from initial onboarding through ongoing personalization — so that users never need to understand the underlying AI mechanics to get value from them.
+
 ## Key Architecture Decisions
 - **Multi-provider**: Supports Anthropic, OpenAI, and Google via Vercel AI SDK v6. Users bring their own API key.
 - **MCP integration**: Connects to pco-mcp (separate service at ~/projects/pco-mcp) as an MCP client. pco-mcp handles all PCO API communication.
