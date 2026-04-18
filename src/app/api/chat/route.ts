@@ -23,10 +23,14 @@ import {
   getConversation,
   saveMessage,
   updateConversationTitle,
+  getMessages,
 } from '@/lib/chat/persist';
 import { assembleRules } from '@/lib/rules/assemble';
 import { getMemoryPrompt } from '@/lib/memory/retrieve';
 import { extractAndSaveMemories } from '@/lib/memory/extract';
+import { getOnboardingPrompt, ONBOARDING_COMPLETE_SIGNAL } from '@/lib/onboarding/prompts';
+import { extractOnboardingProfile } from '@/lib/onboarding/extract';
+import { getOrgMemories } from '@/lib/memory/queries';
 import { parseFileToText } from '@/lib/files/parse';
 import { getFileStore } from '@/lib/files/store';
 import { getFileRecord, createFileRecord } from '@/lib/files/persist';
@@ -185,10 +189,19 @@ export async function POST(req: Request) {
       assembleRules(session.user.agentUserId, session.user.orgId, { formatAsPrompt: true }),
       getMemoryPrompt(session.user.orgId, session.user.agentUserId, lastUserText || undefined),
     ]);
+
+    // Check if user needs onboarding
+    let onboardingInstructions: string | undefined;
+    if (!user.onboardingComplete) {
+      const orgMemories = await getOrgMemories(session.user.orgId);
+      onboardingInstructions = getOnboardingPrompt(orgMemories.length > 0);
+    }
+
     systemPrompt = buildSystemPrompt(
       typeof assembledRules === 'string' ? assembledRules : '',
       memoryPrompt,
       mcpConnected,
+      onboardingInstructions,
     );
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -333,11 +346,18 @@ export async function POST(req: Request) {
       stopWhen: stepCountIs(5),
       onFinish: async ({ text, toolCalls, usage }) => {
         try {
+          // Strip onboarding completion signal before saving
+          let displayText = text || '';
+          const hadOnboardingSignal = displayText.includes(ONBOARDING_COMPLETE_SIGNAL);
+          if (hadOnboardingSignal) {
+            displayText = displayText.replace(ONBOARDING_COMPLETE_SIGNAL, '').trimEnd();
+          }
+
           // Save assistant message
           await saveMessage({
             conversationId,
             role: MessageRole.assistant,
-            content: text || '',
+            content: displayText,
             toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
             tokenCount: usage?.totalTokens ?? null,
           });
@@ -353,23 +373,52 @@ export async function POST(req: Request) {
             }
           }
 
-          // Fire-and-forget memory extraction
+          // Memory extraction — onboarding vs. generic
           if (text && lastUserMessage?.role === 'user') {
-            const userText = lastUserMessage.parts
-              .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-              .map((p) => p.text)
-              .join('\n');
-            extractAndSaveMemories(
-              session.user.orgId,
-              session.user.agentUserId,
-              userText,
-              text,
-              user.apiProvider!,
-              apiKey,
-            ).catch((err) => log.error('[chat] Memory extraction failed', {
-              conversationId,
-              error: err instanceof Error ? err.message : String(err),
-            }));
+            if (!user.onboardingComplete) {
+              // Onboarding extraction: check if we should trigger
+              const shouldExtract = hadOnboardingSignal ||
+                (toolCalls && toolCalls.length > 0);
+
+              if (shouldExtract) {
+                // Load full conversation for onboarding extraction
+                const convMessages = await getMessages(conversationId);
+                const formattedMessages = convMessages.map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                }));
+
+                extractOnboardingProfile({
+                  orgId: session.user.orgId,
+                  userId: session.user.agentUserId,
+                  conversationId,
+                  messages: formattedMessages,
+                  provider: user.apiProvider!,
+                  apiKey,
+                }).catch((err) => log.error('[chat] Onboarding extraction failed', {
+                  conversationId,
+                  error: err instanceof Error ? err.message : String(err),
+                }));
+              }
+              // Generic extraction is suppressed during onboarding
+            } else {
+              // Normal extraction
+              const userText = lastUserMessage.parts
+                .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                .map((p) => p.text)
+                .join('\n');
+              extractAndSaveMemories(
+                session.user.orgId,
+                session.user.agentUserId,
+                userText,
+                text,
+                user.apiProvider!,
+                apiKey,
+              ).catch((err) => log.error('[chat] Memory extraction failed', {
+                conversationId,
+                error: err instanceof Error ? err.message : String(err),
+              }));
+            }
           }
 
           // MCP client lifecycle managed by connection pool
@@ -406,7 +455,7 @@ function generateTitle(userMessage: string): string {
   return words.slice(0, 60).replace(/\s+\S*$/, '') + '...';
 }
 
-function buildSystemPrompt(rules: string, memory?: string, mcpConnected?: boolean): string {
+function buildSystemPrompt(rules: string, memory?: string, mcpConnected?: boolean, onboardingInstructions?: string): string {
   let prompt = `You are Service Planner, an AI assistant for church staff who use Planning Center Online (PCO). You help with people management, service planning, volunteer scheduling, and song library management — all through natural conversation.
 
 Be friendly, use plain language, and avoid technical jargon. If you're unsure about something, say so rather than guessing. When you use a tool and get results, summarize them in a clear, readable way.
@@ -476,6 +525,10 @@ Planning Center has two main modules you can work with:
 
   if (rules) {
     prompt += `\n\n## Rules\n\nFollow these rules in all your responses:\n${rules}`;
+  }
+
+  if (onboardingInstructions) {
+    prompt += `\n\n${onboardingInstructions}`;
   }
 
   return prompt;
