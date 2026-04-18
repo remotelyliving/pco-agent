@@ -30,7 +30,6 @@ import { getMemoryPrompt } from '@/lib/memory/retrieve';
 import { extractAndSaveMemories } from '@/lib/memory/extract';
 import { getOnboardingPrompt, ONBOARDING_COMPLETE_SIGNAL } from '@/lib/onboarding/prompts';
 import { extractOnboardingProfile } from '@/lib/onboarding/extract';
-import { getOrgMemories } from '@/lib/memory/queries';
 import { parseFileToText } from '@/lib/files/parse';
 import { getFileStore } from '@/lib/files/store';
 import { getFileRecord, createFileRecord } from '@/lib/files/persist';
@@ -193,8 +192,8 @@ export async function POST(req: Request) {
     // Check if user needs onboarding
     let onboardingInstructions: string | undefined;
     if (!user.onboardingComplete) {
-      const orgMemories = await getOrgMemories(session.user.orgId);
-      onboardingInstructions = getOnboardingPrompt(orgMemories.length > 0);
+      const orgMemoryCount = await prisma.memory.count({ where: { orgId: session.user.orgId, userId: null } });
+      onboardingInstructions = getOnboardingPrompt(orgMemoryCount > 0);
     }
 
     systemPrompt = buildSystemPrompt(
@@ -382,7 +381,7 @@ export async function POST(req: Request) {
 
               if (shouldExtract) {
                 // Load full conversation for onboarding extraction
-                const convMessages = await getMessages(conversationId);
+                const convMessages = await getMessages(conversationId, { take: 50 });
                 const formattedMessages = convMessages.map((m) => ({
                   role: m.role,
                   content: m.content,

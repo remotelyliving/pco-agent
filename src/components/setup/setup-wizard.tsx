@@ -364,6 +364,7 @@ export function SetupWizard() {
           <CardContent className="space-y-3">
             <Button
               onClick={async () => {
+                setSaving(true);
                 try {
                   const res = await fetch('/api/conversations/onboarding', { method: 'POST' });
                   if (res.ok) {
@@ -376,10 +377,11 @@ export function SetupWizard() {
                   router.push('/chat');
                 }
               }}
+              disabled={saving}
               className="w-full"
               size="lg"
             >
-              Start Chatting
+              {saving ? 'Setting up...' : 'Start Chatting'}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               You can change your provider or model anytime in Settings.

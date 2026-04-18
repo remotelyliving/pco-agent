@@ -161,6 +161,16 @@ The following items were resolved and removed from this file on 2026-04-07:
 **Impact:** AI-generated snake_case keys (e.g., `church_size`) could theoretically collide with admin-created manual org memories using the same key. The `upsertMemory` function would overwrite.
 **Fix:** Namespace auto-extracted keys with an `auto:` prefix to prevent collision with manual memories.
 
+### Onboarding Injection Validation is Denylist-Only
+**Status:** Accepted — defense in depth mitigates
+**Impact:** The 8 regex patterns in `validateRuleContent` cover common prompt injection phrasing but can't catch all variants (unicode homoglyphs, obfuscation, multilingual). Rules go into the system prompt.
+**Fix:** Add a model-based classification pass ("Is this a behavioral preference or an instruction override?") as a second validation layer. Current mitigations: denylist + 500-char cap + extraction prompt guardrails.
+
+### Onboarding Extraction Logging Inside Transaction
+**Status:** Accepted — cosmetic
+**Impact:** The success log in `extractOnboardingProfile` runs inside the `$transaction` callback. If the transaction commit fails after the log statement, a success log is recorded for a rolled-back transaction.
+**Fix:** Move the log after the `$transaction` call returns, or add a separate failure log.
+
 ---
 
 ## How to Use This File

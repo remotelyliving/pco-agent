@@ -24,6 +24,8 @@ function stripToolMarkup(text: string): string {
   // Strip partial/unclosed tags that stream mid-sentence
   cleaned = cleaned.replace(/<function_calls>[\s\S]*/g, '');
   cleaned = cleaned.replace(/<function_response>[\s\S]*/g, '');
+  // Strip onboarding completion signal (internal protocol, not for display)
+  cleaned = cleaned.replace(/ONBOARDING_COMPLETE/g, '');
   // Clean up leftover whitespace
   cleaned = cleaned.replace(/\n{3,}/g, '\n\n').trim();
   return cleaned;
