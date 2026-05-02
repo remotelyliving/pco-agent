@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+# superpowers tooling scratch state
+.superpowers/
+
 # testing
 /coverage
 .stryker-tmp/
