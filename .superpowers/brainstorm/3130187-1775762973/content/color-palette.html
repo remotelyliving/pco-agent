@@ -1,0 +1,77 @@
+<h2>Color Palette Direction</h2>
+<p class="subtitle">Which palette feels right for Service Planner? Each is derived from the illustration's lime-green + light blue tones.</p>
+
+<div class="cards">
+  <!-- Option A: Direct from illustration -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #EDF3FF;">
+      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #A3D944; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Primary</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #8BC62F; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Hover</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #D6E8F7; display: flex; align-items: center; justify-content: center; color: #555; font-weight: bold; font-size: 11px;">BG</div>
+      </div>
+      <!-- Mock button -->
+      <div style="text-align: center;">
+        <div style="display: inline-block; background: #A3D944; color: white; padding: 10px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">Sign in with Planning Center</div>
+      </div>
+      <div style="margin-top: 12px; text-align: center;">
+        <div style="display: inline-block; background: #A3D944; color: white; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">+ New Chat</div>
+        <div style="display: inline-block; border: 1px solid #ddd; color: #555; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">Settings</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Lime Forward</h3>
+      <p>Primary: <code>#A3D944</code> (lime-green from illustration)<br>
+      Background: <code>#EDF3FF</code> (light blue tint)<br>
+      Bold and energetic. Matches the illustration directly.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Muted / professional -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #F0F5F0;">
+      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #5B9A3C; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Primary</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #4A8331; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Hover</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #F0F5F0; display: flex; align-items: center; justify-content: center; color: #555; font-weight: bold; font-size: 11px;">BG</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="display: inline-block; background: #5B9A3C; color: white; padding: 10px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">Sign in with Planning Center</div>
+      </div>
+      <div style="margin-top: 12px; text-align: center;">
+        <div style="display: inline-block; background: #5B9A3C; color: white; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">+ New Chat</div>
+        <div style="display: inline-block; border: 1px solid #ddd; color: #555; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">Settings</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Forest Professional</h3>
+      <p>Primary: <code>#5B9A3C</code> (deeper green)<br>
+      Background: <code>#F0F5F0</code> (subtle sage tint)<br>
+      More muted and professional. Better contrast/accessibility.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Green + blue accent -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; background: #F5F8FF;">
+      <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 16px;">
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #7CB342; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Primary</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #689F38; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">Hover</div>
+        <div style="width: 60px; height: 60px; border-radius: 12px; background: #4A90D9; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px;">Accent</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="display: inline-block; background: #7CB342; color: white; padding: 10px 32px; border-radius: 8px; font-weight: 600; font-size: 15px;">Sign in with Planning Center</div>
+      </div>
+      <div style="margin-top: 12px; text-align: center;">
+        <div style="display: inline-block; background: #7CB342; color: white; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">+ New Chat</div>
+        <div style="display: inline-block; border: 1px solid #4A90D9; color: #4A90D9; padding: 6px 16px; border-radius: 6px; font-size: 13px; margin: 4px;">Settings</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Green Primary + Blue Accent</h3>
+      <p>Primary: <code>#7CB342</code> (medium lime-green)<br>
+      Accent: <code>#4A90D9</code> (blue from illustration background)<br>
+      Two-tone — green for actions, blue for secondary elements. Bridges both colors from the illustration.</p>
+    </div>
+  </div>
+</div>
